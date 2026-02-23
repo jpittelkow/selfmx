@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 
 // Mock axios
@@ -19,16 +19,12 @@ vi.mock('axios', () => ({
 
 describe('API Client', () => {
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
   it('creates axios instance with correct config', async () => {
-    // Import after mocking
-    const { api } = await import('@/lib/api');
+    await import('@/lib/api');
 
     expect(axios.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -39,7 +35,7 @@ describe('API Client', () => {
   });
 
   it('includes CSRF header configuration', async () => {
-    const { api } = await import('@/lib/api');
+    await import('@/lib/api');
 
     expect(axios.create).toHaveBeenCalledWith(
       expect.objectContaining({

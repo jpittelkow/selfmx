@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-// Mock the api module
+// Mock dependencies
 vi.mock('@/lib/api', () => ({
   api: {
     get: vi.fn(),
@@ -9,10 +9,18 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
+vi.mock('@/lib/timezones', () => ({
+  detectBrowserTimezone: vi.fn(() => 'America/New_York'),
+}));
+
+vi.mock('@/lib/utils', () => ({
+  setUserTimezone: vi.fn(),
+  cn: vi.fn((...args: any[]) => args.filter(Boolean).join(' ')),
+}));
+
 describe('useAuth Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset the store state
     vi.resetModules();
   });
 
@@ -28,7 +36,7 @@ describe('useAuth Hook', () => {
   it('fetches user on mount', async () => {
     const { api } = await import('@/lib/api');
     const mockUser = { id: 1, name: 'Test User', email: 'test@example.com' };
-    
+
     (api.get as any).mockResolvedValueOnce({ data: { user: mockUser } });
 
     const { useAuth } = await import('@/lib/auth');
@@ -44,8 +52,12 @@ describe('useAuth Hook', () => {
   it('handles login', async () => {
     const { api } = await import('@/lib/api');
     const mockUser = { id: 1, name: 'Test User', email: 'test@example.com' };
-    
-    (api.post as any).mockResolvedValueOnce({ data: { user: mockUser } });
+
+    // CSRF cookie get, then login post, then timezone post
+    (api.get as any).mockResolvedValueOnce({});
+    (api.post as any)
+      .mockResolvedValueOnce({ data: { user: mockUser } })
+      .mockResolvedValueOnce({});
 
     const { useAuth } = await import('@/lib/auth');
     const { result } = renderHook(() => useAuth());
@@ -57,12 +69,13 @@ describe('useAuth Hook', () => {
     expect(api.post).toHaveBeenCalledWith('/auth/login', {
       email: 'test@example.com',
       password: 'password',
+      remember: false,
     });
   });
 
   it('handles logout', async () => {
     const { api } = await import('@/lib/api');
-    
+
     (api.post as any).mockResolvedValueOnce({});
 
     const { useAuth } = await import('@/lib/auth');
@@ -79,14 +92,18 @@ describe('useAuth Hook', () => {
   it('handles registration', async () => {
     const { api } = await import('@/lib/api');
     const mockUser = { id: 1, name: 'New User', email: 'new@example.com' };
-    
-    (api.post as any).mockResolvedValueOnce({ data: { user: mockUser } });
+
+    // CSRF cookie get, then register post, then timezone post
+    (api.get as any).mockResolvedValueOnce({});
+    (api.post as any)
+      .mockResolvedValueOnce({ data: { user: mockUser } })
+      .mockResolvedValueOnce({});
 
     const { useAuth } = await import('@/lib/auth');
     const { result } = renderHook(() => useAuth());
 
     await act(async () => {
-      await result.current.register('New User', 'new@example.com', 'password');
+      await result.current.register('New User', 'new@example.com', 'password', 'password');
     });
 
     expect(api.post).toHaveBeenCalledWith('/auth/register', {
@@ -99,22 +116,20 @@ describe('useAuth Hook', () => {
 
   it('handles errors', async () => {
     const { api } = await import('@/lib/api');
-    
-    (api.post as any).mockRejectedValueOnce({
-      response: { data: { message: 'Invalid credentials' } },
-    });
+
+    // CSRF cookie get succeeds, login post fails
+    (api.get as any).mockResolvedValueOnce({});
+    (api.post as any).mockRejectedValueOnce(
+      new Error('Invalid credentials')
+    );
 
     const { useAuth } = await import('@/lib/auth');
     const { result } = renderHook(() => useAuth());
 
     await act(async () => {
-      try {
-        await result.current.login('test@example.com', 'wrongpassword');
-      } catch (e) {
-        // Expected to throw
-      }
+      await expect(
+        result.current.login('test@example.com', 'wrongpassword')
+      ).rejects.toThrow('Invalid credentials');
     });
-
-    expect(result.current.error).toBe('Invalid credentials');
   });
 });
