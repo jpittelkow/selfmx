@@ -76,7 +76,7 @@ return [
     'security' => [
         'max_query_depth' => 12,
         'max_query_complexity' => 200,
-        'disable_introspection' => true,
+        'disable_introspection' => \GraphQL\Validator\Rules\DisableIntrospection::ENABLED,
     ],
 
     /*

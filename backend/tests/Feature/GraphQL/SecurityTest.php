@@ -8,7 +8,7 @@ beforeEach(function () {
 
 describe('introspection', function () {
     it('is disabled by default', function () {
-        config(['lighthouse.security.disable_introspection' => true]);
+        config(['lighthouse.security.disable_introspection' => \GraphQL\Validator\Rules\DisableIntrospection::ENABLED]);
 
         $user = createUser();
         $key = createApiKey($user);
@@ -25,8 +25,7 @@ describe('introspection', function () {
 
     it('is available when enabled', function () {
         config([
-            'graphql.introspection_enabled' => true,
-            'lighthouse.security.disable_introspection' => false,
+            'lighthouse.security.disable_introspection' => \GraphQL\Validator\Rules\DisableIntrospection::DISABLED,
         ]);
 
         $user = createUser();

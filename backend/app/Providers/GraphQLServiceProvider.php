@@ -13,7 +13,9 @@ class GraphQLServiceProvider extends ServiceProvider
         config([
             'lighthouse.security.max_query_depth' => (int) config('graphql.max_query_depth', 12),
             'lighthouse.security.max_query_complexity' => (int) config('graphql.max_query_complexity', 200),
-            'lighthouse.security.disable_introspection' => !config('graphql.introspection_enabled', false),
+            'lighthouse.security.disable_introspection' => config('graphql.introspection_enabled', false)
+                ? \GraphQL\Validator\Rules\DisableIntrospection::DISABLED
+                : \GraphQL\Validator\Rules\DisableIntrospection::ENABLED,
             'lighthouse.pagination.max_count' => (int) config('graphql.max_result_size', 100),
         ]);
     }

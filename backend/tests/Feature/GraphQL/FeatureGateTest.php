@@ -4,7 +4,7 @@ use App\Services\SettingService;
 
 describe('GraphQL Feature Gate', function () {
     it('returns 404 when graphql is disabled', function () {
-        // Default is disabled, no need to set
+        app(SettingService::class)->set('graphql', 'enabled', false);
 
         $user = createUser();
         $key = createApiKey($user);
