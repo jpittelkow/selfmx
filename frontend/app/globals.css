@@ -61,6 +61,29 @@
   }
 }
 
+/* Help article prose spacing overrides */
+.help-article-prose h1 {
+  margin-bottom: 1.25rem;
+}
+.help-article-prose h2 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+.help-article-prose h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.help-article-prose p {
+  margin-bottom: 1rem;
+}
+.help-article-prose ul,
+.help-article-prose ol {
+  margin-bottom: 1rem;
+}
+.help-article-prose li {
+  margin-bottom: 0.375rem;
+}
+
 /* PWA standalone mode: prevent pull-to-refresh overscroll bounce */
 @media (display-mode: standalone) {
   body {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/components/theme-provider";
 import { api } from "@/lib/api";
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Moon, Sun, Monitor, Loader2, Palette, Bell, Brain, Send, Smartphone, Download, Globe } from "lucide-react";
+import { Moon, Sun, Monitor, Loader2, Palette, Bell, Brain, Send, Smartphone, Download, Globe, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { SaveButton } from "@/components/ui/save-button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Link from "next/link";
@@ -42,6 +42,9 @@ import { HelpLink } from "@/components/help/help-link";
 import { useInstallPrompt } from "@/lib/use-install-prompt";
 import { TIMEZONES } from "@/lib/timezones";
 import { setUserTimezone } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getTypesByCategory } from "@/lib/notification-types";
 
 interface UserPreferences {
   theme?: "light" | "dark" | "system";
@@ -68,6 +71,46 @@ interface NotificationChannelPref {
   settings: NotificationSetting[];
 }
 
+function isIOSDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function isStandaloneMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+}
+
+function WebPushHelperText({ webpushEnabled }: { webpushEnabled: boolean }) {
+  const isIOS = isIOSDevice();
+  const standalone = isStandaloneMode();
+
+  if (isIOS && !standalone) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        <strong>iOS:</strong> Push notifications require this app to be installed to your home screen. Tap the share button in Safari, then &quot;Add to Home Screen.&quot;
+      </p>
+    );
+  }
+  if (isIOS && standalone && !isWebPushSupported()) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Push notifications require iOS 16.4 or later.
+      </p>
+    );
+  }
+  if (!isWebPushSupported() && !webpushEnabled) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Push notifications are not available. Your administrator may need to configure VAPID keys.
+      </p>
+    );
+  }
+  return null;
+}
+
 export default function PreferencesPage() {
   const { theme, setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +130,8 @@ export default function PreferencesPage() {
   const [webpushLoading, setWebpushLoading] = useState(false);
   const [webpushPermission, setWebpushPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [installPrompting, setInstallPrompting] = useState(false);
+  const [typePreferences, setTypePreferences] = useState<Record<string, Record<string, boolean>>>({});
+  const [typePrefsOpen, setTypePrefsOpen] = useState(false);
   const { features, novu } = useAppConfig();
   const { isOffline } = useOnline();
   const { canPrompt, isInstalled, promptInstall } = useInstallPrompt();
@@ -161,6 +206,43 @@ export default function PreferencesPage() {
     }
   }, []);
 
+  const fetchTypePreferences = useCallback(async () => {
+    try {
+      const response = await api.get("/user/notification-settings/type-preferences");
+      setTypePreferences(response.data?.preferences ?? {});
+    } catch {
+      // Silently fall back to empty (all enabled)
+    }
+  }, []);
+
+
+  const toggleTypePreference = async (type: string, channel: string, enabled: boolean) => {
+    const snapshot = JSON.parse(JSON.stringify(typePreferences));
+    // Optimistic update
+    setTypePreferences((prev) => {
+      const next = { ...prev };
+      if (enabled) {
+        if (next[type]) {
+          const { [channel]: _, ...rest } = next[type];
+          if (Object.keys(rest).length === 0) {
+            delete next[type];
+          } else {
+            next[type] = rest;
+          }
+        }
+      } else {
+        next[type] = { ...(next[type] ?? {}), [channel]: false };
+      }
+      return next;
+    });
+    try {
+      await api.put("/user/notification-settings/type-preferences", { type, channel, enabled });
+    } catch {
+      setTypePreferences(snapshot);
+      toast.error("Failed to update preference");
+    }
+  };
+
   useEffect(() => {
     fetchPreferences();
   }, [fetchPreferences]);
@@ -168,6 +250,10 @@ export default function PreferencesPage() {
   useEffect(() => {
     fetchChannels();
   }, [fetchChannels]);
+
+  useEffect(() => {
+    fetchTypePreferences();
+  }, [fetchTypePreferences]);
 
   useEffect(() => {
     setWebpushPermission(getPermissionStatus());
@@ -618,11 +704,18 @@ export default function PreferencesPage() {
                         )}
                       </div>
                     ) : (
-                      <Switch
-                        checked={channel.enabled}
-                        onCheckedChange={(enabled) => toggleChannel(channel.id, enabled)}
-                        disabled={(channel.settings.length > 0 && !channel.configured) || isOffline}
-                      />
+                      <div className="flex items-center gap-2">
+                        {channel.settings.length > 0 && !channel.configured && (
+                          <span className="text-xs text-muted-foreground">
+                            Enter settings below to enable
+                          </span>
+                        )}
+                        <Switch
+                          checked={channel.enabled}
+                          onCheckedChange={(enabled) => toggleChannel(channel.id, enabled)}
+                          disabled={(channel.settings.length > 0 && !channel.configured) || isOffline}
+                        />
+                      </div>
                     )}
                   </div>
                   {channel.id === "webpush" && channel.configured && (
@@ -639,6 +732,9 @@ export default function PreferencesPage() {
                       )}
                       Test
                     </Button>
+                  )}
+                  {channel.id === "webpush" && !channel.configured && (
+                    <WebPushHelperText webpushEnabled={!!features?.webpushEnabled} />
                   )}
                   {channel.settings.length > 0 && channel.id !== "webpush" && (
                     <>
@@ -688,6 +784,79 @@ export default function PreferencesPage() {
               ))}
             </div>
           )}
+
+          {/* Per-type preference matrix */}
+          {!novu?.enabled && (() => {
+            const enabledChannels = channels.filter((c) => c.enabled && c.id !== "database");
+            if (enabledChannels.length < 1) return null;
+            const categories = getTypesByCategory();
+            return (
+              <Collapsible open={typePrefsOpen} onOpenChange={setTypePrefsOpen} className="mt-6">
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="flex w-full items-center justify-between p-0 h-auto hover:bg-transparent">
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      Fine-tune by notification type
+                    </span>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${typePrefsOpen ? "rotate-180" : ""}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Control which notification types are sent to each channel. Unchecked types will be silenced on that channel.
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 pr-4 font-medium">Type</th>
+                          {enabledChannels.map((ch) => (
+                            <th key={ch.id} className="text-center py-2 px-2 font-medium whitespace-nowrap">
+                              {ch.name}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {categories.map((cat) => (
+                          <React.Fragment key={cat.category}>
+                            <tr>
+                              <td colSpan={enabledChannels.length + 1} className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                {cat.categoryLabel}
+                              </td>
+                            </tr>
+                            {cat.types.map(({ type, label, icon: Icon }) => (
+                              <tr key={type} className="border-b border-border/50">
+                                <td className="py-2 pr-4">
+                                  <span className="flex items-center gap-2">
+                                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                    {label}
+                                  </span>
+                                </td>
+                                {enabledChannels.map((ch) => {
+                                  const checked = typePreferences[type]?.[ch.id] !== false;
+                                  return (
+                                    <td key={ch.id} className="text-center py-2 px-2">
+                                      <Checkbox
+                                        checked={checked}
+                                        onCheckedChange={(val) => toggleTypePreference(type, ch.id, !!val)}
+                                        disabled={isOffline}
+                                        aria-label={`${label} via ${ch.name}`}
+                                      />
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })()}
         </CardContent>
       </Card>
 
@@ -737,6 +906,7 @@ export default function PreferencesPage() {
           )}
         </CardContent>
       </Card>
+
     </div>
   );
 }

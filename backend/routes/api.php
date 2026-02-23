@@ -43,9 +43,16 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\Admin\SearchAdminController;
 use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\ChangelogController;
+use App\Http\Controllers\Api\NotificationDeliveryController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\OnboardingController;
 use App\Http\Controllers\Api\UsageController;
+use App\Http\Controllers\Api\ApiKeyController;
+use App\Http\Controllers\Api\GraphQLSettingController;
+use App\Http\Controllers\Api\StripeWebhookController;
+use App\Http\Controllers\Api\StripeConnectController;
+use App\Http\Controllers\Api\StripeSettingController;
+use App\Http\Controllers\Api\StripePaymentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -68,6 +75,10 @@ Route::get('/branding', [BrandingController::class, 'show']);
 // Client error reporting (rate limited, no auth)
 Route::post('/client-errors', [ClientErrorController::class, 'store'])
     ->middleware('throttle:10,1');
+
+// Stripe webhook (public, no auth — signature verified in controller)
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
+    ->middleware('throttle:60,1');
 
 /*
 |--------------------------------------------------------------------------
@@ -168,6 +179,8 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::post('/settings/detect-timezone', [UserSettingController::class, 'detectTimezone']);
         Route::get('/notification-settings', [UserNotificationSettingsController::class, 'show'])->middleware('log.access:Setting');
         Route::put('/notification-settings', [UserNotificationSettingsController::class, 'update'])->middleware('log.access:Setting');
+        Route::get('/notification-settings/type-preferences', [UserNotificationSettingsController::class, 'typePreferences'])->middleware('log.access:Setting');
+        Route::put('/notification-settings/type-preferences', [UserNotificationSettingsController::class, 'updateTypePreference'])->middleware('log.access:Setting');
         Route::post('/webpush-subscription', [UserNotificationSettingsController::class, 'storeWebPushSubscription'])->middleware('log.access:Setting');
         Route::delete('/webpush-subscription', [UserNotificationSettingsController::class, 'destroyWebPushSubscription'])->middleware('log.access:Setting');
     });
@@ -224,7 +237,8 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::post('/mark-read', [NotificationController::class, 'markAsRead']);
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
         Route::delete('/{notification}', [NotificationController::class, 'destroy']);
-        
+        Route::post('/delete-batch', [NotificationController::class, 'destroyBatch']);
+
         // Test notification (throttled: 5 per minute)
         Route::post('/test/{channel}', [NotificationController::class, 'test'])->middleware('throttle:5,1');
     });
@@ -349,8 +363,15 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
     Route::prefix('notification-settings')->group(function () {
         Route::get('/', [NotificationSettingController::class, 'show'])->middleware('can:settings.view');
         Route::put('/', [NotificationSettingController::class, 'update'])->middleware('can:settings.edit');
+        Route::post('/generate-vapid', [NotificationSettingController::class, 'generateVapid'])->middleware('can:settings.edit');
         Route::post('/test/{channel}', [NotificationSettingController::class, 'testChannel'])->middleware('can:settings.edit');
         Route::delete('/keys/{key}', [NotificationSettingController::class, 'reset'])->middleware('can:settings.edit');
+    });
+
+    // Notification Delivery Log (permission: notification_deliveries.view)
+    Route::prefix('notification-deliveries')->group(function () {
+        Route::get('/', [NotificationDeliveryController::class, 'index'])->middleware('can:notification_deliveries.view');
+        Route::get('/stats', [NotificationDeliveryController::class, 'stats'])->middleware('can:notification_deliveries.view');
     });
 
     // Novu Settings (permission: settings.view / settings.edit)
@@ -358,6 +379,8 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::get('/', [NovuSettingController::class, 'show'])->middleware('can:settings.view');
         Route::put('/', [NovuSettingController::class, 'update'])->middleware('can:settings.edit');
         Route::post('/test', [NovuSettingController::class, 'test'])->middleware('can:settings.edit');
+        Route::get('/workflow-map', [NovuSettingController::class, 'workflowMap'])->middleware('can:settings.view');
+        Route::put('/workflow-map', [NovuSettingController::class, 'updateWorkflowMap'])->middleware('can:settings.edit');
         Route::delete('/keys/{key}', [NovuSettingController::class, 'resetKey'])->middleware('can:settings.edit');
     });
 
@@ -382,6 +405,31 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::put('/', [SSOSettingController::class, 'update'])->middleware('can:settings.edit');
         Route::post('/test/{provider}', [SSOSettingController::class, 'test'])->middleware('can:settings.edit');
         Route::delete('/keys/{key}', [SSOSettingController::class, 'reset'])->middleware('can:settings.edit');
+    });
+
+    // Stripe Connect (permission: settings.view / settings.edit)
+    Route::prefix('stripe/connect')->group(function () {
+        Route::get('/status', [StripeConnectController::class, 'status'])->middleware('can:settings.view');
+        Route::post('/oauth-link', [StripeConnectController::class, 'createOAuthLink'])->middleware('can:settings.edit');
+        Route::post('/account-link', [StripeConnectController::class, 'createAccountLink'])->middleware('can:settings.edit');
+        Route::post('/login-link', [StripeConnectController::class, 'createLoginLink'])->middleware('can:settings.edit');
+        Route::delete('/disconnect', [StripeConnectController::class, 'disconnect'])->middleware('can:settings.edit');
+    });
+
+    // Stripe Settings (permission: settings.view / settings.edit)
+    Route::prefix('stripe/settings')->group(function () {
+        Route::get('/', [StripeSettingController::class, 'show'])->middleware('can:settings.view');
+        Route::put('/', [StripeSettingController::class, 'update'])->middleware('can:settings.edit');
+        Route::post('/test', [StripeSettingController::class, 'testConnection'])->middleware('can:settings.edit');
+        Route::delete('/keys/{key}', [StripeSettingController::class, 'reset'])->middleware('can:settings.edit');
+    });
+
+    // Payments (permission: payments.view / payments.manage)
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [StripePaymentController::class, 'index'])->middleware('can:payments.view');
+        Route::post('/intent', [StripePaymentController::class, 'createIntent'])->middleware('can:payments.manage');
+        Route::get('/admin', [StripePaymentController::class, 'adminIndex'])->middleware('can:payments.manage');
+        Route::get('/{payment}', [StripePaymentController::class, 'show'])->middleware('can:payments.view');
     });
 
     // Backup Settings (permission: settings.view / settings.edit)
@@ -442,7 +490,29 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::post('/', [ApiTokenController::class, 'store']);
         Route::delete('/{token}', [ApiTokenController::class, 'destroy']);
     });
-    
+
+    // GraphQL API Keys (Authenticated users — sk_ prefixed keys)
+    Route::prefix('user/api-keys')->group(function () {
+        Route::get('/', [ApiKeyController::class, 'index']);
+        Route::post('/', [ApiKeyController::class, 'store']);
+        Route::put('/{id}', [ApiKeyController::class, 'update']);
+        Route::delete('/{id}', [ApiKeyController::class, 'destroy']);
+        Route::post('/{id}/rotate', [ApiKeyController::class, 'rotate']);
+    });
+
+    // GraphQL Settings (admin)
+    Route::prefix('graphql/settings')->group(function () {
+        Route::get('/', [GraphQLSettingController::class, 'show'])->middleware('can:settings.view');
+        Route::put('/', [GraphQLSettingController::class, 'update'])->middleware('can:settings.edit');
+    });
+
+    Route::prefix('graphql/admin')->group(function () {
+        Route::get('/api-keys', [GraphQLSettingController::class, 'adminApiKeys'])->middleware('can:api_keys.manage');
+        Route::get('/api-keys/stats', [GraphQLSettingController::class, 'adminApiKeyStats'])->middleware('can:api_keys.manage');
+        Route::delete('/api-keys/{id}', [GraphQLSettingController::class, 'adminRevokeKey'])->middleware('can:api_keys.manage');
+        Route::get('/usage-stats', [GraphQLSettingController::class, 'usageStats'])->middleware('can:settings.view');
+    });
+
     // Webhooks (permission: settings.edit)
     Route::prefix('webhooks')->group(function () {
         Route::get('/', [WebhookController::class, 'index'])->middleware('can:settings.view');

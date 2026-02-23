@@ -11,6 +11,7 @@
  *   frontend/public/icon-512.png - Backward compat
  *   frontend/public/apple-icon.png - 180x180 Apple touch icon (iOS Add to Home Screen)
  *   frontend/public/favicon.ico    - 32x32 PNG favicon (older browsers)
+ *   frontend/public/badge.png      - 96x96 notification badge (Android)
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
@@ -31,6 +32,7 @@ const MAIN_SIZES = [48, 72, 96, 128, 144, 152, 192, 384, 512];
 const SHORTCUT_SIZE = 96;
 const APPLE_ICON_SIZE = 180;
 const FAVICON_SIZE = 32;
+const BADGE_SIZE = 96;
 
 /**
  * Build a minimal ICO file wrapping a single PNG image.
@@ -115,8 +117,10 @@ async function generateIcons() {
     .toFile(appleIconPath);
   console.log(`Generated ${appleIconPath}`);
 
-  // favicon.ico (32x32 PNG wrapped in ICO container)
-  const faviconPng = await sharp(svg)
+  // favicon.ico (32x32 PNG wrapped in ICO container, from purpose-built favicon.svg)
+  const faviconSvgPath = join(publicDir, 'favicon.svg');
+  const faviconSvg = existsSync(faviconSvgPath) ? readFileSync(faviconSvgPath) : svg;
+  const faviconPng = await sharp(faviconSvg)
     .resize(FAVICON_SIZE, FAVICON_SIZE)
     .png()
     .toBuffer();
@@ -124,6 +128,14 @@ async function generateIcons() {
   const faviconPath = join(publicDir, 'favicon.ico');
   writeFileSync(faviconPath, icoBuffer);
   console.log(`Generated ${faviconPath}`);
+
+  // Notification badge (96x96 for Android notification tray)
+  const badgePath = join(publicDir, 'badge.png');
+  await sharp(svg)
+    .resize(BADGE_SIZE, BADGE_SIZE)
+    .png()
+    .toFile(badgePath);
+  console.log(`Generated ${badgePath}`);
 
   console.log('Done.');
 }

@@ -15,6 +15,7 @@ class UsageAlertService
         IntegrationUsage::INTEGRATION_SMS => 'budget_sms',
         IntegrationUsage::INTEGRATION_STORAGE => 'budget_storage',
         IntegrationUsage::INTEGRATION_BROADCASTING => 'budget_broadcasting',
+        IntegrationUsage::INTEGRATION_PAYMENTS => 'budget_payments',
     ];
 
     public function __construct(
@@ -112,6 +113,7 @@ class UsageAlertService
                             'budget' => number_format($alert['budget'], 2),
                             'current_cost' => number_format($alert['current_cost'], 2),
                             'percent' => (string) $alert['percent'],
+                            'action_url' => '/configuration',
                         ]
                     );
                 } catch (\Throwable $e) {

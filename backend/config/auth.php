@@ -29,6 +29,11 @@ return [
             'driver' => 'sanctum',
             'provider' => 'users',
         ],
+
+        'api-key' => [
+            'driver' => 'api-key',
+            'provider' => 'users',
+        ],
     ],
 
     /*

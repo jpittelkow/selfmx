@@ -15,10 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Trust proxies (Cloudflare Tunnel, Nginx, Traefik, etc.)
         // Set TRUSTED_PROXIES=* to trust all proxies (safe when container is only reachable via proxy)
+        // Use $_SERVER/$_ENV directly because env() is disabled after config:cache
+        $trustedProxies = $_SERVER['TRUSTED_PROXIES'] ?? $_ENV['TRUSTED_PROXIES'] ?? '';
         $middleware->trustProxies(
-            at: in_array(trim(env('TRUSTED_PROXIES', '')), ['*', '**'], true)
+            at: in_array(trim($trustedProxies), ['*', '**'], true)
                 ? '*'
-                : array_filter(array_map('trim', explode(',', env('TRUSTED_PROXIES', '')))),
+                : array_filter(array_map('trim', explode(',', $trustedProxies))),
         );
 
         $middleware->api(prepend: [
@@ -42,6 +44,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/client-errors',
             'api/auth/sso/*',
             'api/auth/callback/*',
+            'api/stripe/webhook',
+            'api/graphql',  // GraphQL uses API key auth, not session cookies
         ]);
 
         // Enable stateful API authentication with session support.

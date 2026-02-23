@@ -67,6 +67,14 @@ export function ServiceWorkerSetup() {
           // Invalid URL, ignore
         }
       }
+      if (event.data?.type === "PUSH_RECEIVED") {
+        // Foreground push — system notification was suppressed to avoid duplicates.
+        // Dispatch event with the notification data so the bell can display it
+        // immediately without waiting for the next API poll.
+        window.dispatchEvent(
+          new CustomEvent("push-received", { detail: event.data.data ?? null })
+        );
+      }
     };
     navigator.serviceWorker.addEventListener("message", handler);
     return () => {

@@ -5,6 +5,7 @@ namespace App\Services\Notifications\Channels;
 use App\Mail\TemplatedMail;
 use App\Models\User;
 use App\Services\EmailTemplateService;
+use App\Services\RenderedEmail;
 use App\Services\UsageTrackingService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -25,22 +26,7 @@ class EmailChannel implements ChannelInterface
                 'app_name' => config('app.name'),
             ]);
 
-            Mail::to($user->email)->send(new TemplatedMail($rendered));
-
-            // Record usage for integration usage dashboard
-            $mailProvider = config('mail.default', 'smtp');
-            app(UsageTrackingService::class)->recordEmail($mailProvider, $user->id);
-
-            Log::info('Email sent', [
-                'user_id' => $user->id,
-                'to' => $user->email,
-                'type' => $type,
-            ]);
-
-            return [
-                'email' => $user->email,
-                'sent' => true,
-            ];
+            return $this->sendRenderedEmail($user, $type, $rendered);
         } catch (\Exception $e) {
             Log::error('Email send failed', [
                 'user_id' => $user->id,
@@ -50,6 +36,43 @@ class EmailChannel implements ChannelInterface
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Send a pre-rendered email (used by orchestrator for per-type email templates).
+     */
+    public function sendRendered(User $user, string $type, RenderedEmail $rendered): array
+    {
+        try {
+            return $this->sendRenderedEmail($user, $type, $rendered);
+        } catch (\Exception $e) {
+            Log::error('Email send failed', [
+                'user_id' => $user->id,
+                'to' => $user->email,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    private function sendRenderedEmail(User $user, string $type, RenderedEmail $rendered): array
+    {
+        Mail::to($user->email)->send(new TemplatedMail($rendered));
+
+        $mailProvider = config('mail.default', 'smtp');
+        app(UsageTrackingService::class)->recordEmail($mailProvider, $user->id);
+
+        Log::info('Email sent', [
+            'user_id' => $user->id,
+            'to' => $user->email,
+            'type' => $type,
+        ]);
+
+        return [
+            'email' => $user->email,
+            'sent' => true,
+        ];
     }
 
     public function getName(): string

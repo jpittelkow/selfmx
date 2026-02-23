@@ -80,6 +80,10 @@ class SystemSettingController extends Controller
                 'search_enabled' => $searchEnabled,
                 'webpush_enabled' => !empty(config('notifications.channels.webpush.public_key')),
                 'webpush_vapid_public_key' => config('notifications.channels.webpush.public_key', ''),
+                'graphql_enabled' => filter_var(
+                    $this->settingService->get('graphql', 'enabled', false),
+                    FILTER_VALIDATE_BOOLEAN
+                ),
             ],
         ]);
     }

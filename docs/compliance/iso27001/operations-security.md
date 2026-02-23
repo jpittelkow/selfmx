@@ -26,7 +26,7 @@ Operational procedures and responsibilities shall be defined and documented.
 | Responsibilities | Roles and responsibilities for operations | [RACI, job descriptions] |
 | Change to procedures | Procedures updated and approved when operations change | [Version control, approval] |
 
-**Sourdough mapping:** Deployment and startup are managed by Docker and supervisord (see [docker/](https://github.com/your-org/sourdough/tree/main/docker)). Document your own runbooks for backup, restore, scaling, and incident response. See [Business Continuity Plan](../business-continuity-plan.md) and [Incident Response Plan](../incident-response-plan.md).
+**Sourdough mapping:** Deployment and startup are managed by Docker and supervisord (see [docker/](https://github.com/Sourdough-start/sourdough/tree/master/docker)). Document your own runbooks for backup, restore, scaling, and incident response. See [Business Continuity Plan](../business-continuity-plan.md) and [Incident Response Plan](../incident-response-plan.md).
 
 ---
 

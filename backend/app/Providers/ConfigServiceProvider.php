@@ -51,6 +51,92 @@ class ConfigServiceProvider extends ServiceProvider
         if (isset($settings['novu'])) {
             $this->injectNovuConfig($settings['novu']);
         }
+
+        if (isset($settings['stripe'])) {
+            $this->injectStripeConfig($settings['stripe']);
+        }
+
+        if (isset($settings['graphql'])) {
+            $this->injectGraphQLConfig($settings['graphql']);
+        }
+    }
+
+    /**
+     * Inject GraphQL API settings into config.
+     */
+    private function injectGraphQLConfig(array $settings): void
+    {
+        if (array_key_exists('enabled', $settings)) {
+            config(['graphql.enabled' => filter_var($settings['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN)]);
+        }
+        if (array_key_exists('max_keys_per_user', $settings)) {
+            $v = (int) ($settings['max_keys_per_user'] ?? 5);
+            config(['graphql.max_keys_per_user' => max(1, min(100, $v))]);
+        }
+        if (array_key_exists('default_rate_limit', $settings)) {
+            $v = (int) ($settings['default_rate_limit'] ?? 60);
+            config(['graphql.default_rate_limit' => max(1, min(10000, $v))]);
+        }
+        if (array_key_exists('introspection_enabled', $settings)) {
+            config(['graphql.introspection_enabled' => filter_var($settings['introspection_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN)]);
+        }
+        if (array_key_exists('max_query_depth', $settings)) {
+            $v = (int) ($settings['max_query_depth'] ?? 12);
+            config(['graphql.max_query_depth' => max(1, min(50, $v))]);
+        }
+        if (array_key_exists('max_query_complexity', $settings)) {
+            $v = (int) ($settings['max_query_complexity'] ?? 200);
+            config(['graphql.max_query_complexity' => max(1, min(10000, $v))]);
+        }
+        if (array_key_exists('max_result_size', $settings)) {
+            $v = (int) ($settings['max_result_size'] ?? 100);
+            config(['graphql.max_result_size' => max(1, min(1000, $v))]);
+        }
+        if (array_key_exists('key_rotation_grace_days', $settings)) {
+            $v = (int) ($settings['key_rotation_grace_days'] ?? 7);
+            config(['graphql.key_rotation_grace_days' => max(0, min(90, $v))]);
+        }
+        if (array_key_exists('cors_allowed_origins', $settings)) {
+            config(['graphql.cors_allowed_origins' => $settings['cors_allowed_origins'] ?? '*']);
+        }
+    }
+
+    /**
+     * Inject Stripe Connect settings into config.
+     */
+    private function injectStripeConfig(array $settings): void
+    {
+        if (array_key_exists('secret_key', $settings)) {
+            config(['stripe.secret_key' => $settings['secret_key'] ?? null]);
+        }
+        if (array_key_exists('publishable_key', $settings)) {
+            config(['stripe.publishable_key' => $settings['publishable_key'] ?? null]);
+        }
+        if (array_key_exists('webhook_secret', $settings)) {
+            config(['stripe.webhook_secret' => $settings['webhook_secret'] ?? null]);
+        }
+        if (array_key_exists('platform_account_id', $settings)) {
+            config(['stripe.platform_account_id' => $settings['platform_account_id'] ?? null]);
+        }
+        if (array_key_exists('platform_client_id', $settings)) {
+            config(['stripe.platform_client_id' => $settings['platform_client_id'] ?? null]);
+        }
+        if (array_key_exists('application_fee_percent', $settings)) {
+            $v = (float) ($settings['application_fee_percent'] ?? 1.0);
+            config(['stripe.application_fee_percent' => max(0, min(100, $v))]);
+        }
+        if (array_key_exists('currency', $settings)) {
+            config(['stripe.currency' => $settings['currency'] ?? 'usd']);
+        }
+        if (array_key_exists('mode', $settings)) {
+            config(['stripe.mode' => $settings['mode'] ?? 'test']);
+        }
+        if (array_key_exists('deployment_role', $settings)) {
+            config(['stripe.deployment_role' => $settings['deployment_role'] ?? 'fork']);
+        }
+        if (array_key_exists('connected_account_id', $settings)) {
+            config(['stripe.connected_account_id' => $settings['connected_account_id'] ?? null]);
+        }
     }
 
     /**
@@ -62,7 +148,7 @@ class ConfigServiceProvider extends ServiceProvider
             config(['novu.enabled' => filter_var($settings['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN)]);
         }
         if (array_key_exists('api_key', $settings)) {
-            config(['novu.api_key' => $settings['api_key'] ?? '']);
+            config(['novu.api_key' => trim((string) ($settings['api_key'] ?? ''))]);
         }
         if (array_key_exists('app_identifier', $settings)) {
             config(['novu.app_identifier' => $settings['app_identifier'] ?? '']);
@@ -72,6 +158,14 @@ class ConfigServiceProvider extends ServiceProvider
         }
         if (array_key_exists('socket_url', $settings) && ! empty(trim((string) ($settings['socket_url'] ?? '')))) {
             config(['novu.socket_url' => rtrim((string) $settings['socket_url'], '/')]);
+        }
+        if (array_key_exists('workflow_map', $settings) && ! empty($settings['workflow_map'])) {
+            $decoded = is_string($settings['workflow_map'])
+                ? json_decode($settings['workflow_map'], true)
+                : $settings['workflow_map'];
+            if (is_array($decoded)) {
+                config(['novu.workflow_map' => array_merge(config('novu.workflow_map', []), $decoded)]);
+            }
         }
     }
 

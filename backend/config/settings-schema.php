@@ -73,6 +73,12 @@ return [
         'matrix_homeserver' => ['env' => 'MATRIX_HOMESERVER', 'default' => null],
         'matrix_access_token' => ['env' => 'MATRIX_ACCESS_TOKEN', 'default' => null, 'encrypted' => true],
         'matrix_default_room' => ['env' => 'MATRIX_DEFAULT_ROOM', 'default' => null],
+        // Rate limiting
+        'rate_limit_enabled' => ['env' => 'NOTIFICATION_RATE_LIMIT_ENABLED', 'default' => false],
+        'rate_limit_max' => ['env' => 'NOTIFICATION_RATE_LIMIT_MAX', 'default' => 10],
+        'rate_limit_window_minutes' => ['env' => 'NOTIFICATION_RATE_LIMIT_WINDOW', 'default' => 60],
+        // Queue
+        'queue_enabled' => ['env' => 'NOTIFICATION_QUEUE_ENABLED', 'default' => true],
     ],
 
     'llm' => [
@@ -198,6 +204,7 @@ return [
         'app_identifier' => ['env' => 'NOVU_APP_IDENTIFIER', 'default' => '', 'public' => true],
         'api_url' => ['env' => 'NOVU_API_URL', 'default' => 'https://api.novu.co', 'public' => true],
         'socket_url' => ['env' => 'NOVU_SOCKET_URL', 'default' => 'https://ws.novu.co', 'public' => true],
+        'workflow_map' => ['env' => null, 'default' => null],
     ],
 
     'storage' => [
@@ -207,6 +214,32 @@ return [
         'storage_alert_email' => ['env' => 'STORAGE_ALERT_EMAIL', 'default' => true],
     ],
 
+    'stripe' => [
+        'secret_key' => ['env' => 'STRIPE_SECRET_KEY', 'default' => null, 'encrypted' => true],
+        'publishable_key' => ['env' => 'STRIPE_PUBLISHABLE_KEY', 'default' => null, 'public' => true],
+        'webhook_secret' => ['env' => 'STRIPE_WEBHOOK_SECRET', 'default' => null, 'encrypted' => true],
+        'platform_account_id' => ['env' => 'STRIPE_PLATFORM_ACCOUNT_ID', 'default' => null],
+        'platform_client_id' => ['default' => 'pk_live_51T3IOFLxjkep9LMmNOGaCUjcW2wJ94BADNXlgNPLS6zqpqsG0TKeg5WxDlboeWbKobd3I4sSsMGL7znxFLrG7gMF00hY5PRSme'],
+        'application_fee_percent' => ['env' => 'STRIPE_APPLICATION_FEE_PERCENT', 'default' => 1.0],
+        'currency' => ['env' => 'STRIPE_CURRENCY', 'default' => 'usd'],
+        'mode' => ['env' => 'STRIPE_MODE', 'default' => 'test'],
+        'deployment_role' => ['env' => 'STRIPE_DEPLOYMENT_ROLE', 'default' => 'fork'],
+        'connected_account_id' => ['env' => 'STRIPE_CONNECTED_ACCOUNT_ID', 'default' => null],
+        'connect_onboarding_state' => ['env' => null, 'default' => null],
+    ],
+
+    'graphql' => [
+        'enabled' => ['env' => null, 'default' => false, 'public' => true],
+        'max_keys_per_user' => ['env' => 'GRAPHQL_MAX_KEYS_PER_USER', 'default' => 5],
+        'default_rate_limit' => ['env' => 'GRAPHQL_DEFAULT_RATE_LIMIT', 'default' => 60],
+        'introspection_enabled' => ['env' => 'GRAPHQL_INTROSPECTION_ENABLED', 'default' => false],
+        'max_query_depth' => ['env' => 'GRAPHQL_MAX_QUERY_DEPTH', 'default' => 12],
+        'max_query_complexity' => ['env' => 'GRAPHQL_MAX_QUERY_COMPLEXITY', 'default' => 200],
+        'max_result_size' => ['env' => 'GRAPHQL_MAX_RESULT_SIZE', 'default' => 100],
+        'key_rotation_grace_days' => ['env' => 'GRAPHQL_KEY_ROTATION_GRACE_DAYS', 'default' => 7],
+        'cors_allowed_origins' => ['env' => 'GRAPHQL_CORS_ALLOWED_ORIGINS', 'default' => '*'],
+    ],
+
     'usage' => [
         'pricing_llm' => ['env' => 'USAGE_PRICING_LLM', 'default' => '{}'],
         'budget_llm' => ['env' => 'USAGE_BUDGET_LLM', 'default' => null],
@@ -214,6 +247,7 @@ return [
         'budget_sms' => ['env' => 'USAGE_BUDGET_SMS', 'default' => null],
         'budget_storage' => ['env' => 'USAGE_BUDGET_STORAGE', 'default' => null],
         'budget_broadcasting' => ['env' => 'USAGE_BUDGET_BROADCASTING', 'default' => null],
+        'budget_payments' => ['env' => 'USAGE_BUDGET_PAYMENTS', 'default' => null],
         'alert_threshold' => ['env' => 'USAGE_ALERT_THRESHOLD', 'default' => 80],
     ],
 ];

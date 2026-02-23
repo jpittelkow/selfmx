@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="400" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="50%" stop-color="#7a5cff"/>
+      <stop offset="100%" stop-color="#ff2bd6"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Symbol -->
+  <g filter="url(#glow)" stroke="url(#neonGrad)" stroke-width="8" fill="none">
+    <!-- loaf outline -->
+    <rect x="60" y="120" rx="40" ry="40" width="220" height="160"/>
+    <path d="M60 160 Q170 40 280 160"/>
+    <!-- terminal arrow -->
+    <path d="M110 200 l40 -20 l-40 -20" stroke="#39ff14"/>
+    <line x1="160" y1="200" x2="210" y2="200" stroke="#39ff14"/>
+    <!-- status dots -->
+    <circle cx="130" cy="245" r="6" fill="url(#neonGrad)" stroke="none"/>
+    <circle cx="160" cy="245" r="6" fill="url(#neonGrad)" stroke="none"/>
+    <circle cx="190" cy="245" r="6" fill="url(#neonGrad)" stroke="none"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="340" y="235"
+        font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+        font-size="120"
+        fill="url(#neonGrad)"
+        filter="url(#glow)">
+    Sourdough
+  </text>
+</svg>

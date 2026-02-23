@@ -2,32 +2,11 @@
 
 Quick-start guide for AI assistants developing on Sourdough.
 
-## Quick Context Loading
+## Context Loading
 
-**Before doing anything else, identify your task type and load these files:**
+**Identify your task type, then load the relevant files from [context-loading.md](context-loading.md).**
 
-| Task Type | Read First |
-|-----------|------------|
-| **New Project Setup** | Say **"Get cooking"** — [setup-new-project](recipes/setup-new-project.md) (master index), [Tier 1](recipes/setup-identity-branding.md), [Tier 2](recipes/setup-features-auth.md), [Tier 3](recipes/setup-infrastructure-repo.md), `FORK-ME.md`, `docs/customization-checklist.md` |
-| Frontend UI | `frontend/app/(dashboard)/`, `frontend/components/`, `frontend/lib/api.ts` |
-| Backend API | `backend/routes/api.php`, `backend/app/Http/Controllers/Api/` |
-| Branding/UI | `frontend/config/app.ts`, `frontend/components/logo.tsx`, [branding roadmap](../plans/branding-ui-consistency-roadmap.md) |
-| Mobile/Responsive | [ADR-013](../adr/013-responsive-mobile-first-design.md), `frontend/lib/use-mobile.ts`, [responsive recipe](recipes/make-component-responsive.md) |
-| Notifications | [ADR-005](../adr/005-notification-system-architecture.md), [ADR-017](../adr/017-notification-template-system.md), [ADR-025](../adr/025-novu-notification-integration.md), `backend/app/Services/Notifications/`, `backend/app/Services/NovuService.php`, [trigger-notifications](recipes/trigger-notifications.md), [add-notification-template](recipes/add-notification-template.md), [configure-novu](recipes/configure-novu.md) |
-| LLM | [ADR-006](../adr/006-llm-orchestration-modes.md), `backend/app/Services/LLM/` |
-| Settings | [ADR-012](../adr/012-admin-only-settings.md), [ADR-014](../adr/014-database-settings-env-fallback.md), `backend/app/Services/SettingService.php`, `backend/config/settings-schema.php`, `frontend/app/(dashboard)/configuration/` |
-| Backup & Restore | [ADR-007](../adr/007-backup-system-design.md), `backend/app/Services/Backup/BackupService.php`, `backend/config/settings-schema.php` (backup group), [add-backup-destination](recipes/add-backup-destination.md), [extend-backup-restore](recipes/extend-backup-restore.md) |
-| Auth | [ADR-002](../adr/002-authentication-architecture.md), `backend/app/Http/Controllers/Api/AuthController.php` |
-| Logging | [Logging](../logging.md), `backend/config/logging.php`, `frontend/lib/error-logger.ts`, [extend-logging](recipes/extend-logging.md), [add-access-logging](recipes/add-access-logging.md) |
-| Search | `backend/app/Services/Search/SearchService.php`, `frontend/lib/search.ts`, [add-searchable-model](recipes/add-searchable-model.md), [context-loading: Search Work](context-loading.md#search-work) |
-| Help/Documentation | `frontend/lib/help/help-content.ts`, `frontend/components/help/`, [add-help-article](recipes/add-help-article.md), [context-loading: Help/Documentation](context-loading.md#help--documentation-work) |
-| Docker | [ADR-009](../adr/009-docker-single-container.md), `docker/Dockerfile`, `docker-compose.yml` |
-| Testing | [ADR-008](../adr/008-testing-strategy.md), `e2e/`, `backend/tests/` |
-| PWA | [PWA roadmap](../plans/pwa-roadmap.md), `frontend/public/sw.js`, `frontend/lib/use-install-prompt.ts`, [add-pwa-install-prompt](recipes/add-pwa-install-prompt.md), [context-loading: PWA Work](context-loading.md#pwa-work) |
-| Security | [ADR-024](../adr/024-security-hardening.md), [Security roadmap](../plans/security-compliance-roadmap.md), `backend/app/Services/UrlValidationService.php`, `backend/app/Providers/AppServiceProvider.php` |
-| Release/Deploy | `VERSION`, `frontend/public/sw.js`, `.github/workflows/release.yml`, [commit-and-release recipe](recipes/commit-and-release.md), [context-loading: Release Work](context-loading.md#release--deployment-work) |
-
-**Full context loading details:** [context-loading.md](context-loading.md)
+For quick lookup, the task-type table is also in [CLAUDE.md](../../CLAUDE.md#task-type-file-lookup).
 
 ## Development Workflow
 
@@ -57,10 +36,11 @@ Example plan reference:
 
 > This implementation will follow [add-config-page.md](recipes/add-config-page.md) recipe and use the SettingService pattern from patterns/setting-service.md. Relevant ADR: [ADR-014](../adr/014-database-settings-env-fallback.md).
 
-## Quick Links - Recipes
+## Recipes
 
 | Task | Recipe |
 |------|--------|
+| **Full-Stack Feature** | [add-full-stack-feature.md](recipes/add-full-stack-feature.md) |
 | **Set Up New Project** | [setup-new-project.md](recipes/setup-new-project.md) (master index) |
 | — Tier 1: Identity & Branding | [setup-identity-branding.md](recipes/setup-identity-branding.md) |
 | — Tier 2: Features & Auth | [setup-features-auth.md](recipes/setup-features-auth.md) |
@@ -100,23 +80,18 @@ Example plan reference:
 | Add Help Article | [add-help-article.md](recipes/add-help-article.md) |
 | Add Configuration Menu Item | [add-configuration-menu-item.md](recipes/add-configuration-menu-item.md) |
 | Add PWA Install Prompt | [add-pwa-install-prompt.md](recipes/add-pwa-install-prompt.md) |
+| Setup Stripe | [setup-stripe.md](recipes/setup-stripe.md) |
+| Add Payment Flow | [add-payment-flow.md](recipes/add-payment-flow.md) |
+| Handle Stripe Webhooks | [handle-stripe-webhooks.md](recipes/handle-stripe-webhooks.md) |
+| Stripe Connect Onboarding | [stripe-connect-onboarding.md](recipes/stripe-connect-onboarding.md) |
 
 ## Common Gotchas
 
-- **Global components** - NEVER duplicate logic across pages. Use shared components from `frontend/components/` and utilities from `frontend/lib/`. See [Components Pattern](patterns/components.md).
-- **User scoping** - Most tables have `user_id`. Always filter by `$request->user()->id`
-- **User password** - The User model uses the `hashed` cast. Pass plaintext when creating/updating; do not use `Hash::make()` in controllers or you will double-hash.
-- **SQLite default** - Dev uses SQLite but code supports MySQL/PostgreSQL. Test array/JSON columns carefully.
-- **API prefix** - All backend routes are under `/api/`. Frontend calls go through Nginx proxy.
-- **Settings models** - User settings use `Setting` model; system settings use `SystemSetting` model
-- **Schema-backed settings** - For settings in `backend/config/settings-schema.php` (e.g. mail), use **SettingService** (env fallback, encryption, cache); do not use `SystemSetting::get`/`set` directly. See [ADR-014](../adr/014-database-settings-env-fallback.md) and [SettingService pattern](patterns/setting-service.md).
-- **Sanctum cookies** - Auth uses session cookies, not Bearer tokens. Include `credentials: 'include'` in fetch.
-- **shadcn/ui** - Components in `frontend/components/ui/` are CLI-managed. Use `npx shadcn@latest add <component>` from `frontend/`; config in `frontend/components.json`. See [Quick Reference](../quick-reference.md) for commands.
-- **Service layer** - Business logic goes in `Services/`, not controllers. Controllers just validate and route.
-- **Form fields optional by default** - Config pages should make fields optional unless explicitly required. Use `z.string().optional()` and `.refine()` for format validation that allows empty. See [add-config-page recipe](recipes/add-config-page.md).
-- **Mobile-first CSS** - Write base styles for mobile (no prefix), add `md:`, `lg:` for larger screens. Use `useIsMobile()` hook for conditional rendering. See [Responsive Pattern](patterns/responsive.md).
-- **Admin is group-based** - Admin status is determined by membership in the `admin` group, not an `is_admin` column. Use `$user->isAdmin()` or `$user->inGroup('admin')` on backend; use `isAdminUser(user)` from `frontend/lib/auth.ts` on frontend. The API returns a computed `is_admin` attribute for compatibility.
-- **Audit actions** - Use `AuditService` for logging user actions (auth events, settings changes, admin operations). Use `{resource}.{action}` naming (e.g. `user.created`, `settings.updated`). Sensitive data is auto-masked.
+See [CLAUDE.md Gotchas](../../CLAUDE.md#gotchas) (always loaded) for the full list. Key ones:
+
+- **Global components** - NEVER duplicate logic across pages. See [Components Pattern](patterns/components.md).
+- **Schema-backed settings** - Use **SettingService**, not `SystemSetting::get`/`set` directly. See [ADR-014](../adr/014-database-settings-env-fallback.md).
+- **Admin is group-based** - Not an `is_admin` column. See CLAUDE.md gotchas.
 
 See also: [Anti-Patterns](anti-patterns/README.md) - Common mistakes to avoid
 

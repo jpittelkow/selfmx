@@ -84,6 +84,31 @@ class NotificationSettingController extends Controller
     }
 
     /**
+     * Generate a VAPID key pair for Web Push.
+     */
+    public function generateVapid(Request $request): JsonResponse
+    {
+        try {
+            $keys = \Minishlink\WebPush\VAPID::createVapidKeys();
+
+            $this->auditService->log(
+                'notification_settings.vapid_generated',
+                null,
+                [],
+                [],
+                $request->user()?->id
+            );
+
+            return $this->dataResponse([
+                'public_key' => $keys['publicKey'],
+                'private_key' => $keys['privateKey'],
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to generate VAPID keys: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Test a notification channel.
      */
     public function testChannel(Request $request, string $channel): JsonResponse

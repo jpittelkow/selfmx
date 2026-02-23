@@ -1,4 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#3b82f6" rx="4"/>
-  <text x="16" y="22" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white" text-anchor="middle">S</text>
+  <defs>
+    <linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="50%" stop-color="#7a5cff"/>
+      <stop offset="100%" stop-color="#ff2bd6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- loaf outline -->
+  <rect x="3" y="10" rx="4" ry="4" width="26" height="18" stroke="url(#ng)" stroke-width="2" fill="none"/>
+  <path d="M3 14 Q16 2 29 14" stroke="url(#ng)" stroke-width="2" fill="none"/>
+  <!-- terminal arrow -->
+  <path d="M8 18 l4 -3 l-4 -3" stroke="#39ff14" stroke-width="2" fill="none"/>
+  <line x1="13" y1="18" x2="19" y2="18" stroke="#39ff14" stroke-width="2"/>
+  <!-- status dots -->
+  <circle cx="11" cy="24" r="1.2" fill="url(#ng)"/>
+  <circle cx="15" cy="24" r="1.2" fill="url(#ng)"/>
+  <circle cx="19" cy="24" r="1.2" fill="url(#ng)"/>
 </svg>

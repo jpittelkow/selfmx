@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\SSOController;
+use App\Http\Controllers\Api\StripeConnectCallbackController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -61,3 +62,21 @@ Route::prefix('api/auth')->middleware('throttle:10,1')->group(function () {
         ->where('provider', '^(?!providers$).+');
     Route::get('/callback/{provider}', [SSOController::class, 'callback']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Stripe Connect OAuth Callback
+|--------------------------------------------------------------------------
+|
+| This route handles the browser redirect from Stripe after the fork operator
+| authorizes the Connect integration. It uses 'web' middleware (not 'api')
+| for the same reasons as SSO callbacks above: it receives an external redirect
+| and must produce a RedirectResponse to the frontend.
+|
+| The route is NOT auth-protected because Stripe redirects the browser here
+| after the external OAuth flow. CSRF is handled via a state parameter stored
+| in settings (not session-based, since the session may expire during onboarding).
+|
+*/
+Route::get('/api/stripe/connect/callback', [StripeConnectCallbackController::class, 'handle'])
+    ->middleware('throttle:10,1');

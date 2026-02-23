@@ -46,10 +46,11 @@ import {
   MessageSquareText,
   ScrollText,
   BarChart3,
+  CreditCard,
+  Receipt,
+  Send,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-
-const CONFIG_NAV_STORAGE_KEY = "config-nav-expanded-groups";
 
 type NavItem = {
   name: string;
@@ -58,6 +59,8 @@ type NavItem = {
   description: string;
   /** Permission required to see this item (e.g. settings.view). Omit for items visible to all config users. */
   permission?: string;
+  /** Feature flag key (e.g. "stripe"). Item is hidden when the flag is disabled. */
+  featureFlag?: string;
 };
 
 type NavGroup = {
@@ -73,6 +76,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "System", href: "/configuration/system", icon: Globe, description: "Application-wide settings", permission: "settings.view" },
       { name: "Theme & Branding", href: "/configuration/branding", icon: Palette, description: "Visual customization", permission: "settings.edit" },
+      { name: "Backup & Restore", href: "/configuration/backup", icon: Database, description: "Manage system backups", permission: "backups.view" },
       { name: "Changelog", href: "/configuration/changelog", icon: ScrollText, description: "Version history and release notes" },
     ],
   },
@@ -84,7 +88,14 @@ const navigationGroups: NavGroup[] = [
       { name: "Groups", href: "/configuration/groups", icon: UsersRound, description: "User groups and permissions", permission: "groups.view" },
       { name: "Security", href: "/configuration/security", icon: ShieldCheck, description: "Auth and security settings", permission: "settings.view" },
       { name: "SSO", href: "/configuration/sso", icon: LogIn, description: "Single sign-on providers", permission: "settings.view" },
-      { name: "API & Webhooks", href: "/configuration/api", icon: Key, description: "API tokens and webhooks", permission: "settings.view" },
+    ],
+  },
+  {
+    name: "Developer & API",
+    icon: Terminal,
+    items: [
+      { name: "Webhooks", href: "/configuration/api", icon: Key, description: "Outgoing webhook endpoints", permission: "settings.view" },
+      { name: "GraphQL API", href: "/configuration/graphql", icon: Terminal, description: "GraphQL API settings and keys", permission: "settings.view" },
     ],
   },
   {
@@ -95,7 +106,6 @@ const navigationGroups: NavGroup[] = [
       { name: "Email", href: "/configuration/email", icon: Mail, description: "Email delivery configuration", permission: "settings.view" },
       { name: "Email Templates", href: "/configuration/email-templates", icon: MailOpen, description: "Customize system emails", permission: "settings.view" },
       { name: "Notification Templates", href: "/configuration/notification-templates", icon: MessageSquareText, description: "Per-type push, in-app, chat templates", permission: "settings.view" },
-      { name: "Novu", href: "/configuration/novu", icon: Bell, description: "Novu notification infrastructure (optional)", permission: "settings.view" },
     ],
   },
   {
@@ -105,6 +115,8 @@ const navigationGroups: NavGroup[] = [
       { name: "AI / LLM", href: "/configuration/ai", icon: Brain, description: "LLM providers and modes", permission: "settings.view" },
       { name: "Storage", href: "/configuration/storage", icon: HardDrive, description: "File storage configuration", permission: "settings.view" },
       { name: "Search", href: "/configuration/search", icon: Search, description: "Manage search indexes", permission: "settings.view" },
+      { name: "Novu", href: "/configuration/novu", icon: Bell, description: "Novu notification infrastructure (optional)", permission: "settings.view" },
+      { name: "Stripe", href: "/configuration/stripe", icon: CreditCard, description: "Payment processing", permission: "settings.view" },
     ],
   },
   {
@@ -114,16 +126,11 @@ const navigationGroups: NavGroup[] = [
       { name: "Audit Log", href: "/configuration/audit", icon: FileText, description: "View system activity logs", permission: "audit.view" },
       { name: "Application Logs", href: "/configuration/logs", icon: Terminal, description: "Real-time console log viewer", permission: "logs.view" },
       { name: "Access Logs (HIPAA)", href: "/configuration/access-logs", icon: FileText, description: "PHI access audit trail", permission: "logs.view" },
-      { name: "Log retention", href: "/configuration/log-retention", icon: FileText, description: "Retention and cleanup config", permission: "settings.view" },
+      { name: "Log Retention", href: "/configuration/log-retention", icon: FileText, description: "Retention and cleanup config", permission: "settings.view" },
       { name: "Jobs", href: "/configuration/jobs", icon: Clock, description: "Monitor scheduled jobs", permission: "settings.view" },
       { name: "Usage & Costs", href: "/configuration/usage", icon: BarChart3, description: "Integration usage analytics", permission: "usage.view" },
-    ],
-  },
-  {
-    name: "Data",
-    icon: Database,
-    items: [
-      { name: "Backup & Restore", href: "/configuration/backup", icon: Database, description: "Manage system backups", permission: "backups.view" },
+      { name: "Payment History", href: "/configuration/payments", icon: Receipt, description: "View payment transactions", permission: "payments.view" },
+      { name: "Delivery Log", href: "/configuration/notification-deliveries", icon: Send, description: "Notification delivery attempts", permission: "notification_deliveries.view" },
     ],
   },
 ];
@@ -137,6 +144,9 @@ const CONFIG_ACCESS_PERMISSIONS = [
   "logs.view",
   "backups.view",
   "usage.view",
+  "payments.view",
+  "notification_deliveries.view",
+  "api_keys.manage",
 ];
 
 function getGroupId(group: NavGroup, index: number): string {
@@ -145,7 +155,8 @@ function getGroupId(group: NavGroup, index: number): string {
 
 function filterGroupsByPermission(
   groups: NavGroup[],
-  permissions: string[] | undefined
+  permissions: string[] | undefined,
+  featureFlags?: Record<string, boolean>
 ): NavGroup[] {
   if (!permissions) return [];
   const hasPermission = (p: string) => permissions.includes(p);
@@ -153,7 +164,9 @@ function filterGroupsByPermission(
     .map((group) => ({
       ...group,
       items: group.items.filter(
-        (item) => !item.permission || hasPermission(item.permission)
+        (item) =>
+          (!item.permission || hasPermission(item.permission)) &&
+          (!item.featureFlag || featureFlags?.[item.featureFlag] !== false)
       ),
     }))
     .filter((group) => group.items.length > 0);
@@ -170,54 +183,36 @@ function getDefaultExpanded(pathname: string, groups: NavGroup[]): Set<string> {
   return expanded;
 }
 
-function loadStoredExpanded(pathname: string, groups: NavGroup[]): Set<string> {
-  if (typeof window === "undefined") return getDefaultExpanded(pathname, groups);
-  try {
-    const raw = localStorage.getItem(CONFIG_NAV_STORAGE_KEY);
-    if (!raw) return getDefaultExpanded(pathname, groups);
-    const stored = JSON.parse(raw) as string[];
-    return new Set(stored);
-  } catch {
-    return getDefaultExpanded(pathname, groups);
-  }
-}
-
-function saveStoredExpanded(expanded: Set<string>) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(
-      CONFIG_NAV_STORAGE_KEY,
-      JSON.stringify(Array.from(expanded))
-    );
-  } catch {
-    // ignore
-  }
-}
-
-// Grouped navigation with collapsible sections (filtered by user permissions)
+// Grouped navigation with collapsible sections (filtered by user permissions + feature flags)
 function GroupedNavigation({ pathname }: { pathname: string }) {
   const { user } = useAuth();
-  // Admin users see all nav items; others filtered by permissions
-  const filteredGroups = useMemo(
-    () =>
-      isAdminUser(user)
-        ? navigationGroups
-        : filterGroupsByPermission(navigationGroups, user?.permissions),
-    [user]
-  );
-  const [expanded, setExpanded] = useState<Set<string>>(() =>
-    getDefaultExpanded(pathname, filteredGroups)
+  const { features } = useAppConfig();
+
+  // Build feature flags from public settings
+  const featureFlags = useMemo<Record<string, boolean>>(
+    () => ({
+      graphql: features?.graphqlEnabled ?? false,
+    }),
+    [features]
   );
 
-  // Hydrate from localStorage after mount
-  useEffect(() => {
-    setExpanded((prev) => {
-      const stored = loadStoredExpanded(pathname, filteredGroups);
-      return stored.size > 0 ? stored : prev;
-    });
-  }, [pathname, filteredGroups]);
+  // Filter nav items by permissions and feature flags
+  // Admin users bypass permission checks but still respect feature flags
+  const filteredGroups = useMemo(() => {
+    // Collect all unique permission strings so admins pass every check
+    const allPermissions = isAdminUser(user)
+      ? navigationGroups.flatMap((g) => g.items.map((i) => i.permission).filter(Boolean) as string[])
+      : user?.permissions;
 
-  // Ensure active group is expanded when pathname changes
+    return filterGroupsByPermission(
+      navigationGroups,
+      allPermissions,
+      featureFlags
+    );
+  }, [user, featureFlags]);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set<string>());
+
+  // Expand the active group whenever pathname changes (includes initial mount)
   useEffect(() => {
     const defaultExpanded = getDefaultExpanded(pathname, filteredGroups);
     setExpanded((prev) => {
@@ -239,21 +234,15 @@ function GroupedNavigation({ pathname }: { pathname: string }) {
             key={groupId}
             open={isExpanded}
             onOpenChange={(open) => {
-              if (open) {
-                setExpanded((prev) => {
-                  const next = new Set(prev);
+              setExpanded((prev) => {
+                const next = new Set(prev);
+                if (open) {
                   next.add(groupId);
-                  saveStoredExpanded(next);
-                  return next;
-                });
-              } else {
-                setExpanded((prev) => {
-                  const next = new Set(prev);
+                } else {
                   next.delete(groupId);
-                  saveStoredExpanded(next);
-                  return next;
-                });
-              }
+                }
+                return next;
+              });
             }}
           >
             <CollapsibleTrigger
@@ -416,8 +405,10 @@ export default function ConfigurationLayout({
                   <SheetTitle>Configuration</SheetTitle>
                 </div>
               </SheetHeader>
-              <div className="flex-1 flex flex-col">
-                <GroupedNavigation pathname={pathname} />
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  <GroupedNavigation pathname={pathname} />
+                </div>
                 <VersionFooter />
               </div>
             </div>

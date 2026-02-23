@@ -151,7 +151,7 @@ class NovuService
             return true;
         }
 
-        return str_contains(strtolower($message), '409')
+        return (bool) preg_match('/\b409\b/', $message)
             || str_contains(strtolower($message), 'conflict')
             || str_contains(strtolower($message), 'already exists')
             || str_contains(strtolower($message), 'duplicate');
@@ -217,7 +217,9 @@ class NovuService
     }
 
     /**
-     * Test connection to Novu API (e.g. list workflows or validate credentials).
+     * Test connection to Novu API and validate workflow mappings.
+     *
+     * @return array{success: bool, error?: string, workflows_found?: string[], warnings?: array}
      */
     public function testConnection(): array
     {
@@ -230,9 +232,60 @@ class NovuService
             if (! $sdk) {
                 return ['success' => false, 'error' => 'Novu SDK not available'];
             }
-            $sdk->workflows->list();
 
-            return ['success' => true];
+            $response = $sdk->workflows->list(limit: 100);
+
+            // Extract workflow identifiers from Novu response
+            $novuWorkflowIds = [];
+            $workflows = $response->listWorkflowsResponseDto->workflows ?? $response->workflows ?? [];
+            foreach ($workflows as $workflow) {
+                $id = $workflow->workflowId
+                    ?? (isset($workflow->triggers[0]) ? $workflow->triggers[0]->identifier : null)
+                    ?? $workflow->name
+                    ?? null;
+                if ($id !== null) {
+                    $novuWorkflowIds[] = $id;
+                }
+            }
+
+            // Compare against our workflow map
+            $map = config('novu.workflow_map', []);
+            $warnings = [];
+
+            $allTypes = \App\Models\NotificationTemplate::query()
+                ->select('type')
+                ->distinct()
+                ->pluck('type')
+                ->toArray();
+
+            // Check for unmapped types
+            foreach ($allTypes as $type) {
+                if (! isset($map[$type]) || empty($map[$type])) {
+                    $warnings[] = [
+                        'type' => 'unmapped',
+                        'notification_type' => $type,
+                        'message' => "No workflow mapped for notification type '{$type}'",
+                    ];
+                }
+            }
+
+            // Check for mapped workflows that don't exist in Novu
+            foreach ($map as $type => $workflowId) {
+                if (! empty($workflowId) && ! in_array($workflowId, $novuWorkflowIds, true)) {
+                    $warnings[] = [
+                        'type' => 'missing',
+                        'notification_type' => $type,
+                        'workflow_id' => $workflowId,
+                        'message' => "Workflow '{$workflowId}' for type '{$type}' not found in Novu",
+                    ];
+                }
+            }
+
+            return [
+                'success' => true,
+                'workflows_found' => $novuWorkflowIds,
+                'warnings' => $warnings,
+            ];
         } catch (\Throwable $e) {
             return [
                 'success' => false,

@@ -47,6 +47,18 @@ class NotificationTemplateController extends Controller
             return $this->errorResponse('Template not found.', 404);
         }
 
+        // Include sibling templates (same type, different channel groups) for tab navigation
+        $siblings = NotificationTemplate::where('type', $template->type)
+            ->where('id', '!=', $template->id)
+            ->orderBy('channel_group')
+            ->get()
+            ->map(fn (NotificationTemplate $s) => [
+                'id' => $s->id,
+                'channel_group' => $s->channel_group,
+            ])
+            ->values()
+            ->all();
+
         return $this->dataResponse([
             'data' => [
                 'id' => $template->id,
@@ -59,6 +71,7 @@ class NotificationTemplateController extends Controller
                 'is_system' => $template->is_system,
                 'is_active' => $template->is_active,
                 'updated_at' => $template->updated_at->toISOString(),
+                'siblings' => $siblings,
             ],
         ]);
     }
@@ -89,6 +102,13 @@ class NotificationTemplateController extends Controller
             'percent' => 'Budget usage percentage',
             'current_cost' => 'Current month cost (dollar amount)',
             'budget' => 'Monthly budget limit (dollar amount)',
+            'amount' => 'Payment amount (formatted, e.g. 25.00)',
+            'currency' => 'Currency code (e.g. USD)',
+            'description' => 'Payment description',
+            'customer_email' => 'Customer email address',
+            'payment_id' => 'Internal payment ID',
+            'refund_amount' => 'Refund amount (formatted, e.g. 10.00)',
+            'refund_type' => 'Type of refund (Full refund or Partial refund)',
         ];
     }
 
@@ -283,6 +303,36 @@ class NotificationTemplateController extends Controller
                 'percent' => '112',
                 'current_cost' => '56.00',
                 'budget' => '50.00',
+            ],
+            'payment.succeeded' => [
+                'user' => $user,
+                'app_name' => $appName,
+                'amount' => '25.00',
+                'currency' => 'USD',
+                'description' => 'Monthly subscription',
+                'customer_email' => 'customer@example.com',
+                'payment_id' => '42',
+            ],
+            'payment.failed' => [
+                'user' => $user,
+                'app_name' => $appName,
+                'amount' => '25.00',
+                'currency' => 'USD',
+                'description' => 'Monthly subscription',
+                'customer_email' => 'customer@example.com',
+                'payment_id' => '43',
+                'error_message' => 'Your card was declined.',
+            ],
+            'payment.refunded' => [
+                'user' => $user,
+                'app_name' => $appName,
+                'amount' => '25.00',
+                'refund_amount' => '25.00',
+                'currency' => 'USD',
+                'description' => 'Monthly subscription',
+                'customer_email' => 'customer@example.com',
+                'payment_id' => '42',
+                'refund_type' => 'Full refund',
             ],
             default => [
                 'user' => $user,

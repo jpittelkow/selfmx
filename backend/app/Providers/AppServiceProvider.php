@@ -3,11 +3,14 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
+use App\Auth\ApiKeyGuard;
 use App\Enums\Permission;
 use App\Models\User;
+use App\Services\ApiKeyService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,7 +33,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\Notifications\NotificationOrchestrator::class, function ($app) {
             return new \App\Services\Notifications\NotificationOrchestrator(
                 $app->make(\App\Services\NotificationTemplateService::class),
-                $app->make(\App\Services\NovuService::class)
+                $app->make(\App\Services\NovuService::class),
+                $app->make(\App\Services\Notifications\NotificationRateLimiter::class)
             );
         });
 
@@ -100,6 +104,20 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->registerCustomFilesystemDrivers();
+        $this->registerApiKeyGuard();
+    }
+
+    /**
+     * Register the api-key authentication guard driver.
+     */
+    private function registerApiKeyGuard(): void
+    {
+        Auth::extend('api-key', function ($app, $name, array $config) {
+            return new ApiKeyGuard(
+                $app->make(ApiKeyService::class),
+                $app->make('request')
+            );
+        });
     }
 
     /**

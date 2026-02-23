@@ -60,6 +60,7 @@ class StorageAlertCommand extends Command
             'threshold' => (string) $threshold,
             'free_formatted' => $this->formatBytes((int) $diskFree),
             'total_formatted' => $this->formatBytes((int) $diskTotal),
+            'action_url' => '/configuration',
         ];
 
         $admins = User::whereHas('groups', fn ($q) => $q->where('slug', 'admin'))->get();

@@ -14,7 +14,11 @@ interface SSOProvider {
   color: string;
 }
 
-export function SSOButtons() {
+interface SSOButtonsProps {
+  onLoad?: (hasProviders: boolean) => void;
+}
+
+export function SSOButtons({ onLoad }: SSOButtonsProps) {
   const [providers, setProviders] = useState<SSOProvider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [redirectingProviderId, setRedirectingProviderId] = useState<string | null>(null);
@@ -24,11 +28,13 @@ export function SSOButtons() {
       try {
         const response = await api.get("/auth/sso/providers");
         setProviders(response.data.providers);
+        onLoad?.(response.data.providers.length > 0);
       } catch (error) {
         errorLogger.report(
           error instanceof Error ? error : new Error("Failed to fetch SSO providers"),
           { source: "sso-buttons" }
         );
+        onLoad?.(false);
       } finally {
         setIsLoading(false);
       }

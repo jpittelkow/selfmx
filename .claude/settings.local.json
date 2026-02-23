@@ -8,7 +8,10 @@
       "Bash(git -C \"C:\\\\Users\\\\jpitt_6932a9v\\\\code\\\\sourdough\" check-ignore -v .env backend/.env)",
       "Bash(git -C \"C:\\\\Users\\\\jpitt_6932a9v\\\\code\\\\sourdough\" ls-files:*)",
       "Bash(find:*)",
-      "Bash(php -l:*)"
+      "Bash(php -l:*)",
+      "Bash(git status:*)",
+      "Bash(composer require:*)",
+      "Bash(powershell.exe -Command \"Get-Command php -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; Get-Command composer -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")"
     ]
   }
 }

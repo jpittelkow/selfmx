@@ -29,8 +29,18 @@ enum Permission: string
     case LOGS_EXPORT = 'logs.export';
     case AUDIT_VIEW = 'audit.view';
 
+    // Payments
+    case PAYMENTS_VIEW = 'payments.view';
+    case PAYMENTS_MANAGE = 'payments.manage';
+
     // Usage
     case USAGE_VIEW = 'usage.view';
+
+    // Notification Deliveries
+    case NOTIFICATION_DELIVERIES_VIEW = 'notification_deliveries.view';
+
+    // API
+    case API_KEYS_MANAGE = 'api_keys.manage';
 
     /**
      * All permission values as strings.
@@ -52,8 +62,10 @@ enum Permission: string
             'Groups' => [self::GROUPS_VIEW, self::GROUPS_MANAGE],
             'Settings' => [self::SETTINGS_VIEW, self::SETTINGS_EDIT],
             'Backups' => [self::BACKUPS_VIEW, self::BACKUPS_CREATE, self::BACKUPS_RESTORE, self::BACKUPS_DELETE],
-            'Logs' => [self::LOGS_VIEW, self::LOGS_EXPORT, self::AUDIT_VIEW],
+            'Logs' => [self::LOGS_VIEW, self::LOGS_EXPORT, self::AUDIT_VIEW, self::NOTIFICATION_DELIVERIES_VIEW],
+            'Payments' => [self::PAYMENTS_VIEW, self::PAYMENTS_MANAGE],
             'Usage' => [self::USAGE_VIEW],
+            'API' => [self::API_KEYS_MANAGE],
         ];
     }
 }

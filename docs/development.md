@@ -14,7 +14,7 @@ Development setup, tooling, and configuration:
 
 ```bash
 # Clone
-git clone https://github.com/jpittelkow/sourdough.git
+git clone https://github.com/Sourdough-start/sourdough.git
 cd sourdough
 
 # Backend

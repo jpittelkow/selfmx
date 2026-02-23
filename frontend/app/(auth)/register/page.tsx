@@ -40,6 +40,7 @@ export default function RegisterPage() {
   const { features } = useAppConfig();
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [hasSSOProviders, setHasSSOProviders] = useState(false);
   const { isChecking, isAvailable, error: availabilityError, checkEmail } =
     useEmailAvailability();
 
@@ -94,9 +95,9 @@ export default function RegisterPage() {
       title="Create Account"
       description="Get started with your free account"
     >
-      <SSOButtons />
+      <SSOButtons onLoad={setHasSSOProviders} />
 
-      <AuthDivider />
+      {hasSSOProviders && <AuthDivider />}
 
       {!features?.emailVerificationAvailable && features !== null && (
         <Alert variant="default" className="mb-4">

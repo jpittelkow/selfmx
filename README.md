@@ -32,7 +32,7 @@ The easiest way to get started is with Docker:
 
 ```bash
 # Clone the repository
-git clone https://github.com/jpittelkow/sourdough.git
+git clone https://github.com/Sourdough-start/sourdough.git
 cd sourdough
 
 # Start the application

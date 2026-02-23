@@ -134,8 +134,14 @@ fi
 chown www-data:www-data ${DB_PATH}
 chmod 664 ${DB_PATH}
 
-# Update .env database path
+# Ensure .env exists (needed before any artisan commands)
 cd ${BACKEND_DIR}
+if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+    echo "Creating .env from .env.example..."
+    cp .env.example .env
+fi
+
+# Update .env database path
 if [ -f ".env" ]; then
     sed -i "s|DB_DATABASE=.*|DB_DATABASE=${DB_PATH}|g" .env
 fi
@@ -204,6 +210,12 @@ fi
 # Internal API URL for server-side fetches (e.g. dynamic manifest route).
 # In the single-container setup Nginx listens on port 80 and proxies to Laravel.
 export INTERNAL_API_URL="${INTERNAL_API_URL:-http://127.0.0.1:80}"
+
+# Remove stale config/route cache files directly so env() works during migrations.
+# Must use rm (not artisan config:clear) because artisan itself fails if a stale
+# cache exists with baked-in env values from a previous boot.
+rm -f ${BACKEND_DIR}/bootstrap/cache/config.php
+rm -f ${BACKEND_DIR}/bootstrap/cache/routes-v7.php
 
 # Run database migrations with Scout disabled (Meilisearch not started yet)
 echo "Running database migrations..."

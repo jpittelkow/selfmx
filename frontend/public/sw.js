@@ -45,22 +45,43 @@ self.addEventListener('activate', (event) => {
 });
 
 // Push: display notification (payload from backend is decrypted by browser)
+// When the app is focused in the foreground, skip the system notification to avoid
+// duplicates with in-app notifications. Instead, notify the page to refresh its list.
 self.addEventListener('push', (event) => {
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
-  } catch {
-    // Fallback if payload is not JSON
+  } catch (err) {
+    console.error('[SW] Failed to parse push payload:', err);
   }
   const title = data.title || 'Notification';
   const options = {
     body: data.body || '',
     icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/icon-192.png',
+    badge: data.badge || '/badge.png',
+    tag: data.tag || undefined,
+    renotify: !!data.tag,
+    vibrate: [200, 100, 200],
     data: data.data || {},
     timestamp: data.timestamp || Date.now(),
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: false }).then((windowClients) => {
+      const hasFocusedClient = windowClients.some(
+        (client) => client.visibilityState === 'visible' && client.focused
+      );
+      if (hasFocusedClient) {
+        // App is in foreground — skip system notification to avoid duplicate.
+        windowClients.forEach((client) => {
+          client.postMessage({ type: 'PUSH_RECEIVED', data });
+        });
+        return;
+      }
+      return self.registration.showNotification(title, options).catch((err) => {
+        console.error('[SW] showNotification failed:', err);
+      });
+    })
+  );
 });
 
 // Notification click: focus existing window or open URL

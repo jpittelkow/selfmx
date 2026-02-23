@@ -19,3 +19,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Dual License Notice
+
+The majority of this project is licensed under the MIT License above.
+
+The following components are licensed under the **Sourdough Commercial License**:
+
+- `backend/app/Services/Stripe/` and related Stripe integration files
+
+See `backend/app/Services/Stripe/LICENSE.md` for the full commercial license
+terms. In summary: use via Stripe Connect is free; direct Stripe integration
+(bypassing Connect) requires a commercial license.
+
+All other files in this repository remain MIT licensed.

@@ -89,12 +89,13 @@ export function Logo({ variant = "full", size = "md", className }: LogoProps) {
       <div
         className={cn(
           sizes.icon,
-          "flex items-center justify-center rounded-md bg-primary text-primary-foreground font-bold",
+          "flex items-center justify-center rounded-md font-bold text-white",
           size === "sm" && "text-xs",
           size === "md" && "text-sm",
           size === "lg" && "text-base",
           className
         )}
+        style={{ background: "linear-gradient(to right, #00f5ff, #7a5cff, #ff2bd6)" }}
         suppressHydrationWarning
       >
         {iconChar}
@@ -137,11 +138,12 @@ export function Logo({ variant = "full", size = "md", className }: LogoProps) {
       <div
         className={cn(
           sizes.icon,
-          "flex items-center justify-center rounded-md bg-primary text-primary-foreground font-bold flex-shrink-0",
+          "flex items-center justify-center rounded-md font-bold text-white flex-shrink-0",
           size === "sm" && "text-xs",
           size === "md" && "text-sm",
           size === "lg" && "text-base"
         )}
+        style={{ background: "linear-gradient(to right, #00f5ff, #7a5cff, #ff2bd6)" }}
         suppressHydrationWarning
       >
         {appName ? appName.charAt(0).toUpperCase() : ''}

@@ -1,84 +1,45 @@
 # Recipe: Add Configuration Page
 
-Step-by-step guide to add a new configuration page in the dashboard using react-hook-form with Zod validation. **Fields are optional by default** unless explicitly marked as required.
-
-## Critical Principles
-
-1. **Optional by default** - All fields should be optional unless you explicitly need them required
-2. **Empty strings are valid** - Use `refine()` to allow empty strings for fields with format validation
-3. **Validate on blur** - Use `mode: "onBlur"` to avoid blocking users while typing
-4. **Track dirty state properly** - Use `reset()` for initial values and `{ shouldDirty: true }` for custom inputs
-5. **Send null for empty fields** - Backend should receive `null` (not empty string) to clear a field
+Add a new configuration page with react-hook-form + Zod validation. **Fields are optional by default.**
 
 ## Files to Create/Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
 | `frontend/app/(dashboard)/configuration/{name}/page.tsx` | Create | Config page UI |
+| `frontend/app/(dashboard)/configuration/layout.tsx` | Modify | Add nav item to `navigationGroups` |
 | `backend/routes/api.php` | Modify | Add config endpoints |
 | `backend/app/Http/Controllers/Api/{Name}Controller.php` | Create | Handle requests |
+| `backend/config/search-pages.php` | Modify | Search registration (backend) |
+| `frontend/lib/search-pages.ts` | Modify | Search registration (frontend) |
 
-## When Config Uses Database + Env Fallback (SettingService)
+## Reference Implementations
 
-If the config is stored in the database with environment fallback (see [ADR-014](../../adr/014-database-settings-env-fallback.md)):
+- **Simple config page**: `frontend/app/(dashboard)/configuration/branding/page.tsx`
+- **Config with SettingService**: `frontend/app/(dashboard)/configuration/storage/page.tsx` + `backend/app/Http/Controllers/Api/StorageSettingController.php`
+- **Nav registration**: see [add-configuration-menu-item recipe](add-configuration-menu-item.md)
+- **Search registration**: see [add-searchable-page recipe](add-searchable-page.md)
 
-1. **Add keys to** `backend/config/settings-schema.php` for the group (e.g. `mail`) with `env`, `default`, `encrypted`, and `public` (for settings exposed to unauthenticated users via `GET /system-settings/public`) where needed.
-2. **Backend controller** should use **SettingService** (inject it), not `SystemSetting::get`/`set` directly. Use `$this->settingService->getGroup('group')` and `$this->settingService->set('group', $key, $value, $userId)`.
-3. **Boot-time injection**: Add an `injectXxxConfig(array $settings)` method in `ConfigServiceProvider` and call it from `boot()` when the group is present in loaded settings.
-4. **Reset to default**: Expose `DELETE /api/.../keys/{key}` where `{key}` is the **schema key** (e.g. `smtp_password`), not the frontend key. Validate that the key exists in `config('settings-schema.{group}')` before calling `$this->settingService->reset($group, $key)`.
-5. **Frontend**: Reset button can call `api.delete(\`/mail-settings/keys/${schemaKey}\`)`. Schema keys for mail are e.g. `mailer`, `smtp_host`, `smtp_port`, `smtp_password`, `from_address`, `from_name`.
+## Critical Rules
 
-See [SettingService pattern](../patterns/setting-service.md) and `backend/app/Http/Controllers/Api/MailSettingController.php` for key mapping (schema ↔ frontend) and validation.
+1. **Optional by default** - Use `z.string().optional()`. For format validation on optional fields, use `.refine()` to allow empty:
+   ```tsx
+   webhook_url: z.string()
+     .refine((val) => !val || val === "" || isValidUrl(val), { message: "Must be a valid URL" })
+     .optional(),
+   ```
 
-## Step 1: Define the Zod Schema (Optional by Default)
+2. **Validate on blur** - `useForm({ resolver: zodResolver(schema), mode: "onBlur" })`
 
-```tsx
-import { z } from "zod";
+3. **Use `reset()` for initial values** - Not `setValue()`. This establishes clean state for `isDirty` tracking.
 
-// ✅ CORRECT: Fields are optional by default
-const configSchema = z.object({
-  // Simple optional string
-  api_key: z.string().optional(),
-  
-  // Optional string with format validation that ALSO allows empty
-  webhook_url: z.string()
-    .refine((val) => {
-      if (!val || val === "") return true; // Empty is valid
-      try {
-        new URL(val);
-        return true;
-      } catch {
-        return false;
-      }
-    }, {
-      message: "Must be a valid URL",
-    })
-    .optional(),
-  
-  // Optional hex color (empty allowed)
-  accent_color: z.string()
-    .refine((val) => {
-      if (!val || val === "") return true; // Empty is valid
-      return /^#[0-9A-Fa-f]{6}$/.test(val);
-    }, {
-      message: "Must be a valid hex color (e.g., #3b82f6)",
-    })
-    .optional(),
-  
-  // Boolean with default
-  enabled: z.boolean().default(false),
-  
-  // Optional number
-  retry_count: z.coerce.number().optional(),
-  
-  // ONLY mark required when truly needed
-  // name: z.string().min(1, "Name is required"),
-});
+4. **Custom inputs need `shouldDirty`** - `setValue("field", value, { shouldDirty: true })`
 
-type ConfigForm = z.infer<typeof configSchema>;
-```
+5. **Send null for empty fields** - Backend receives `null` (not empty string) to clear fields.
 
-### Common Field Patterns
+6. **Backend uses `nullable`** - `'field' => 'nullable|string|max:255'`
+
+## Common Field Patterns
 
 ```tsx
 // Optional string (most common)
@@ -86,175 +47,20 @@ field_name: z.string().optional(),
 
 // Optional string with format validation (URL, email, etc.)
 url_field: z.string()
-  .refine((val) => !val || val === "" || isValidUrl(val), {
-    message: "Must be a valid URL",
-  })
+  .refine((val) => !val || val === "" || isValidUrl(val), { message: "Must be a valid URL" })
   .optional(),
 
-// Optional hex color
-color_field: z.string()
-  .refine((val) => !val || val === "" || /^#[0-9A-Fa-f]{6}$/.test(val), {
-    message: "Must be a valid hex color",
-  })
-  .optional(),
-
-// Boolean (always has a value, use default)
+// Boolean (always has a value)
 toggle_field: z.boolean().default(false),
 
 // Optional number (coerce from string input)
 number_field: z.coerce.number().optional(),
 
-// Optional enum/select
-mode_field: z.enum(["option1", "option2", "option3"]).optional(),
-
 // ONLY when truly required
 required_field: z.string().min(1, "This field is required"),
 ```
 
-## Step 2: Set Up the Form (Validate on Blur)
-
-```tsx
-"use client";
-
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { api } from "@/lib/api";
-
-export default function ExampleConfigPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // ✅ CORRECT: mode "onBlur" prevents validation blocking while typing
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isDirty }, 
-    setValue, 
-    watch, 
-    reset  // Important: use reset() for initial values
-  } = useForm<ConfigForm>({
-    resolver: zodResolver(configSchema),
-    mode: "onBlur", // Validate on blur, not on every keystroke
-    defaultValues: {
-      api_key: "",
-      webhook_url: "",
-      accent_color: "",
-      enabled: false,
-      retry_count: undefined,
-    },
-  });
-
-  // ... rest of component
-}
-```
-
-## Step 3: Fetch and Reset Form State
-
-```tsx
-const fetchSettings = async () => {
-  setIsLoading(true);
-  try {
-    const response = await api.get("/config/example");
-    const settings = response.data.settings || {};
-
-    // ✅ CORRECT: Use reset() to set initial values
-    // This establishes the "clean" state for isDirty tracking
-    const formValues = {
-      api_key: settings.api_key || "",
-      webhook_url: settings.webhook_url || "",
-      accent_color: settings.accent_color || "",
-      enabled: settings.enabled || false,
-      retry_count: settings.retry_count ?? undefined,
-    };
-    
-    reset(formValues);
-  } catch (error: any) {
-    toast.error(error.message || "Failed to load settings");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-useEffect(() => {
-  fetchSettings();
-}, []);
-```
-
-## Step 4: Handle Non-Native Inputs (Switch, ColorPicker, etc.)
-
-```tsx
-// ✅ CORRECT: Use { shouldDirty: true } for custom components
-<Switch
-  checked={watch("enabled")}
-  onCheckedChange={(checked) =>
-    setValue("enabled", checked, { shouldDirty: true })
-  }
-/>
-
-<ColorPicker
-  value={watch("accent_color") || ""}
-  onChange={(color) => setValue("accent_color", color, { shouldDirty: true })}
-/>
-
-// Native inputs with register() track dirty state automatically
-<Input {...register("api_key")} placeholder="Enter API key" />
-```
-
-## Step 5: Submit with Null Conversion
-
-```tsx
-const onSubmit = async (data: ConfigForm) => {
-  setIsSaving(true);
-  try {
-    // ✅ CORRECT: Convert empty strings to null for backend
-    const payload = {
-      ...data,
-      api_key: data.api_key || null,
-      webhook_url: data.webhook_url || null,
-      accent_color: data.accent_color || null,
-      // Numbers: keep as-is (undefined is fine)
-      // Booleans: keep as-is (always have a value)
-    };
-    
-    await api.put("/config/example", payload);
-    toast.success("Settings saved successfully");
-    await fetchSettings(); // Re-fetch to reset dirty state
-  } catch (error: any) {
-    toast.error(error.response?.data?.message || "Failed to save settings");
-  } finally {
-    setIsSaving(false);
-  }
-};
-```
-
-## Step 6: Save Button (Disable When Not Dirty)
-
-Use the shared `SaveButton` component instead of building save button logic inline:
-
-```tsx
-import { SaveButton } from "@/components/ui/save-button";
-
-<SaveButton isDirty={isDirty} isSaving={isSaving} />
-```
-
-## Step 7: Backend Validation (Laravel)
-
-```php
-// ✅ CORRECT: Use 'nullable' for optional fields
-$validated = $request->validate([
-    'api_key' => 'nullable|string|max:255',
-    'webhook_url' => 'nullable|url|max:255',
-    'accent_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-    'enabled' => 'boolean',
-    'retry_count' => 'nullable|integer|min:0|max:10',
-    // ONLY use 'required' when truly needed
-    // 'name' => 'required|string|max:255',
-]);
-```
-
-## Complete Example
+## Page Skeleton
 
 ```tsx
 "use client";
@@ -274,14 +80,8 @@ import { SaveButton } from "@/components/ui/save-button";
 
 const configSchema = z.object({
   api_key: z.string().optional(),
-  webhook_url: z.string()
-    .refine((val) => !val || val === "" || (() => { try { new URL(val); return true; } catch { return false; } })(), {
-      message: "Must be a valid URL",
-    })
-    .optional(),
   enabled: z.boolean().default(false),
 });
-
 type ConfigForm = z.infer<typeof configSchema>;
 
 export default function ExampleConfigPage() {
@@ -291,54 +91,30 @@ export default function ExampleConfigPage() {
   const { register, handleSubmit, formState: { errors, isDirty }, setValue, watch, reset } = useForm<ConfigForm>({
     resolver: zodResolver(configSchema),
     mode: "onBlur",
-    defaultValues: {
-      api_key: "",
-      webhook_url: "",
-      enabled: false,
-    },
+    defaultValues: { api_key: "", enabled: false },
   });
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
 
   const fetchSettings = async () => {
     setIsLoading(true);
     try {
       const response = await api.get("/config/example");
-      const settings = response.data.settings || {};
-      reset({
-        api_key: settings.api_key || "",
-        webhook_url: settings.webhook_url || "",
-        enabled: settings.enabled || false,
-      });
-    } catch (error: any) {
-      toast.error("Failed to load settings");
-    } finally {
-      setIsLoading(false);
-    }
+      reset({ api_key: response.data.settings?.api_key || "", enabled: response.data.settings?.enabled || false });
+    } catch { toast.error("Failed to load settings"); }
+    finally { setIsLoading(false); }
   };
 
   const onSubmit = async (data: ConfigForm) => {
     setIsSaving(true);
     try {
-      await api.put("/config/example", {
-        ...data,
-        api_key: data.api_key || null,
-        webhook_url: data.webhook_url || null,
-      });
+      await api.put("/config/example", { ...data, api_key: data.api_key || null });
       toast.success("Settings saved");
       await fetchSettings();
-    } catch (error: any) {
-      toast.error("Failed to save settings");
-    } finally {
-      setIsSaving(false);
-    }
+    } catch { toast.error("Failed to save settings"); }
+    finally { setIsSaving(false); }
   };
 
-  if (isLoading) {
-    return <SettingsPageSkeleton />;
-  }
+  useEffect(() => { fetchSettings(); }, []);
+  if (isLoading) return <SettingsPageSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -346,36 +122,21 @@ export default function ExampleConfigPage() {
         <h1 className="text-3xl font-bold">Example Config</h1>
         <p className="text-muted-foreground mt-2">Configure your integration.</p>
       </div>
-
       <form onSubmit={handleSubmit(onSubmit)}>
         <Card>
-          <CardHeader>
-            <CardTitle>Settings</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Settings</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <Label>Enabled</Label>
-              <Switch
-                checked={watch("enabled")}
-                onCheckedChange={(checked) => setValue("enabled", checked, { shouldDirty: true })}
-              />
+              <Switch checked={watch("enabled")} onCheckedChange={(checked) => setValue("enabled", checked, { shouldDirty: true })} />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="api_key">API Key</Label>
               <Input {...register("api_key")} type="password" placeholder="Optional" />
               {errors.api_key && <p className="text-sm text-destructive">{errors.api_key.message}</p>}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="webhook_url">Webhook URL</Label>
-              <Input {...register("webhook_url")} placeholder="https://example.com/webhook (optional)" />
-              {errors.webhook_url && <p className="text-sm text-destructive">{errors.webhook_url.message}</p>}
-            </div>
           </CardContent>
-          <CardFooter className="flex justify-end">
-            <SaveButton isDirty={isDirty} isSaving={isSaving} />
-          </CardFooter>
+          <CardFooter className="flex justify-end"><SaveButton isDirty={isDirty} isSaving={isSaving} /></CardFooter>
         </Card>
       </form>
     </div>
@@ -383,89 +144,24 @@ export default function ExampleConfigPage() {
 }
 ```
 
-## Step 8: Register Page for Search (Dual Registration)
+## When Config Uses SettingService (DB + env fallback)
 
-New pages should be discoverable via global search (Cmd+K). This requires registration in **two places**:
+1. Add keys to `backend/config/settings-schema.php` with `env`, `default`, `encrypted`, `public` where needed
+2. Backend controller uses **SettingService** — `$this->settingService->getGroup('group')` and `$this->settingService->set('group', $key, $value, $userId)`
+3. Add `injectXxxConfig()` method in `ConfigServiceProvider` and call from `boot()`
+4. Reset to default: `DELETE /api/.../keys/{key}` — validate key exists in `config('settings-schema.{group}')`
 
-1. **Backend** (`backend/config/search-pages.php`) — for API-based search results and Meilisearch indexing
-2. **Frontend** (`frontend/lib/search-pages.ts` or equivalent) — for instant client-side filtering
-
-Both must be kept in sync. If only one is updated, search will produce inconsistent results (the page may appear via API but not instant search, or vice versa).
-
-See [Recipe: Add a Searchable Page](add-searchable-page.md) for the full registration steps.
+See [SettingService pattern](../patterns/setting-service.md) and `MailSettingController.php` for key mapping example.
 
 ## Checklist
 
 - [ ] Schema uses `.optional()` for non-required fields
 - [ ] Format validations use `.refine()` to allow empty strings
-- [ ] Form uses `mode: "onBlur"` (not `"onChange"`)
+- [ ] Form uses `mode: "onBlur"`
 - [ ] Initial values loaded with `reset()`
 - [ ] Custom inputs use `setValue(..., { shouldDirty: true })`
 - [ ] Submit converts empty strings to `null`
-- [ ] Save button uses `disabled={!isDirty || isSaving}`
+- [ ] Save button disabled when `!isDirty || isSaving`
 - [ ] Backend validation uses `nullable` for optional fields
-- [ ] Page registered in both `search-pages.php` and frontend search pages (see [dual registration](#step-8-register-page-for-search-dual-registration))
-
-## Common Mistakes
-
-### ❌ Wrong: Validation blocks empty optional fields
-
-```tsx
-// This fails validation when empty
-webhook_url: z.string().url().optional(),
-```
-
-### ✅ Correct: Allow empty strings explicitly
-
-```tsx
-webhook_url: z.string()
-  .refine((val) => !val || val === "" || isValidUrl(val), {
-    message: "Must be a valid URL",
-  })
-  .optional(),
-```
-
-### ❌ Wrong: Using setValue without shouldDirty
-
-```tsx
-// isDirty won't update
-setValue("enabled", true);
-```
-
-### ✅ Correct: Include shouldDirty option
-
-```tsx
-setValue("enabled", true, { shouldDirty: true });
-```
-
-### ❌ Wrong: Using onChange mode
-
-```tsx
-// Validates on every keystroke, blocks typing
-useForm({ mode: "onChange" });
-```
-
-### ✅ Correct: Use onBlur mode
-
-```tsx
-// Validates when field loses focus
-useForm({ mode: "onBlur" });
-```
-
-### ❌ Wrong: Using individual setValue for initial load
-
-```tsx
-// Doesn't establish clean state for isDirty
-setValue("api_key", settings.api_key);
-setValue("enabled", settings.enabled);
-```
-
-### ✅ Correct: Use reset for initial load
-
-```tsx
-// Establishes clean state, isDirty works correctly
-reset({
-  api_key: settings.api_key || "",
-  enabled: settings.enabled || false,
-});
-```
+- [ ] Nav item added to `configuration/layout.tsx` `navigationGroups` ([recipe](add-configuration-menu-item.md))
+- [ ] Page registered in both `search-pages.php` and frontend search pages ([recipe](add-searchable-page.md))

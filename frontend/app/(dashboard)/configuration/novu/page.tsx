@@ -26,8 +26,14 @@ import { SaveButton } from "@/components/ui/save-button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink, AlertTriangle } from "lucide-react";
 import { HelpLink } from "@/components/help/help-link";
+import {
+  getNotificationTypeLabel,
+  getNotificationCategory,
+  getCategoryLabel,
+  type NotificationCategory,
+} from "@/lib/notification-types";
 
 const novuSchema = z.object({
   enabled: z.boolean().default(false),
@@ -57,11 +63,30 @@ const defaultValues: NovuForm = {
   socket_url: "https://ws.novu.co",
 };
 
+interface TestWarning {
+  type: "unmapped" | "missing";
+  notification_type: string;
+  workflow_id?: string;
+  message: string;
+}
+
+interface TestResult {
+  success: boolean;
+  workflowsFound?: string[];
+  warnings?: TestWarning[];
+}
+
 export default function NovuConfigurationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<boolean | null>(null);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+
+  // Workflow map state
+  const [workflowMap, setWorkflowMap] = useState<Record<string, string>>({});
+  const [notificationTypes, setNotificationTypes] = useState<string[]>([]);
+  const [isSavingMap, setIsSavingMap] = useState(false);
+  const [mapDirty, setMapDirty] = useState(false);
 
   const {
     register,
@@ -75,6 +100,8 @@ export default function NovuConfigurationPage() {
     mode: "onBlur",
     defaultValues,
   });
+
+  const isEnabled = watch("enabled");
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -99,9 +126,24 @@ export default function NovuConfigurationPage() {
     }
   }, [reset]);
 
+  const fetchWorkflowMap = useCallback(async () => {
+    try {
+      const res = await api.get<{
+        workflow_map: Record<string, string>;
+        notification_types: string[];
+      }>("/novu-settings/workflow-map");
+      setWorkflowMap(res.data?.workflow_map ?? {});
+      setNotificationTypes(res.data?.notification_types ?? []);
+      setMapDirty(false);
+    } catch {
+      // Silently fail — map section just won't show data
+    }
+  }, []);
+
   useEffect(() => {
     fetchSettings();
-  }, [fetchSettings]);
+    fetchWorkflowMap();
+  }, [fetchSettings, fetchWorkflowMap]);
 
   const onSubmit = async (data: NovuForm) => {
     setIsSaving(true);
@@ -129,16 +171,61 @@ export default function NovuConfigurationPage() {
     setIsTesting(true);
     setTestResult(null);
     try {
-      await api.post("/novu-settings/test");
-      setTestResult(true);
+      const res = await api.post<{
+        message: string;
+        workflows_found: string[];
+        warnings: TestWarning[];
+      }>("/novu-settings/test");
+      setTestResult({
+        success: true,
+        workflowsFound: res.data?.workflows_found ?? [],
+        warnings: res.data?.warnings ?? [],
+      });
       toast.success("Connection successful");
-    } catch {
-      setTestResult(false);
-      toast.error("Connection failed. Check API key and URL.");
+    } catch (err: unknown) {
+      setTestResult({ success: false });
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      toast.error(message || "Connection failed. Check API key and URL.");
     } finally {
       setIsTesting(false);
     }
   };
+
+  const onSaveWorkflowMap = async () => {
+    setIsSavingMap(true);
+    try {
+      await api.put("/novu-settings/workflow-map", { workflow_map: workflowMap });
+      toast.success("Workflow map saved");
+      setMapDirty(false);
+      await fetchWorkflowMap();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to save workflow map"));
+    } finally {
+      setIsSavingMap(false);
+    }
+  };
+
+  const updateWorkflowId = (type: string, value: string) => {
+    setWorkflowMap((prev) => ({ ...prev, [type]: value }));
+    setMapDirty(true);
+  };
+
+  // Group notification types by category
+  const groupedTypes = notificationTypes.reduce<
+    { category: NotificationCategory; label: string; types: string[] }[]
+  >((acc, type) => {
+    const cat = getNotificationCategory(type);
+    const existing = acc.find((g) => g.category === cat);
+    if (existing) {
+      existing.types.push(type);
+    } else {
+      acc.push({ category: cat, label: getCategoryLabel(cat), types: [type] });
+    }
+    return acc;
+  }, []);
 
   if (isLoading) {
     return <SettingsPageSkeleton />;
@@ -230,33 +317,102 @@ export default function NovuConfigurationPage() {
                   "Test connection"
                 )}
               </Button>
-              {testResult === true && (
+              {testResult?.success && (!testResult.warnings || testResult.warnings.length === 0) && (
                 <Badge variant="success">Connected</Badge>
               )}
-              {testResult === false && (
+              {testResult?.success && testResult.warnings && testResult.warnings.length > 0 && (
+                <Badge variant="warning">Connected with warnings</Badge>
+              )}
+              {testResult !== null && !testResult.success && (
                 <Badge variant="destructive">Connection failed</Badge>
               )}
             </div>
 
-            <Alert>
-              <AlertDescription>
-                Create workflows in the Novu dashboard for each notification type (e.g. backup-completed, auth-login). See the recipe in docs for mapping.
-                <a
-                  href="https://docs.novu.co"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 ml-2 text-primary hover:underline"
-                >
-                  Novu docs <ExternalLink className="h-3 w-3" />
-                </a>
-              </AlertDescription>
-            </Alert>
+            {testResult?.success && testResult.warnings && testResult.warnings.length > 0 && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <p className="font-medium mb-2">
+                    {testResult.warnings.length} workflow warning{testResult.warnings.length > 1 ? "s" : ""}:
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-sm">
+                    {testResult.warnings.map((w, i) => (
+                      <li key={i}>
+                        {w.type === "unmapped" ? (
+                          <span>
+                            <Badge variant="outline" className="mr-1 text-xs">Unmapped</Badge>
+                            {getNotificationTypeLabel(w.notification_type)} has no workflow mapped
+                          </span>
+                        ) : (
+                          <span>
+                            <Badge variant="destructive" className="mr-1 text-xs">Missing</Badge>
+                            Workflow <code className="text-xs">{w.workflow_id}</code> for {getNotificationTypeLabel(w.notification_type)} not found in Novu
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
           <CardFooter className="flex justify-end">
             <SaveButton isDirty={isDirty} isSaving={isSaving} />
           </CardFooter>
         </Card>
       </form>
+
+      {isEnabled && notificationTypes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Workflow Mapping</CardTitle>
+            <CardDescription>
+              Map each notification type to a Novu workflow identifier. Create matching workflows in your{" "}
+              <a
+                href="https://docs.novu.co"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                Novu dashboard <ExternalLink className="h-3 w-3" />
+              </a>
+              . Unmapped types will use local channels as fallback.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {groupedTypes.map((group) => (
+                <div key={group.category}>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">{group.label}</h4>
+                  <div className="space-y-2">
+                    {group.types.map((type) => (
+                      <div key={type} className="flex items-center gap-3">
+                        <div className="w-44 shrink-0">
+                          <span className="text-sm">{getNotificationTypeLabel(type)}</span>
+                        </div>
+                        <Input
+                          value={workflowMap[type] ?? ""}
+                          onChange={(e) => updateWorkflowId(type, e.target.value)}
+                          placeholder="e.g. backup-completed"
+                          className="max-w-xs font-mono text-sm"
+                        />
+                        {workflowMap[type] ? (
+                          <Badge variant="success" className="text-xs shrink-0">Mapped</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs shrink-0">Unmapped</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end">
+            <SaveButton isDirty={mapDirty} isSaving={isSavingMap} onClick={onSaveWorkflowMap} />
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 }

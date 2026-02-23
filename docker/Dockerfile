@@ -102,7 +102,7 @@ COPY --chown=www-data:www-data backend/ ./backend/
 
 # Install PHP dependencies
 WORKDIR /var/www/html/backend
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Copy built frontend (standalone output - much smaller than full node_modules)
 WORKDIR /var/www/html

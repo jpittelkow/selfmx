@@ -29,5 +29,10 @@ return [
         'storage.warning' => 'storage-warning',
         'storage.critical' => 'storage-critical',
         'suspicious_activity' => 'suspicious-activity',
+        'usage.budget_warning' => 'usage-budget-warning',
+        'usage.budget_exceeded' => 'usage-budget-exceeded',
+        'payment.succeeded' => 'payment-succeeded',
+        'payment.failed' => 'payment-failed',
+        'payment.refunded' => 'payment-refunded',
     ],
 ];

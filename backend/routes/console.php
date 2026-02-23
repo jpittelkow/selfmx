@@ -61,3 +61,8 @@ Schedule::command('storage:check-alerts')
 Schedule::command('usage:check-budgets')
     ->daily()
     ->withoutOverlapping(60);
+
+// Prune expired API keys and auto-revoke rotated keys past grace period
+Schedule::command('api-keys:prune-expired')
+    ->daily()
+    ->withoutOverlapping(60);

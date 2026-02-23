@@ -38,6 +38,14 @@ A complete full-stack application framework with enterprise-grade features ready
 - Application logging with correlation IDs
 - Suspicious activity detection
 
+**Payments (Optional)**
+- Stripe Connect integration with 1% platform application fee
+- Payment processing with destination charges
+- Connect onboarding (OAuth) for fork operators
+- Payment history with admin view
+- Webhook handling with idempotency
+- Usage tracking integration for payment events
+
 ## Philosophy
 
 Sourdough is **opinionated but modular**:
@@ -89,7 +97,7 @@ All configurations contain the same core rules - choose the IDE that works best 
 ### 1. Clone and Run
 
 ```bash
-git clone https://github.com/jpittelkow/sourdough.git my-project
+git clone https://github.com/Sourdough-start/sourdough.git my-project
 cd my-project
 docker-compose up -d
 ```
@@ -145,6 +153,7 @@ If you don't need certain features, you can remove them:
 | Specific notification channels | Individual files in `backend/app/Services/Notifications/Channels/` |
 | Backup remote destinations | Individual files in `backend/app/Services/Backup/Destinations/` |
 | PWA | `frontend/public/sw.js`, `frontend/public/manifest.json`, `frontend/lib/use-install-prompt.ts` |
+| Payments/Stripe | `backend/app/Services/Stripe/`, `backend/config/stripe.php`, `backend/app/Http/Controllers/Api/Stripe*.php`, `backend/app/Models/Payment.php`, `backend/app/Models/StripeCustomer.php`, `backend/app/Models/StripeWebhookEvent.php`, migrations (`*stripe*`, `*payments*`), `frontend/lib/stripe.ts`, `frontend/app/(dashboard)/configuration/stripe/`, `frontend/app/(dashboard)/configuration/payments/` |
 
 See the [Customization Checklist](docs/customization-checklist.md) for detailed guidance.
 
@@ -177,3 +186,5 @@ docs/
 ## License
 
 Sourdough is MIT licensed. You can use it for any purpose, including commercial projects.
+
+**Stripe module exception:** The Stripe/payments files are dual-licensed under the Sourdough Commercial License. Using them via Stripe Connect is free; direct Stripe usage requires a commercial license. See `backend/app/Services/Stripe/LICENSE.md` for details.

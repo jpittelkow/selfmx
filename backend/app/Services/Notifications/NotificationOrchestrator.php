@@ -2,11 +2,14 @@
 
 namespace App\Services\Notifications;
 
+use App\Jobs\SendNotificationChannelJob;
+use App\Models\NotificationDelivery;
 use App\Models\User;
 use App\Models\Notification;
 use App\Models\SystemSetting;
 use App\Services\NotificationTemplateService;
 use App\Services\NovuService;
+use App\Services\RenderedEmail;
 use App\Services\Notifications\Channels\ChannelInterface;
 use App\Services\Notifications\Channels\DatabaseChannel;
 use App\Services\Notifications\Channels\EmailChannel;
@@ -27,10 +30,15 @@ class NotificationOrchestrator
 {
     use NotificationChannelMetadata;
     private array $channelInstances = [];
+    private array $typePreferencesCache = [];
+
+    /** Channels that always run synchronously (in-app inbox must be immediate). */
+    private const SYNC_ONLY_CHANNELS = ['database'];
 
     public function __construct(
         private NotificationTemplateService $notificationTemplateService,
-        private NovuService $novuService
+        private NovuService $novuService,
+        private NotificationRateLimiter $rateLimiter
     ) {}
 
     /**
@@ -48,10 +56,10 @@ class NotificationOrchestrator
     }
 
     /**
-     * Send a notification by type using per-channel templates (push, inapp, chat).
-     * For email, variables must include 'title' and 'message'.
-     * Variables are merged with user and app_name; templates are rendered for push/inapp/chat.
-     * When Novu is enabled, delegates to Novu and returns without using local channels.
+     * Send a notification by type using per-channel templates (push, inapp, chat, email).
+     * Variables are merged with user and app_name; templates are rendered per channel group.
+     * For email: uses per-type email template when available, falls back to generic notification template.
+     * When Novu is enabled, delegates to Novu first. Falls back to local channels on failure.
      */
     public function sendByType(
         User $user,
@@ -63,18 +71,28 @@ class NotificationOrchestrator
             'user' => ['name' => $user->name, 'email' => $user->email],
             'app_name' => config('app.name', 'Sourdough'),
         ];
-        if ($this->novuService->isEnabled()) {
-            return $this->sendViaNovu($user, $type, array_merge($baseVariables, $variables));
+        $results = [];
+        if ($this->novuService->isEnabled() && $this->novuService->getWorkflowIdForType($type) !== null) {
+            $novuResult = $this->sendViaNovu($user, $type, array_merge($baseVariables, $variables));
+            if ($novuResult['novu']['success'] ?? false) {
+                return $novuResult;
+            }
+            $this->writeDelivery($user->id, $type, 'novu', NotificationDelivery::STATUS_FAILED, $novuResult['novu']['error'] ?? 'unknown');
+            Log::warning('Novu delivery failed, falling back to local channels', [
+                'type' => $type,
+                'user' => $user->id,
+                'novu_error' => $novuResult['novu']['error'] ?? 'unknown',
+            ]);
+            $results = $novuResult;
         }
 
         $channels = $channels ?? $this->getDefaultChannels();
         $callerVariables = $variables;
         $mergedVariables = array_merge($baseVariables, $variables);
-        $results = [];
 
         foreach ($channels as $channel) {
             try {
-                $channelInstance = $this->getChannelInstance($channel);
+                $channelInstance = $this->resolveChannel($channel);
 
                 if (!$channelInstance || !$this->isChannelEnabled($channel)) {
                     continue;
@@ -84,11 +102,18 @@ class NotificationOrchestrator
                     continue;
                 }
 
-                if (!$this->isUserChannelEnabled($user, $channel)) {
+                if (!$this->isUserChannelEnabled($user, $channel, $type)) {
                     continue;
                 }
 
                 if (!$channelInstance->isAvailableFor($user)) {
+                    continue;
+                }
+
+                // Rate limit check
+                if ($this->rateLimiter->isLimited($user, $channel)) {
+                    $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_RATE_LIMITED);
+                    $results[$channel] = ['success' => false, 'rate_limited' => true];
                     continue;
                 }
 
@@ -97,32 +122,68 @@ class NotificationOrchestrator
                 $message = null;
 
                 if ($channelGroup === 'email') {
-                    $title = $mergedVariables['title'] ?? $type;
-                    $message = $mergedVariables['message'] ?? '';
-                } else {
+                    // Use per-type email template; skip if none exists
                     try {
-                        $rendered = $this->notificationTemplateService->render($type, $channelGroup, $mergedVariables);
+                        $rendered = $this->notificationTemplateService->render($type, 'email', $mergedVariables);
+                        $bodyHtml = $rendered['body'];
+                        $bodyText = strip_tags(str_replace(
+                            ['</p>', '<br>', '<br/>', '<br />'],
+                            "\n",
+                            $bodyHtml
+                        ));
+                        $renderedEmail = new RenderedEmail(
+                            $rendered['title'],
+                            $bodyHtml,
+                            $bodyText
+                        );
                         $title = $rendered['title'];
-                        $message = $rendered['body'];
+                        $message = $bodyText;
                     } catch (\InvalidArgumentException $e) {
-                        Log::warning("Notification template not found, skipping channel", [
+                        Log::warning("No per-type email template, skipping email channel", [
                             'type' => $type,
-                            'channel' => $channel,
-                            'channel_group' => $channelGroup,
                             'error' => $e->getMessage(),
                         ]);
                         continue;
                     }
+
+                    // Email always runs sync (rendered content can't be serialized to a job easily)
+                    try {
+                        /** @var EmailChannel $channelInstance */
+                        $channelInstance->sendRendered($user, $type, $renderedEmail);
+                        $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_SUCCESS);
+                        $results[$channel] = ['success' => true];
+                    } catch (\Exception $e) {
+                        $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_FAILED, $e->getMessage());
+                        Log::error("Notification channel {$channel} failed", [
+                            'user' => $user->id,
+                            'type' => $type,
+                            'error' => $e->getMessage(),
+                        ]);
+                        $results[$channel] = ['success' => false, 'error' => $e->getMessage()];
+                    }
+                    continue;
                 }
 
-                // Pass caller variables (without PII base vars) as data to avoid
-                // storing user email/name in the notification data column.
-                $result = $channelInstance->send($user, $type, $title, $message, $callerVariables);
-                $results[$channel] = [
-                    'success' => true,
-                    'result' => $result,
-                ];
+                try {
+                    $rendered = $this->notificationTemplateService->render($type, $channelGroup, $mergedVariables);
+                    $title = $rendered['title'];
+                    $message = $rendered['body'];
+                } catch (\InvalidArgumentException $e) {
+                    Log::warning("Notification template not found, skipping channel", [
+                        'type' => $type,
+                        'channel' => $channel,
+                        'channel_group' => $channelGroup,
+                        'error' => $e->getMessage(),
+                    ]);
+                    continue;
+                }
+
+                // Dispatch: sync for database, async for others when queue is enabled
+                $results[$channel] = $this->dispatchChannel(
+                    $user, $channel, $type, $title, $message, $callerVariables
+                );
             } catch (\Exception $e) {
+                $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_FAILED, $e->getMessage());
                 Log::error("Notification channel {$channel} failed", [
                     'user' => $user->id,
                     'type' => $type,
@@ -135,12 +196,14 @@ class NotificationOrchestrator
             }
         }
 
+        $this->typePreferencesCache = [];
+
         return $results;
     }
 
     /**
      * Send a notification to a user via specified channels.
-     * When Novu is enabled and a workflow exists for this type, delegates to Novu.
+     * When Novu is enabled and a workflow exists for this type, delegates to Novu first. Falls back to local channels on failure.
      */
     public function send(
         User $user,
@@ -150,6 +213,7 @@ class NotificationOrchestrator
         array $data = [],
         ?array $channels = null
     ): array {
+        $results = [];
         if ($this->novuService->isEnabled()) {
             $workflowId = $this->novuService->getWorkflowIdForType($type);
             if ($workflowId !== null) {
@@ -159,17 +223,25 @@ class NotificationOrchestrator
                     'user' => ['name' => $user->name, 'email' => $user->email],
                     'app_name' => config('app.name', 'Sourdough'),
                 ]);
-
-                return $this->sendViaNovu($user, $type, $payload);
+                $novuResult = $this->sendViaNovu($user, $type, $payload);
+                if ($novuResult['novu']['success'] ?? false) {
+                    return $novuResult;
+                }
+                $this->writeDelivery($user->id, $type, 'novu', NotificationDelivery::STATUS_FAILED, $novuResult['novu']['error'] ?? 'unknown');
+                Log::warning('Novu delivery failed, falling back to local channels', [
+                    'type' => $type,
+                    'user' => $user->id,
+                    'novu_error' => $novuResult['novu']['error'] ?? 'unknown',
+                ]);
+                $results = $novuResult;
             }
         }
 
         $channels = $channels ?? $this->getDefaultChannels();
-        $results = [];
 
         foreach ($channels as $channel) {
             try {
-                $channelInstance = $this->getChannelInstance($channel);
+                $channelInstance = $this->resolveChannel($channel);
 
                 if (!$channelInstance || !$this->isChannelEnabled($channel)) {
                     continue;
@@ -179,7 +251,7 @@ class NotificationOrchestrator
                     continue;
                 }
 
-                if (!$this->isUserChannelEnabled($user, $channel)) {
+                if (!$this->isUserChannelEnabled($user, $channel, $type)) {
                     continue;
                 }
 
@@ -187,12 +259,18 @@ class NotificationOrchestrator
                     continue;
                 }
 
-                $result = $channelInstance->send($user, $type, $title, $message, $data);
-                $results[$channel] = [
-                    'success' => true,
-                    'result' => $result,
-                ];
+                // Rate limit check
+                if ($this->rateLimiter->isLimited($user, $channel)) {
+                    $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_RATE_LIMITED);
+                    $results[$channel] = ['success' => false, 'rate_limited' => true];
+                    continue;
+                }
+
+                $results[$channel] = $this->dispatchChannel(
+                    $user, $channel, $type, $title, $message, $data
+                );
             } catch (\Exception $e) {
+                $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_FAILED, $e->getMessage());
                 Log::error("Notification channel {$channel} failed", [
                     'user' => $user->id,
                     'error' => $e->getMessage(),
@@ -204,15 +282,17 @@ class NotificationOrchestrator
             }
         }
 
+        $this->typePreferencesCache = [];
+
         return $results;
     }
 
     /**
-     * Send a test notification.
+     * Send a test notification (bypasses rate limiting, always sync).
      */
     public function sendTestNotification(User $user, string $channel): array
     {
-        $channelInstance = $this->getChannelInstance($channel);
+        $channelInstance = $this->resolveChannel($channel);
 
         if (!$channelInstance) {
             throw new \RuntimeException("Unknown channel: {$channel}");
@@ -230,7 +310,7 @@ class NotificationOrchestrator
             $user,
             'test',
             'Test Notification',
-            'This is a test notification from Sourdough.',
+            'This is a test notification from ' . config('app.name', 'Sourdough') . '.',
             ['test' => true, 'timestamp' => now()->toISOString()]
         );
     }
@@ -252,6 +332,86 @@ class NotificationOrchestrator
             'message' => $message,
             'data' => $data,
         ]);
+    }
+
+    /**
+     * Dispatch a channel send — async via job or sync inline.
+     */
+    private function dispatchChannel(
+        User $user,
+        string $channel,
+        string $type,
+        string $title,
+        string $message,
+        array $data
+    ): array {
+        $queueEnabled = $this->isQueueEnabled();
+
+        if ($queueEnabled && !in_array($channel, self::SYNC_ONLY_CHANNELS, true)) {
+            SendNotificationChannelJob::dispatch(
+                $user->id, $channel, $type, $title, $message, $data
+            );
+            $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_QUEUED);
+            return ['success' => true, 'queued' => true];
+        }
+
+        // Sync path
+        $channelInstance = $this->resolveChannel($channel);
+        if (!$channelInstance) {
+            return ['success' => false, 'error' => 'Channel not available'];
+        }
+
+        try {
+            $result = $channelInstance->send($user, $type, $title, $message, $data);
+            $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_SUCCESS);
+            return ['success' => true, 'result' => $result];
+        } catch (\Exception $e) {
+            $this->writeDelivery($user->id, $type, $channel, NotificationDelivery::STATUS_FAILED, $e->getMessage());
+            Log::error("Notification channel {$channel} failed", [
+                'user' => $user->id,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Write a delivery log record.
+     */
+    private function writeDelivery(
+        int $userId,
+        string $type,
+        string $channel,
+        string $status,
+        ?string $error = null,
+        int $attempt = 1
+    ): void {
+        try {
+            NotificationDelivery::create([
+                'user_id' => $userId,
+                'notification_type' => $type,
+                'channel' => $channel,
+                'status' => $status,
+                'error' => $error,
+                'attempt' => $attempt,
+                'attempted_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('Failed to write notification delivery log', [
+                'error' => $e->getMessage(),
+                'channel' => $channel,
+                'type' => $type,
+            ]);
+        }
+    }
+
+    /**
+     * Check if async queue dispatch is enabled.
+     */
+    private function isQueueEnabled(): bool
+    {
+        return (bool) SystemSetting::get('queue_enabled', config('notifications.queue.enabled', true), 'notifications');
     }
 
     /**
@@ -287,14 +447,42 @@ class NotificationOrchestrator
 
     /**
      * Check if the user has enabled this channel in their preferences.
+     * When a type is provided, also checks per-type preferences.
      */
-    protected function isUserChannelEnabled(User $user, string $channel): bool
+    protected function isUserChannelEnabled(User $user, string $channel, string $type = ''): bool
     {
         if ($channel === 'database') {
             return true;
         }
 
-        return (bool) $user->getSetting('notifications', "{$channel}_enabled", false);
+        if (!(bool) $user->getSetting('notifications', "{$channel}_enabled", false)) {
+            return false;
+        }
+
+        if ($type === '') {
+            return true;
+        }
+
+        $prefs = $this->getUserTypePreferences($user);
+        if (isset($prefs[$type][$channel]) && $prefs[$type][$channel] === false) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get per-type notification preferences for a user (cached per send cycle).
+     */
+    private function getUserTypePreferences(User $user): array
+    {
+        $userId = $user->id;
+        if (!isset($this->typePreferencesCache[$userId])) {
+            $raw = $user->getSetting('notifications', 'type_preferences', []);
+            $this->typePreferencesCache[$userId] = is_array($raw) ? $raw : [];
+        }
+
+        return $this->typePreferencesCache[$userId];
     }
 
     /**
@@ -335,9 +523,9 @@ class NotificationOrchestrator
     }
 
     /**
-     * Get or create channel instance.
+     * Resolve a channel instance (public for use by SendNotificationChannelJob).
      */
-    private function getChannelInstance(string $channel): ?ChannelInterface
+    public function resolveChannel(string $channel): ?ChannelInterface
     {
         if (isset($this->channelInstances[$channel])) {
             return $this->channelInstances[$channel];

@@ -37,6 +37,7 @@ class CheckSuspiciousActivityCommand extends Command
                         'alert_summary' => $alertSummary,
                         'alert_count' => (string) count($alerts),
                         'alerts' => $alerts,
+                        'action_url' => '/configuration',
                     ]
                 );
             } catch (\Throwable $e) {

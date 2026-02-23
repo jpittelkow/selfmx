@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateNovuSettingsRequest;
 use App\Http\Traits\ApiResponseTrait;
+use App\Models\NotificationTemplate;
 use App\Services\AuditService;
 use App\Services\NovuService;
 use App\Services\SettingService;
@@ -33,6 +34,7 @@ class NovuSettingController extends Controller
         if (! empty($settings['api_key'] ?? '')) {
             $masked['api_key'] = '••••••••';
         }
+        $masked['workflow_map'] = config('novu.workflow_map', []);
 
         return $this->dataResponse(['settings' => $masked]);
     }
@@ -69,17 +71,71 @@ class NovuSettingController extends Controller
     }
 
     /**
-     * Test Novu connection.
+     * Test Novu connection and validate workflow mappings.
      */
     public function test(Request $request): JsonResponse
     {
+        // Re-inject latest settings so test uses just-saved values
+        $settings = $this->settingService->getGroup(self::GROUP);
+        (new \App\Providers\ConfigServiceProvider(app()))->boot();
+        $this->novuService = new NovuService();
+
         $result = $this->novuService->testConnection();
 
         if ($result['success']) {
-            return $this->successResponse('Connection successful');
+            return $this->dataResponse([
+                'message' => 'Connection successful',
+                'workflows_found' => $result['workflows_found'] ?? [],
+                'warnings' => $result['warnings'] ?? [],
+            ]);
         }
 
         return $this->errorResponse($result['error'] ?? 'Connection failed', 400);
+    }
+
+    /**
+     * Get workflow map and all known notification types.
+     */
+    public function workflowMap(): JsonResponse
+    {
+        $currentMap = config('novu.workflow_map', []);
+        $types = NotificationTemplate::query()
+            ->select('type')
+            ->distinct()
+            ->pluck('type')
+            ->toArray();
+
+        return $this->dataResponse([
+            'workflow_map' => $currentMap,
+            'notification_types' => $types,
+        ]);
+    }
+
+    /**
+     * Update the workflow map.
+     */
+    public function updateWorkflowMap(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'workflow_map' => ['required', 'array'],
+            'workflow_map.*' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $map = array_filter($validated['workflow_map'], fn ($v) => ! empty($v));
+
+        $userId = $request->user()->id;
+        $this->settingService->set(self::GROUP, 'workflow_map', json_encode($map), $userId);
+        $this->settingService->clearCache();
+
+        $this->auditService->log(
+            'novu_settings.workflow_map_updated',
+            null,
+            [],
+            ['mapped_types' => array_keys($map)],
+            $request->user()?->id
+        );
+
+        return $this->successResponse('Workflow map updated');
     }
 
     /**

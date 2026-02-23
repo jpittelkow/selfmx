@@ -16,8 +16,8 @@ Sourdough sends notifications via multiple channels (in-app, push, chat, email).
 
 We will implement a **per-type notification template system** for push, in-app, and chat channel groups:
 
-- **NotificationTemplate model**: Stores type (e.g. `backup.completed`, `auth.login`), channel_group (`push`, `inapp`, `chat`), title, body, variables (JSON), is_system, is_active. Unique on (type, channel_group).
-- **Channel groups**: `push` (WebPush, FCM, ntfy), `inapp` (DatabaseChannel), `chat` (Telegram, Discord, Slack, Twilio, Signal, Matrix, Vonage, SNS). Email continues to use EmailTemplate (ADR-016).
+- **NotificationTemplate model**: Stores type (e.g. `backup.completed`, `auth.login`), channel_group (`push`, `inapp`, `chat`, `email`), title, body, variables (JSON), is_system, is_active. Unique on (type, channel_group).
+- **Channel groups**: `push` (WebPush, FCM, ntfy), `inapp` (DatabaseChannel), `chat` (Telegram, Discord, Slack, Twilio, Signal, Matrix, Vonage, SNS), `email` (per-type email templates with HTML body). Transactional emails (password_reset, email_verification, welcome) remain in EmailTemplate (ADR-016).
 - **Variable replacement**: Same as EmailTemplateService — `{{variable}}` and `{{user.name}}` (dot notation); missing variables replaced with empty string.
 - **NotificationTemplateService**: `getByTypeAndChannel($type, $channelGroup)`, `render($type, $channelGroup, $variables)`, `renderTemplate(NotificationTemplate $template, $variables)`, `renderContent($title, $body, $variables)`, `getAvailableVariables($type, $channelGroup)`, `getDefaultContent($type, $channelGroup)`.
 - **NotificationOrchestrator**: New `sendByType($user, $type, $variables, $channels)` resolves templates per channel group and sends; existing `send($user, $type, $title, $message, $data)` unchanged. Each channel’s `send()` optionally resolves a template for (type, channel_group) when present, otherwise uses passed title/message (backward compatible).

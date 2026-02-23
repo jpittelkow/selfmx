@@ -45,7 +45,7 @@ return [
 
     'check_enabled' => env('VERSION_CHECK_ENABLED', false),
 
-    'check_url' => env('VERSION_CHECK_URL', 'https://api.github.com/repos/jpittelkow/sourdough/releases/latest'),
+    'check_url' => env('VERSION_CHECK_URL', 'https://api.github.com/repos/Sourdough-start/sourdough/releases/latest'),
 
     /*
     |--------------------------------------------------------------------------

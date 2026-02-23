@@ -19,8 +19,10 @@ class ApiTokenController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($token) {
-                // Only show first 8 characters of token for security
-                $token->token_preview = substr($token->token, 0, 8) . '...';
+                // Use key_prefix when available (new tokens), fall back to hash prefix (legacy)
+                $token->token_preview = $token->key_prefix
+                    ? $token->key_prefix . '...'
+                    : substr($token->token, 0, 8) . '...';
                 return $token->makeHidden(['token']);
             });
 

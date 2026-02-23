@@ -191,6 +191,31 @@ class UsageTrackingService
     }
 
     /**
+     * Record a payment event (successful charge or refund).
+     */
+    public function recordPayment(
+        string $provider,
+        float $amountDollars,
+        string $metric = 'payment_processed',
+        ?array $metadata = null,
+        ?int $userId = null
+    ): void {
+        try {
+            $this->record(
+                IntegrationUsage::INTEGRATION_PAYMENTS,
+                $provider,
+                $metric,
+                1,
+                $amountDollars,
+                $metadata,
+                $userId
+            );
+        } catch (\Exception $e) {
+            Log::warning('Failed to record payment usage', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Estimate LLM cost from pricing settings.
      * Pricing JSON format: {"model_name": {"input": rate_per_1k, "output": rate_per_1k}, ...}
      * Falls back to sensible defaults for common models.

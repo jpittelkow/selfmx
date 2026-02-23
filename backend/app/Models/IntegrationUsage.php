@@ -16,6 +16,7 @@ class IntegrationUsage extends Model
     public const INTEGRATION_SMS = 'sms';
     public const INTEGRATION_STORAGE = 'storage';
     public const INTEGRATION_BROADCASTING = 'broadcasting';
+    public const INTEGRATION_PAYMENTS = 'payments';
 
     public const INTEGRATIONS = [
         self::INTEGRATION_LLM,
@@ -23,6 +24,7 @@ class IntegrationUsage extends Model
         self::INTEGRATION_SMS,
         self::INTEGRATION_STORAGE,
         self::INTEGRATION_BROADCASTING,
+        self::INTEGRATION_PAYMENTS,
     ];
 
     /**

@@ -17,7 +17,7 @@ return [
     |
     */
 
-    'default_channels' => ['database'],
+    'default_channels' => ['database', 'email', 'webpush', 'fcm', 'ntfy', 'telegram', 'discord', 'slack', 'signal', 'matrix', 'twilio', 'vonage', 'sns'],
 
     /*
     |--------------------------------------------------------------------------

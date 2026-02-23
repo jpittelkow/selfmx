@@ -30,6 +30,10 @@ class ScheduledTaskService
             'description' => 'Check storage usage against thresholds and notify admins',
             'dangerous' => false,
         ],
+        'api-keys:prune-expired' => [
+            'description' => 'Soft-delete expired API keys and auto-revoke rotated keys past grace period',
+            'dangerous' => false,
+        ],
     ];
 
     /**

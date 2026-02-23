@@ -1,0 +1,438 @@
+"A date-time string in ISO 8601 format with timezone."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+"A date string in Y-m-d format."
+scalar Date @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Date")
+
+"Arbitrary JSON data."
+scalar JSON @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\JSON")
+
+type Query {
+    "Get the currently authenticated user's profile."
+    me: User! @guard(with: ["api-key"])
+
+    "Get the authenticated user's notifications."
+    myNotifications(
+        "Filter by notification category (e.g. 'backup', 'auth', 'system')."
+        category: String
+        "Only return unread notifications."
+        unreadOnly: Boolean
+        "Number of results per page."
+        first: Int = 25
+        "Page number."
+        page: Int = 1
+    ): NotificationPaginator! @guard(with: ["api-key"])
+
+    "Get the authenticated user's API keys."
+    myApiKeys: [ApiKey!]! @guard(with: ["api-key"])
+
+    "Get the authenticated user's notification settings."
+    myNotificationSettings: NotificationSettings! @guard(with: ["api-key"])
+
+    "List audit logs. Requires audit.view permission."
+    auditLogs(
+        first: Int = 25
+        page: Int = 1
+        filters: AuditLogFilter
+        orderBy: [AuditLogOrderBy!]
+    ): AuditLogPaginator! @guard(with: ["api-key"]) @can(ability: "audit.view")
+
+    "List access logs. Requires audit.view permission."
+    accessLogs(
+        first: Int = 25
+        page: Int = 1
+        filters: AccessLogFilter
+        orderBy: [AccessLogOrderBy!]
+    ): AccessLogPaginator! @guard(with: ["api-key"]) @can(ability: "audit.view")
+
+    "List notification deliveries. Requires notification_deliveries.view permission."
+    notificationDeliveries(
+        first: Int = 25
+        page: Int = 1
+        filters: NotificationDeliveryFilter
+        orderBy: [NotificationDeliveryOrderBy!]
+    ): NotificationDeliveryPaginator! @guard(with: ["api-key"]) @can(ability: "notification_deliveries.view")
+
+    "List payments. Requires payments.view permission."
+    payments(
+        first: Int = 25
+        page: Int = 1
+        filters: PaymentFilter
+        orderBy: [PaymentOrderBy!]
+    ): PaymentPaginator! @guard(with: ["api-key"]) @can(ability: "payments.view")
+
+    "Get integration usage statistics. Requires usage.view permission."
+    usageStats(
+        dateFrom: Date
+        dateTo: Date
+        integration: String
+        first: Int = 25
+        page: Int = 1
+    ): UsageStatPaginator! @guard(with: ["api-key"]) @can(ability: "usage.view")
+
+    "Get usage breakdown grouped by integration. Requires usage.view permission."
+    usageBreakdown(
+        dateFrom: Date
+        dateTo: Date
+        integration: String
+    ): [UsageBreakdownEntry!]! @guard(with: ["api-key"]) @can(ability: "usage.view")
+
+    "List user groups. Requires groups.view permission."
+    userGroups: [UserGroup!]! @guard(with: ["api-key"]) @can(ability: "groups.view")
+
+    "List all users (admin). Requires users.view permission."
+    users(
+        first: Int = 25
+        page: Int = 1
+        search: String
+    ): UserAdminPaginator! @guard(with: ["api-key"]) @can(ability: "users.view")
+}
+
+type Mutation {
+    "Update the authenticated user's profile."
+    updateProfile(input: UpdateProfileInput!): UpdateProfilePayload!
+        @guard(with: ["api-key"])
+
+    "Mark a notification as read."
+    markNotificationAsRead(id: ID!): Notification!
+        @guard(with: ["api-key"])
+
+    "Delete one or more notifications."
+    deleteNotifications(ids: [ID!]!): DeleteNotificationsPayload!
+        @guard(with: ["api-key"])
+
+    "Update the authenticated user's notification channel settings."
+    updateNotificationSettings(input: NotificationSettingsInput!): NotificationSettings!
+        @guard(with: ["api-key"])
+
+    "Update per-type notification channel preferences."
+    updateTypePreferences(input: TypePreferencesInput!): TypePreferencesPayload!
+        @guard(with: ["api-key"])
+}
+
+# ========================================
+# Phase 3A Types (User-Facing)
+# ========================================
+
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    avatar: String
+    emailVerifiedAt: DateTime @rename(attribute: "email_verified_at")
+    twoFactorEnabled: Boolean! @rename(attribute: "two_factor_enabled")
+    isAdmin: Boolean! @rename(attribute: "is_admin")
+    createdAt: DateTime! @rename(attribute: "created_at")
+    updatedAt: DateTime! @rename(attribute: "updated_at")
+}
+
+type Notification {
+    id: ID!
+    type: String!
+    title: String!
+    message: String
+    data: JSON
+    readAt: DateTime @rename(attribute: "read_at")
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+type ApiKey {
+    id: ID!
+    name: String!
+    keyPrefix: String! @rename(attribute: "key_prefix")
+    lastUsedAt: DateTime @rename(attribute: "last_used_at")
+    expiresAt: DateTime @rename(attribute: "expires_at")
+    revokedAt: DateTime @rename(attribute: "revoked_at")
+    status: String!
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+type NotificationSettings {
+    channels: [NotificationChannel!]!
+    typePreferences: JSON!
+}
+
+type NotificationChannel {
+    id: String!
+    name: String!
+    enabled: Boolean!
+    configured: Boolean!
+}
+
+# ========================================
+# Phase 3B Types (Admin Read-Only)
+# ========================================
+
+type AuditLog {
+    id: ID!
+    userId: ID @rename(attribute: "user_id")
+    user: UserAdmin
+    action: String!
+    severity: String!
+    auditableType: String @rename(attribute: "auditable_type")
+    auditableId: String @rename(attribute: "auditable_id")
+    oldValues: JSON @rename(attribute: "old_values")
+    newValues: JSON @rename(attribute: "new_values")
+    ipAddress: String @rename(attribute: "ip_address")
+    userAgent: String @rename(attribute: "user_agent")
+    correlationId: String @rename(attribute: "correlation_id")
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+type AccessLog {
+    id: ID!
+    userId: ID @rename(attribute: "user_id")
+    user: UserAdmin
+    action: String!
+    resourceType: String @rename(attribute: "resource_type")
+    resourceId: String @rename(attribute: "resource_id")
+    fieldsAccessed: JSON @rename(attribute: "fields_accessed")
+    ipAddress: String @rename(attribute: "ip_address")
+    userAgent: String @rename(attribute: "user_agent")
+    correlationId: String @rename(attribute: "correlation_id")
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+type NotificationDelivery {
+    id: ID!
+    userId: ID @rename(attribute: "user_id")
+    user: UserAdmin
+    notificationType: String! @rename(attribute: "notification_type")
+    channel: String!
+    status: String!
+    error: String
+    attempt: Int
+    attemptedAt: DateTime @rename(attribute: "attempted_at")
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+type Payment {
+    id: ID!
+    userId: ID @rename(attribute: "user_id")
+    user: UserAdmin
+    stripeCustomerId: String @field(resolver: "App\\GraphQL\\Types\\PaymentType@stripeCustomerId")
+    stripePaymentIntentId: String @rename(attribute: "stripe_payment_intent_id")
+    amount: Int!
+    currency: String!
+    status: String!
+    description: String
+    metadata: JSON
+    applicationFeeAmount: Int @rename(attribute: "application_fee_amount")
+    paidAt: DateTime @rename(attribute: "paid_at")
+    refundedAt: DateTime @rename(attribute: "refunded_at")
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+type UsageStat {
+    id: ID!
+    integration: String!
+    provider: String!
+    metric: String!
+    quantity: Float!
+    estimatedCost: Float @rename(attribute: "estimated_cost")
+    metadata: JSON
+    userId: ID @rename(attribute: "user_id")
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+type UsageBreakdownEntry {
+    integration: String!
+    provider: String!
+    totalQuantity: Float!
+    totalCost: Float!
+    count: Int!
+}
+
+type UserGroup {
+    id: ID!
+    name: String!
+    slug: String!
+    description: String
+    isSystem: Boolean! @rename(attribute: "is_system")
+    isDefault: Boolean! @rename(attribute: "is_default")
+    memberCount: Int!
+    permissions: [String!]!
+    createdAt: DateTime! @rename(attribute: "created_at")
+}
+
+"Admin view of a user with all fields visible."
+type UserAdmin {
+    id: ID!
+    name: String!
+    email: String!
+    avatar: String
+    emailVerifiedAt: DateTime @rename(attribute: "email_verified_at")
+    twoFactorEnabled: Boolean! @rename(attribute: "two_factor_enabled")
+    isAdmin: Boolean! @rename(attribute: "is_admin")
+    disabledAt: DateTime @rename(attribute: "disabled_at")
+    createdAt: DateTime! @rename(attribute: "created_at")
+    updatedAt: DateTime! @rename(attribute: "updated_at")
+}
+
+# ========================================
+# Input Types
+# ========================================
+
+input UpdateProfileInput {
+    name: String
+    email: String
+    avatar: String
+}
+
+input NotificationSettingsInput {
+    channel: String!
+    enabled: Boolean
+    settings: JSON
+}
+
+input TypePreferencesInput {
+    type: String!
+    channel: String!
+    enabled: Boolean!
+}
+
+input AuditLogFilter {
+    action: String
+    userId: ID
+    severity: String
+    dateFrom: Date
+    dateTo: Date
+}
+
+input AccessLogFilter {
+    action: String
+    userId: ID
+    resourceType: String
+    dateFrom: Date
+    dateTo: Date
+}
+
+input NotificationDeliveryFilter {
+    notificationType: String
+    channel: String
+    status: String
+    userId: ID
+    dateFrom: Date
+    dateTo: Date
+}
+
+input PaymentFilter {
+    status: String
+    userId: ID
+    dateFrom: Date
+    dateTo: Date
+}
+
+input AuditLogOrderBy {
+    column: AuditLogOrderColumn!
+    direction: SortDirection!
+}
+
+input AccessLogOrderBy {
+    column: AccessLogOrderColumn!
+    direction: SortDirection!
+}
+
+input NotificationDeliveryOrderBy {
+    column: NotificationDeliveryOrderColumn!
+    direction: SortDirection!
+}
+
+input PaymentOrderBy {
+    column: PaymentOrderColumn!
+    direction: SortDirection!
+}
+
+enum AuditLogOrderColumn {
+    CREATED_AT
+    ACTION
+    SEVERITY
+}
+
+enum AccessLogOrderColumn {
+    CREATED_AT
+    ACTION
+    RESOURCE_TYPE
+}
+
+enum NotificationDeliveryOrderColumn {
+    CREATED_AT
+    CHANNEL
+    STATUS
+}
+
+enum PaymentOrderColumn {
+    CREATED_AT
+    AMOUNT
+    STATUS
+}
+
+enum SortDirection {
+    ASC
+    DESC
+}
+
+# ========================================
+# Paginator Types
+# ========================================
+
+type PaginatorInfo {
+    count: Int!
+    currentPage: Int!
+    lastPage: Int!
+    perPage: Int!
+    total: Int!
+    hasMorePages: Boolean!
+}
+
+type NotificationPaginator {
+    data: [Notification!]!
+    paginatorInfo: PaginatorInfo!
+}
+
+type AuditLogPaginator {
+    data: [AuditLog!]!
+    paginatorInfo: PaginatorInfo!
+}
+
+type AccessLogPaginator {
+    data: [AccessLog!]!
+    paginatorInfo: PaginatorInfo!
+}
+
+type NotificationDeliveryPaginator {
+    data: [NotificationDelivery!]!
+    paginatorInfo: PaginatorInfo!
+}
+
+type PaymentPaginator {
+    data: [Payment!]!
+    paginatorInfo: PaginatorInfo!
+}
+
+type UsageStatPaginator {
+    data: [UsageStat!]!
+    paginatorInfo: PaginatorInfo!
+}
+
+type UserAdminPaginator {
+    data: [UserAdmin!]!
+    paginatorInfo: PaginatorInfo!
+}
+
+# ========================================
+# Mutation Payloads
+# ========================================
+
+type UpdateProfilePayload {
+    user: User!
+    emailVerificationSent: Boolean!
+}
+
+type DeleteNotificationsPayload {
+    deletedCount: Int!
+}
+
+type TypePreferencesPayload {
+    preferences: JSON!
+}

@@ -37,7 +37,7 @@ export function BrandingPreview({
                   unoptimized
                 />
               ) : (
-                <div className="h-6 w-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                <div className="h-6 w-6 rounded-md text-white flex items-center justify-center text-xs font-bold" style={{ background: "linear-gradient(to right, #00f5ff, #7a5cff, #ff2bd6)" }}>
                   {appName.charAt(0).toUpperCase()}
                 </div>
               )}

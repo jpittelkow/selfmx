@@ -20,19 +20,41 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { SaveButton } from "@/components/ui/save-button";
 import { ArrowLeft, RotateCcw, Loader2, Copy, Send } from "lucide-react";
 import { CollapsibleCard } from "@/components/ui/collapsible-card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { EmailTemplateEditor } from "@/components/email-template-editor";
+import DOMPurify from "dompurify";
+import { CHANNEL_GROUP_LABELS } from "@/lib/notification-types";
 
 const templateSchema = z.object({
   title: z.string().min(1, "Title is required").max(500),
-  body: z.string().min(1, "Body is required"),
+  body: z.string().min(1, "Body is required").refine(
+    (v) => v.replace(/<[^>]*>/g, "").trim().length > 0,
+    { message: "Body cannot be empty" }
+  ),
   is_active: z.boolean(),
 });
 
 type TemplateForm = z.infer<typeof templateSchema>;
+
+interface SiblingTemplate {
+  id: number;
+  channel_group: string;
+}
 
 interface NotificationTemplateFull {
   id: number;
@@ -45,13 +67,12 @@ interface NotificationTemplateFull {
   is_system: boolean;
   is_active: boolean;
   updated_at: string;
+  siblings?: SiblingTemplate[];
 }
 
-const channelGroupLabel: Record<string, string> = {
-  push: "Push",
-  inapp: "In-App",
-  chat: "Chat",
-};
+const channelGroupLabel = CHANNEL_GROUP_LABELS;
+
+const channelGroupOrder = ["push", "inapp", "chat", "email"];
 
 const PREVIEW_DEBOUNCE_MS = 500;
 
@@ -71,6 +92,7 @@ export default function NotificationTemplateEditorPage() {
   const [previewBody, setPreviewBody] = useState("");
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const isInitialLoad = useRef(true);
+  const [pendingTabId, setPendingTabId] = useState<number | null>(null);
 
   const {
     register,
@@ -90,6 +112,8 @@ export default function NotificationTemplateEditorPage() {
 
   const titleValue = watch("title");
   const bodyValue = watch("body");
+
+  const isEmail = template?.channel_group === "email";
 
   const fetchTemplate = useCallback(async () => {
     if (!id) return;
@@ -128,6 +152,7 @@ export default function NotificationTemplateEditorPage() {
   }, [id, resetForm, router]);
 
   useEffect(() => {
+    isInitialLoad.current = true;
     fetchTemplate();
   }, [fetchTemplate]);
 
@@ -213,6 +238,7 @@ export default function NotificationTemplateEditorPage() {
     inapp: "database",
     push: "webpush",
     chat: "slack",
+    email: "email",
   };
 
   const handleSendTest = async () => {
@@ -246,12 +272,25 @@ export default function NotificationTemplateEditorPage() {
   const channelLabel =
     channelGroupLabel[template.channel_group] ?? template.channel_group;
 
+  // Build tab list from current template + siblings
+  const allTabs = [
+    { id: template.id, channel_group: template.channel_group },
+    ...(template.siblings ?? []),
+  ].sort(
+    (a, b) =>
+      channelGroupOrder.indexOf(a.channel_group) -
+      channelGroupOrder.indexOf(b.channel_group)
+  );
+
   const copyPlaceholder = (placeholder: string) => {
-    navigator.clipboard.writeText(placeholder).then(() => {
-      toast.success("Copied to clipboard");
-    }).catch(() => {
-      toast.error("Failed to copy to clipboard");
-    });
+    navigator.clipboard
+      .writeText(placeholder)
+      .then(() => {
+        toast.success("Copied to clipboard");
+      })
+      .catch(() => {
+        toast.error("Failed to copy to clipboard");
+      });
   };
 
   return (
@@ -270,11 +309,38 @@ export default function NotificationTemplateEditorPage() {
             {template.type} — {channelLabel}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Edit title and body. Use variables like {`{{user.name}}`},{" "}
-            {`{{app_name}}`} for dynamic content.
+            Edit {isEmail ? "subject" : "title"} and body. Use variables like{" "}
+            {`{{user.name}}`}, {`{{app_name}}`} for dynamic content.
           </p>
         </div>
       </div>
+
+      {/* Channel group tabs */}
+      {allTabs.length > 1 && (
+        <Tabs
+          value={template.channel_group}
+          onValueChange={(value) => {
+            const target = allTabs.find((t) => t.channel_group === value);
+            if (target && target.id !== template.id) {
+              if (isDirty) {
+                setPendingTabId(target.id);
+                return;
+              }
+              router.push(
+                `/configuration/notification-templates/${target.id}`
+              );
+            }
+          }}
+        >
+          <TabsList>
+            {allTabs.map((tab) => (
+              <TabsTrigger key={tab.channel_group} value={tab.channel_group}>
+                {channelGroupLabel[tab.channel_group] ?? tab.channel_group}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -282,7 +348,8 @@ export default function NotificationTemplateEditorPage() {
             <CardHeader>
               <CardTitle>Content</CardTitle>
               <CardDescription>
-                Title and body support placeholders such as{" "}
+                {isEmail ? "Subject" : "Title"} and body support placeholders
+                such as{" "}
                 {variables
                   .slice(0, 3)
                   .map((v) => `{{${v}}}`)
@@ -292,7 +359,9 @@ export default function NotificationTemplateEditorPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">
+                  {isEmail ? "Subject" : "Title"}
+                </Label>
                 <Input
                   id="title"
                   {...register("title")}
@@ -306,14 +375,27 @@ export default function NotificationTemplateEditorPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="body">Body</Label>
-                <Textarea
-                  id="body"
-                  {...register("body")}
-                  placeholder={'e.g. Backup "{{backup_name}}" finished successfully.'}
-                  rows={6}
-                  className={errors.body ? "border-destructive" : ""}
-                />
+                <Label htmlFor={isEmail ? undefined : "body"}>Body</Label>
+                {isEmail ? (
+                  <EmailTemplateEditor
+                    content={bodyValue}
+                    onChange={(html) =>
+                      setValue("body", html, { shouldDirty: true })
+                    }
+                    variables={variables}
+                    placeholder="Write email notification content…"
+                  />
+                ) : (
+                  <Textarea
+                    id="body"
+                    {...register("body")}
+                    placeholder={
+                      'e.g. Backup "{{backup_name}}" finished successfully.'
+                    }
+                    rows={6}
+                    className={errors.body ? "border-destructive" : ""}
+                  />
+                )}
                 {errors.body && (
                   <p className="text-sm text-destructive">
                     {errors.body.message}
@@ -387,7 +469,7 @@ export default function NotificationTemplateEditorPage() {
               <>
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Title
+                    {isEmail ? "Subject" : "Title"}
                   </p>
                   <p className="rounded-md border bg-muted/50 p-3 text-sm">
                     {previewTitle || "—"}
@@ -397,9 +479,18 @@ export default function NotificationTemplateEditorPage() {
                   <p className="text-sm font-medium text-muted-foreground">
                     Body
                   </p>
-                  <p className="whitespace-pre-wrap rounded-md border bg-muted/50 p-3 text-sm">
-                    {previewBody || "—"}
-                  </p>
+                  {isEmail ? (
+                    <div
+                      className="rounded-md border bg-muted/50 p-3 text-sm prose prose-sm max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(previewBody || "<p>—</p>"),
+                      }}
+                    />
+                  ) : (
+                    <p className="whitespace-pre-wrap rounded-md border bg-muted/50 p-3 text-sm">
+                      {previewBody || "—"}
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -449,6 +540,28 @@ export default function NotificationTemplateEditorPage() {
           </div>
         )}
       </CollapsibleCard>
+
+      <AlertDialog open={pendingTabId !== null} onOpenChange={(open) => { if (!open) setPendingTabId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Discard and switch tabs?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingTabId !== null) {
+                router.push(`/configuration/notification-templates/${pendingTabId}`);
+              }
+              setPendingTabId(null);
+            }}>
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

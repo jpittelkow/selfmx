@@ -10,9 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { NotificationItem } from "@/components/notifications/notification-item";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CheckCheck, Trash2 } from "lucide-react";
 import type { Notification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
+import { getAllCategories } from "@/lib/notification-types";
 
 const PER_PAGE = 20;
 
@@ -35,6 +43,7 @@ export default function NotificationsPage() {
   const { isOffline } = useOnline();
 
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [category, setCategory] = useState<string>("all");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -47,15 +56,19 @@ export default function NotificationsPage() {
   const hasSelection = selectedIds.size > 0;
 
   const fetch = useCallback(
-    async (p: number, unreadOnly: boolean) => {
+    async (p: number, unreadOnly: boolean, cat: string) => {
       setIsLoading(true);
       try {
+        const params: Record<string, unknown> = {
+          page: p,
+          per_page: PER_PAGE,
+          unread: unreadOnly ? 1 : 0,
+        };
+        if (cat !== "all") {
+          params.category = cat;
+        }
         const { data } = await api.get<PaginatedResponse>("/notifications", {
-          params: {
-            page: p,
-            per_page: PER_PAGE,
-            unread: unreadOnly ? 1 : 0,
-          },
+          params,
         });
         setNotifications(data.data ?? []);
         setTotal(data.total ?? 0);
@@ -72,12 +85,12 @@ export default function NotificationsPage() {
   );
 
   useEffect(() => {
-    fetch(1, filter === "unread");
-  }, [filter, fetch]);
+    fetch(1, filter === "unread", category);
+  }, [filter, category, fetch]);
 
   const goToPage = (p: number) => {
     if (p < 1 || p > lastPage) return;
-    fetch(p, filter === "unread");
+    fetch(p, filter === "unread", category);
     setSelectedIds(new Set());
   };
 
@@ -85,7 +98,7 @@ export default function NotificationsPage() {
     try {
       await markAllAsRead();
       await fetchUnreadCount();
-      fetch(page, filter === "unread");
+      fetch(page, filter === "unread", category);
       toast.success("All notifications marked as read");
     } catch {
       toast.error("Failed to mark all as read");
@@ -117,13 +130,13 @@ export default function NotificationsPage() {
     if (!hasSelection) return;
     setDeleting(true);
     try {
-      for (const id of Array.from(selectedIds)) {
-        await deleteNotification(id);
-      }
+      await api.post("/notifications/delete-batch", {
+        ids: Array.from(selectedIds),
+      });
       setSelectedIds(new Set());
       await fetchUnreadCount();
-      refetchContext();
-      fetch(page, filter === "unread");
+      await refetchContext();
+      await fetch(1, filter === "unread", category);
       toast.success("Selected notifications deleted");
     } catch {
       toast.error("Failed to delete notifications");
@@ -168,10 +181,25 @@ export default function NotificationsPage() {
         onValueChange={(v) => setFilter(v as "all" | "unread")}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="unread">Unread</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center gap-2">
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="unread">Unread</TabsTrigger>
+            </TabsList>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {getAllCategories().map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             {hasUnread && (
               <Button

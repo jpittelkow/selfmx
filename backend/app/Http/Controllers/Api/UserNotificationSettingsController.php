@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\NotificationTemplate;
 use App\Models\SystemSetting;
 use App\Services\Notifications\NotificationChannelMetadata;
 use App\Services\Notifications\NotificationOrchestrator;
@@ -129,6 +130,73 @@ class UserNotificationSettingsController extends Controller
             ->delete();
 
         return response()->json(['message' => 'Subscription removed']);
+    }
+
+    /**
+     * Get per-type notification preferences for the current user.
+     */
+    public function typePreferences(Request $request): JsonResponse
+    {
+        $prefs = $request->user()->getSetting(self::GROUP, 'type_preferences', []);
+
+        return response()->json(['preferences' => is_array($prefs) ? $prefs : []]);
+    }
+
+    /**
+     * Update a single per-type, per-channel notification preference.
+     */
+    public function updateTypePreference(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'type' => ['required', 'string'],
+            'channel' => ['required', 'string'],
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        $type = $validated['type'];
+        $channel = $validated['channel'];
+        $enabled = $validated['enabled'];
+
+        if (!NotificationOrchestrator::isKnownChannel($channel)) {
+            return response()->json(['message' => "Unknown channel: {$channel}"], 422);
+        }
+
+        $knownTypes = cache()->remember('notification_known_types', 300, function () {
+            return NotificationTemplate::query()
+                ->distinct()
+                ->pluck('type')
+                ->toArray();
+        });
+
+        if (!in_array($type, $knownTypes, true)) {
+            return response()->json(['message' => "Unknown notification type: {$type}"], 422);
+        }
+
+        $user = $request->user();
+        $prefs = $user->getSetting(self::GROUP, 'type_preferences', []);
+        if (!is_array($prefs)) {
+            $prefs = [];
+        }
+
+        if ($enabled) {
+            // Remove the override (absence = enabled)
+            unset($prefs[$type][$channel]);
+            if (isset($prefs[$type]) && empty($prefs[$type])) {
+                unset($prefs[$type]);
+            }
+        } else {
+            if (!isset($prefs[$type])) {
+                $prefs[$type] = [];
+            }
+            $prefs[$type][$channel] = false;
+        }
+
+        $user->setSetting(self::GROUP, 'type_preferences', $prefs);
+
+        return response()->json([
+            'message' => 'Type preference updated',
+            'preferences' => $prefs,
+        ]);
     }
 
     private function getAvailableChannelIds(array $channelConfig, ?string $smsProvider): array

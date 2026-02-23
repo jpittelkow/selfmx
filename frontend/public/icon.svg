@@ -1,4 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#3b82f6" rx="64"/>
-  <text x="256" y="340" font-family="Arial, sans-serif" font-size="320" font-weight="bold" fill="white" text-anchor="middle">S</text>
+  <defs>
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="50%" stop-color="#7a5cff"/>
+      <stop offset="100%" stop-color="#ff2bd6"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Centered loaf+terminal symbol scaled to fill 512x512 -->
+  <g transform="translate(1, 16) scale(1.5)" filter="url(#glow)">
+    <!-- loaf outline -->
+    <rect x="60" y="120" rx="40" ry="40" width="220" height="160" stroke="url(#neonGrad)" stroke-width="8" fill="none"/>
+    <path d="M60 160 Q170 40 280 160" stroke="url(#neonGrad)" stroke-width="8" fill="none"/>
+    <!-- terminal arrow -->
+    <path d="M110 200 l40 -20 l-40 -20" stroke="#39ff14" stroke-width="8" fill="none"/>
+    <line x1="160" y1="200" x2="210" y2="200" stroke="#39ff14" stroke-width="8"/>
+    <!-- status dots -->
+    <circle cx="130" cy="245" r="6" fill="url(#neonGrad)"/>
+    <circle cx="160" cy="245" r="6" fill="url(#neonGrad)"/>
+    <circle cx="190" cy="245" r="6" fill="url(#neonGrad)"/>
+  </g>
 </svg>

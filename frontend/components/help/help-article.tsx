@@ -13,7 +13,7 @@ export function HelpArticle({ content, className }: HelpArticleProps) {
   return (
     <div
       className={cn(
-        "prose prose-sm dark:prose-invert max-w-none",
+        "help-article-prose prose prose-sm dark:prose-invert max-w-none",
         "prose-headings:font-semibold prose-headings:tracking-tight",
         "prose-h1:text-xl prose-h2:text-lg prose-h3:text-base",
         "prose-p:text-muted-foreground prose-p:leading-relaxed",

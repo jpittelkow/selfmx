@@ -38,6 +38,7 @@ export default function LoginPage() {
   const showPasskeyLogin = passkeyMode !== "disabled" && isPasskeySupported();
   const [isLoading, setIsLoading] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
+  const [hasSSOProviders, setHasSSOProviders] = useState(false);
 
   const {
     register,
@@ -88,20 +89,19 @@ export default function LoginPage() {
       title="Sign In"
       description="Enter your credentials to access your account"
     >
-      <SSOButtons />
+      <SSOButtons onLoad={setHasSSOProviders} />
 
       {showPasskeyLogin && (
         <>
-          <AuthDivider />
+          {hasSSOProviders && <AuthDivider text="Or continue with passkey" />}
           <PasskeyLoginButton
             onSuccess={() => router.push("/dashboard")}
             className="w-full"
           />
-          <AuthDivider />
         </>
       )}
 
-      <AuthDivider />
+      {(hasSSOProviders || showPasskeyLogin) && <AuthDivider />}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormField

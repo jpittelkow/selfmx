@@ -1,9 +1,10 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import type { Notification } from "@/lib/notifications";
+import { getNotificationType, getDefaultActionUrl } from "@/lib/notification-types";
 
 function formatRelative(date: Date): string {
   const now = new Date();
@@ -33,10 +34,19 @@ export function NotificationItem({
   compact = false,
   showMarkRead = true,
 }: NotificationItemProps) {
+  const router = useRouter();
   const isUnread = !notification.read_at;
+  const rawActionUrl =
+    (notification.data?.action_url as string | undefined) ??
+    getDefaultActionUrl(notification.type);
+  // Only allow relative paths to prevent open redirect
+  const actionUrl =
+    rawActionUrl && rawActionUrl.startsWith("/") ? rawActionUrl : undefined;
 
   const handleClick = () => {
+    if (isUnread) onMarkRead?.(notification.id);
     onClick?.(notification);
+    if (actionUrl) router.push(actionUrl);
   };
 
   const handleMarkRead = (e: React.MouseEvent) => {
@@ -44,8 +54,19 @@ export function NotificationItem({
     if (isUnread) onMarkRead?.(notification.id);
   };
 
+  const typeMeta = getNotificationType(notification.type);
+  const TypeIcon = typeMeta.icon;
+
   const content = (
     <div className="flex gap-3 w-full text-left">
+      <div
+        className={cn(
+          "shrink-0 mt-0.5 text-muted-foreground",
+          isUnread && "text-foreground"
+        )}
+      >
+        <TypeIcon className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
+      </div>
       <div
         className={cn(
           "flex-1 min-w-0",
@@ -74,28 +95,34 @@ export function NotificationItem({
         </p>
       </div>
       {showMarkRead && isUnread && onMarkRead && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 h-8 w-8"
+        <div
+          role="button"
+          tabIndex={0}
+          className="shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           onClick={handleMarkRead}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleMarkRead(e as unknown as React.MouseEvent); } }}
           title="Mark as read"
           aria-label="Mark as read"
         >
           <Check className="h-4 w-4" />
-        </Button>
+        </div>
+      )}
+      {actionUrl && (
+        <ChevronRight className="shrink-0 h-4 w-4 text-muted-foreground mt-1" />
       )}
     </div>
   );
+
+  const isClickable = !!(onClick || actionUrl);
 
   const baseClass = cn(
     "rounded-lg transition-colors border",
     compact ? "px-3 py-2" : "px-4 py-3",
     isUnread && "bg-muted/50 border-muted",
-    onClick && "cursor-pointer hover:bg-muted/50"
+    isClickable && "cursor-pointer hover:bg-muted/50"
   );
 
-  if (onClick) {
+  if (isClickable) {
     return (
       <button
         type="button"

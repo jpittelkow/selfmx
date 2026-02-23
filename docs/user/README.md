@@ -12,6 +12,7 @@ Welcome to Sourdough! This guide will help you get started with the application.
 6. [Backup & Restore](#backup--restore)
 7. [Administration (Admins)](#administration-admins)
    - [Single Sign-On (SSO)](#single-sign-on-sso)
+8. [Payments (Fork Operators)](#payments-fork-operators)
 
 ---
 
@@ -32,7 +33,7 @@ docker run -d \
   --name sourdough \
   -p 8080:80 \
   -v sourdough_data:/data \
-  ghcr.io/jpittelkow/sourdough:latest
+  ghcr.io/sourdough-start/sourdough:latest
 
 # Access at http://localhost:8080
 ```
@@ -41,7 +42,7 @@ docker run -d \
 
 ```bash
 # Clone repository
-git clone https://github.com/jpittelkow/sourdough.git
+git clone https://github.com/Sourdough-start/sourdough.git
 cd sourdough
 
 # Start services
@@ -473,6 +474,39 @@ Variables available for each template are listed in the template description. In
 
 ---
 
+## Payments (Fork Operators)
+
+If you're running a forked instance of Sourdough, you can accept payments by connecting your Stripe account to the platform.
+
+### Connecting Your Stripe Account
+
+1. Go to **Configuration > Stripe**
+2. Click **Connect Stripe Account**
+3. You'll be redirected to Stripe to authorize your account
+4. Complete the Stripe onboarding (business details, bank account)
+5. Return to the app — your status will show as "Pending" or "Active"
+
+### Setup States
+
+- **Not Connected** — Click "Connect Stripe Account" to begin
+- **Setup Incomplete** — Stripe onboarding is not complete. Click "Complete Setup" to finish
+- **Active** — Ready to accept payments. Payouts go to your Stripe account
+
+### Platform Fee
+
+The platform collects a small application fee (shown on the Stripe page) on each payment. This fee is handled automatically by Stripe — no action needed from you.
+
+### Disconnecting
+
+Click **Disconnect** to remove your Stripe account. Existing payments are not affected, but no new payments can be processed. You can reconnect at any time.
+
+### Prerequisites
+
+- A Stripe account (create one at [stripe.com](https://stripe.com) if needed)
+- Business identity verification completed on Stripe
+
+---
+
 ## Troubleshooting
 
 ### Can't Login
@@ -507,5 +541,5 @@ Variables available for each template are listed in the template description. In
 ## Getting Help
 
 - **Documentation**: [docs/](../)
-- **Issues**: [GitHub Issues](https://github.com/jpittelkow/sourdough/issues)
+- **Issues**: [GitHub Issues](https://github.com/Sourdough-start/sourdough/issues)
 - **Email**: support@example.com

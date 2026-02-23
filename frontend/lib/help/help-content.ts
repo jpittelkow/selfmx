@@ -1,4 +1,4 @@
-import { type LucideIcon, Book, Shield, Bell, Settings, User, Users, FileText, Brain, Database, BarChart3 } from "lucide-react";
+import { type LucideIcon, Book, Shield, Bell, Settings, User, Users, FileText, Brain, Database, BarChart3, Send } from "lucide-react";
 
 export interface HelpArticle {
   id: string;
@@ -74,7 +74,7 @@ Click your profile picture in the top-right corner to access:
 
 ## Keyboard Shortcuts
 
-- **?** - Open this help center
+- **?** or **Ctrl+/** / **Cmd+/** - Open this help center
 - **Ctrl+K** / **Cmd+K** - Open search
 - **Esc** - Close dialogs`,
       },
@@ -389,6 +389,32 @@ To receive push notifications:
 2. Allow notifications when prompted by your browser
 3. Ensure browser notifications aren't blocked
 
+## Mobile Push Notifications
+
+To receive push notifications on your phone or tablet:
+
+### Requirements
+- **HTTPS** — The app must be served over HTTPS
+- **Installed as PWA** — On mobile, install the app to your home screen
+- **Permission granted** — Allow notifications when prompted
+- **VAPID configured** — Your administrator must configure push notification keys
+
+### iOS (iPhone / iPad)
+- Requires **iOS 16.4 or later**
+- You must add the app to your home screen via Safari's Share menu
+- Push notifications only work when opened from the home screen icon
+- iOS does not support badge counts or silent push notifications
+
+### Android
+- Install the app from Chrome's menu ("Add to Home Screen" or "Install App")
+- Push notifications work in both the browser and the installed app
+- Notifications appear in the system notification tray
+
+### Troubleshooting
+- If notifications stop working, try disabling and re-enabling them in Preferences
+- Ensure your device has not blocked notifications for this site
+- Check that your device is connected to the internet
+
 ## Notification Types
 
 Different events may have different notification options:
@@ -620,6 +646,7 @@ Enable Single Sign-On so users can sign in with external identity providers.
 - **GitHub** - Sign in with GitHub
 - **GitLab** - Sign in with GitLab
 - **Microsoft/Azure AD** - Sign in with Microsoft account
+- **Apple** - Sign in with Apple
 - **Discord** - Sign in with Discord
 - **OIDC** - Any OpenID Connect compatible provider
 
@@ -642,29 +669,18 @@ Enable **Auto-Register** to allow new users to create accounts via SSO without m
       },
       {
         id: "api-webhooks",
-        title: "API & Webhooks",
-        tags: ["api", "tokens", "webhooks", "integration", "automation"],
-        content: `# API & Webhooks
+        title: "Webhooks",
+        tags: ["webhooks", "integration", "automation", "events"],
+        content: `# Webhooks
 
-Manage programmatic access and event-driven integrations.
+Configure outgoing webhook endpoints for event-driven integrations.
 
-## API Tokens
+## Setting Up Webhooks
 
-Create personal access tokens for API authentication:
+Configure webhooks to notify external systems when events occur:
 
-1. Go to **Configuration** → **API & Webhooks**
-2. Click **Create Token**
-3. Name your token and copy the value (shown only once)
-4. Use the token in your API requests via the Authorization header
-
-Tokens expire after 7 days by default. Revoke unused tokens promptly.
-
-## Webhooks
-
-Configure outgoing webhooks to notify external systems when events occur:
-
-1. Go to **Configuration** → **API & Webhooks**
-2. Click **Add Webhook**
+1. Go to **Configuration** → **Webhooks**
+2. Click **Create Webhook**
 3. Enter the endpoint URL and select events to subscribe to
 4. Optionally set a secret for payload signature verification
 
@@ -676,7 +692,69 @@ Configure outgoing webhooks to notify external systems when events occur:
 
 ## Webhook Security
 
-When a secret is configured, each delivery includes an HMAC-SHA256 signature in the \`X-Webhook-Signature\` header for payload verification.`,
+When a secret is configured, each delivery includes an HMAC-SHA256 signature in the \`X-Webhook-Signature\` header for payload verification.
+
+## API Keys
+
+For programmatic access to the GraphQL API, manage your personal API keys in **User menu** → **Security** → **API Keys**.`,
+      },
+      {
+        id: "api-keys",
+        title: "API Keys",
+        tags: ["api", "keys", "graphql", "programmatic", "integration", "bearer", "token"],
+        content: `# API Keys
+
+Manage personal API keys for programmatic access to the GraphQL API.
+
+## What Are API Keys?
+
+API keys let you access Sourdough programmatically via the GraphQL API. Each key is unique to you and acts as your identity for API requests. Keys must be kept secret — treat them like passwords.
+
+> **Note:** The API Keys section is only visible when the GraphQL API is enabled by an administrator.
+
+## Creating an API Key
+
+1. Go to **User menu** → **Security** → **API Keys**
+2. Click **Create API Key**
+3. Enter a descriptive name (e.g., "My script", "CI pipeline")
+4. Optionally set an expiration date
+5. Click **Create** and **copy the key immediately** — it is only shown once
+
+## Using an API Key
+
+Include your key in the \`Authorization\` header of every API request:
+
+\`\`\`
+Authorization: Bearer sk_your_key_here
+\`\`\`
+
+## Key Prefix
+
+The first 8 characters of your key (the prefix, e.g. \`sk_a1b2c3\`) are stored for display purposes so you can identify keys in logs and this list without exposing the full key.
+
+## Rotating a Key
+
+If you suspect a key has been compromised, rotate it:
+
+1. Click **Rotate** next to the key
+2. Confirm — the old key remains valid for a grace period
+3. Copy the new key immediately
+4. Update your applications to use the new key
+
+The old key is automatically revoked after the grace period.
+
+## Revoking a Key
+
+To immediately revoke a key, click **Revoke** and confirm. The key becomes invalid instantly.
+
+## Security Best Practices
+
+- Never commit API keys to version control
+- Set expiration dates when possible
+- Use a separate key per application or script
+- Rotate keys regularly
+- Revoke unused keys promptly
+- Monitor API usage in audit logs`,
       },
     ],
   },
@@ -766,9 +844,11 @@ Configure which notification channels are available to users.
 - **Discord** - Notifications via Discord webhook
 - **Slack** - Notifications via Slack webhook
 - **SMS** - SMS via Twilio, Vonage, or AWS SNS
+- **Signal** - Notifications via Signal (signal-cli)
 - **Matrix** - Notifications via Matrix homeserver
 - **ntfy** - Push notifications via ntfy service
 - **Web Push** - Browser push notifications (VAPID)
+- **FCM** - Firebase Cloud Messaging for mobile push
 - **In-App** - In-application notification bell
 
 ## Enabling Channels
@@ -785,26 +865,29 @@ Admins enable which channels are available system-wide. Users then enable their 
       {
         id: "notification-templates",
         title: "Notification Templates",
-        tags: ["notification", "templates", "push", "inapp", "chat", "customize"],
+        tags: ["notification", "templates", "push", "inapp", "chat", "email", "customize"],
         content: `# Notification Templates
 
-Customize the content of push, in-app, and chat notifications.
+Customize the content of push, in-app, chat, and email notifications.
 
 ## Template Types
 
-Each notification type (e.g., backup completed, login alert) has templates for three channel groups:
+Each notification type (e.g., backup completed, login alert) has templates for four channel groups:
 
 - **Push** - Web Push, FCM, ntfy
 - **In-App** - Database channel (notification bell)
 - **Chat** - Telegram, Discord, Slack, SMS, Matrix
+- **Email** - Per-type email content (subject and HTML body)
 
 ## Editing Templates
 
 1. Go to **Configuration** → **Notification Templates**
 2. Select the notification type
-3. Edit the title and body for each channel group
-4. Use the **Available Variables** panel to insert dynamic content
-5. Preview before saving
+3. Use the **channel tabs** to switch between Push, In-App, Chat, and Email
+4. Edit the title/subject and body for each channel group
+5. Email templates use a rich text editor; other channels use plain text
+6. Use the **Available Variables** panel to insert dynamic content
+7. Preview before saving
 
 ## Template Variables
 
@@ -864,12 +947,10 @@ Configure AI providers and large language models for features that use AI.
 
 - **OpenAI** - GPT-4, GPT-3.5
 - **Anthropic** - Claude models
-- **Google** - Gemini, Vertex AI
+- **Google** - Gemini
 - **AWS Bedrock** - Various models via Amazon
 - **Azure OpenAI** - OpenAI models via Azure
 - **Ollama** - Local models
-- **Groq** - Fast inference
-- **Mistral** - Mistral models
 
 ## Adding a Provider
 
@@ -883,8 +964,8 @@ Configure AI providers and large language models for features that use AI.
 ## Orchestration Modes
 
 - **Single** - Use one primary provider
+- **Aggregation** - Combine responses from multiple providers
 - **Council** - Multiple providers vote on responses (for reliability)
-- **Fallback** - Try primary, fall back to secondary on failure
 
 ## Model Selection
 
@@ -963,6 +1044,146 @@ If search isn't working:
 2. Verify configuration in environment
 3. Try rebuilding the index
 4. Check application logs for errors`,
+      },
+      {
+        id: "stripe-configuration",
+        title: "Stripe Configuration",
+        tags: ["stripe", "payments", "connect", "billing", "api keys"],
+        content: `# Stripe Configuration
+
+Configure Stripe Connect for payment processing.
+
+## Prerequisites
+
+Before configuring Stripe in the app, you need a Stripe account with Connect enabled (Standard accounts).
+
+## Setup Steps
+
+1. Go to **Configuration** → **Stripe**
+2. Enable Stripe integration
+3. Enter your API keys (Secret Key, Publishable Key)
+4. Set the Webhook Secret
+5. Use **Test Connection** to verify
+6. Configure Connect settings (Platform Account ID, Client ID)
+
+## Connect Onboarding
+
+Once Stripe is configured, connect your Stripe account:
+
+1. In the **Connect** section, click **Connect with Stripe**
+2. Complete the Stripe onboarding flow
+3. Return to the app — your account will show as connected
+
+## Modes
+
+- **Test Mode** — Use Stripe test keys for development
+- **Live Mode** — Use live keys for real payments
+
+## Application Fee
+
+The platform collects a configurable application fee (default 1%) on each payment via Stripe Connect.`,
+      },
+      {
+        id: "stripe-connect-fork",
+        title: "Connecting Your Stripe Account (Fork Operators)",
+        tags: ["stripe", "connect", "payments", "fork", "onboarding"],
+        content: `# Connecting Your Stripe Account
+
+If you're running a forked instance, connecting your Stripe account takes just a few clicks.
+
+## Steps
+
+1. Go to **Configuration** > **Stripe**
+2. Click **Connect Stripe Account**
+3. Authorize your account on Stripe
+4. Complete business verification if prompted
+5. Return to the app
+
+## Connection States
+
+- **Not Connected** — Click "Connect Stripe Account" to begin
+- **Setup Incomplete** — Click "Complete Setup" to finish Stripe's onboarding
+- **Active** — Your account is ready to accept payments
+
+## What Happens Next
+
+- Payments from your users go to your Stripe account
+- The platform automatically collects a small application fee (shown on the Stripe page)
+- You manage disputes and payouts in your own Stripe Dashboard
+
+## Disconnecting
+
+Click **Disconnect** to remove your Stripe account. Existing payments are not affected, but no new payments can be processed.
+
+## Troubleshooting
+
+- **"Failed to create Connect link"** — The platform credentials may not be configured. Contact the platform administrator.
+- **Stuck on "Setup Incomplete"** — Click "Complete Setup" to finish Stripe's identity verification.
+- **Want to switch accounts** — Disconnect first, then reconnect with a different Stripe account.`,
+      },
+      {
+        id: "graphql-configuration",
+        title: "GraphQL API Configuration",
+        tags: ["graphql", "api", "admin", "settings", "keys", "usage", "introspection"],
+        content: `# GraphQL API Configuration
+
+Manage the GraphQL API module settings, view all API keys, and monitor usage.
+
+## Enabling GraphQL
+
+Toggle the **Enable GraphQL API** switch to activate the GraphQL API endpoint. When disabled, all GraphQL routes return 404 and the API Keys section in User Security is hidden. No environment variable is required — this is a database-only toggle.
+
+## Settings
+
+- **Max API keys per user** — Limits how many active keys each user can create (default: 5)
+- **Default rate limit** — Requests per minute allowed per key (default: 60)
+- **Allow introspection** — Enables schema exploration for developer tools. Disable in production for security
+- **Max query depth** — Maximum nesting depth for GraphQL queries (default: 12)
+- **Max query complexity** — Maximum complexity score for a single query (default: 200)
+- **Max result size** — Maximum items returned per paginated query (default: 100)
+- **Key rotation grace period** — Days the old key remains valid after rotation (default: 7)
+- **CORS allowed origins** — Comma-separated origins allowed to make cross-origin requests, or * for any
+
+## API Key Management
+
+The API Keys section shows all keys across all users. You can filter by user, status, or expiration, and revoke any key with confirmation. Requires the **api_keys.manage** permission.
+
+## Usage Stats
+
+View total API requests over 7 and 30 days, daily request trends, top users by request count, and top query names.`,
+      },
+      {
+        id: "payment-history",
+        title: "Payment History",
+        tags: ["payments", "transactions", "billing", "history", "refunds"],
+        content: `# Payment History
+
+View and manage payment transactions.
+
+## Viewing Payments
+
+1. Go to **Configuration** → **Payment History**
+2. Browse the paginated list of payments
+
+## Payment Details
+
+Each payment shows:
+
+- **Date** — When the payment was processed
+- **Description** — What the payment was for
+- **Amount** — Payment amount (converted from cents to dollars)
+- **Status** — Current status (succeeded, failed, refunded)
+
+## Admin View
+
+Administrators can toggle between:
+
+- **My Payments** — Only your payments
+- **All Payments** — All payments across all users (includes fee and user columns)
+
+## Payment Tracking
+
+Payment events are tracked in the **Usage & Costs** dashboard for cost visibility.`,
       },
     ],
   },
@@ -1152,6 +1373,58 @@ The **Queue Status** tab shows pending and failed job counts. The **Failed Jobs*
 ## Run History
 
 Each manual run is recorded with its output, duration, and exit status. All manual runs are audited.`,
+      },
+    ],
+  },
+  // --- Delivery Log (notification_deliveries.view) ---
+  {
+    slug: "delivery-log",
+    name: "Delivery Log",
+    icon: Send,
+    permission: "notification_deliveries.view",
+    articles: [
+      {
+        id: "delivery-log",
+        title: "Notification Delivery Log",
+        tags: ["delivery", "notifications", "log", "channels", "status", "errors"],
+        content: `# Notification Delivery Log
+
+View and troubleshoot notification delivery attempts across all channels.
+
+## Viewing the Delivery Log
+
+1. Go to **Configuration** → **Delivery Log**
+2. Browse the paginated list of delivery attempts
+3. Click an error message to view full details
+
+## What's Tracked
+
+Each delivery record shows:
+
+- **Date** — When the delivery was attempted
+- **User** — The notification recipient
+- **Channel** — Which channel was used (email, telegram, webpush, etc.)
+- **Type** — The notification type (e.g. \`backup.completed\`)
+- **Status** — Success, Failed, Rate Limited, or Skipped
+- **Attempt** — The retry attempt number
+- **Error** — Error message if the delivery failed
+
+## Summary Cards
+
+The top of the page shows 7-day totals for each status: successes, failures, rate-limited, and skipped deliveries.
+
+## Filtering
+
+Use the filters to narrow results by:
+
+- **Channel** — Filter by a specific notification channel
+- **Status** — Show only successes, failures, rate-limited, or skipped
+- **Type** — Search by notification type (e.g. \`login.alert\`)
+- **Date range** — Filter by start and end date
+
+## Troubleshooting Failed Deliveries
+
+Click on an error message to open a detail dialog showing the full error, channel, user, and attempt information. Common issues include invalid credentials, rate limits, and unreachable endpoints.`,
       },
     ],
   },

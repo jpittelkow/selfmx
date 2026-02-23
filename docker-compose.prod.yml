@@ -2,7 +2,7 @@
 
 services:
   app:
-    image: ghcr.io/jpittelkow/sourdough:latest
+    image: ghcr.io/sourdough-start/sourdough:latest
     container_name: ${CONTAINER_NAME:-sourdough}
     ports:
       - "${APP_PORT:-80}:80"

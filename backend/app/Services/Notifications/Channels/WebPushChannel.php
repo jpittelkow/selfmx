@@ -4,6 +4,7 @@ namespace App\Services\Notifications\Channels;
 
 use App\Models\User;
 use App\Services\NotificationTemplateService;
+use Illuminate\Support\Facades\Log;
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
 
@@ -44,14 +45,46 @@ class WebPushChannel implements ChannelInterface
             throw new \RuntimeException('VAPID keys not configured');
         }
 
-        $payload = json_encode([
+        $payloadArray = [
             'title' => $title,
             'body' => $message,
             'icon' => $data['icon'] ?? '/icon-192.png',
             'badge' => $data['badge'] ?? '/badge.png',
+            'tag' => $data['tag'] ?? $type,
             'data' => $data,
             'timestamp' => time() * 1000,
-        ]);
+        ];
+        $payload = json_encode($payloadArray);
+
+        // Web Push payloads are limited to ~4KB. Leave headroom for encryption overhead.
+        $maxPayloadBytes = 3800;
+        if (strlen($payload) > $maxPayloadBytes) {
+            Log::warning('WebPush payload too large, stripping data', [
+                'original_size' => strlen($payload),
+                'user_id' => $user->id,
+                'type' => $type,
+            ]);
+            unset($payloadArray['data']);
+            $payload = json_encode($payloadArray);
+
+            if (strlen($payload) > $maxPayloadBytes) {
+                // Binary search for the right character length that fits the byte limit.
+                // mb_substr counts characters but json_encode may expand them (\uXXXX).
+                $lo = 50;
+                $hi = mb_strlen($payloadArray['body']);
+                while ($lo < $hi) {
+                    $mid = intdiv($lo + $hi + 1, 2);
+                    $payloadArray['body'] = mb_substr($message, 0, $mid) . '...';
+                    if (strlen(json_encode($payloadArray)) <= $maxPayloadBytes) {
+                        $lo = $mid;
+                    } else {
+                        $hi = $mid - 1;
+                    }
+                }
+                $payloadArray['body'] = mb_substr($message, 0, $lo) . '...';
+                $payload = json_encode($payloadArray);
+            }
+        }
 
         $subscription = Subscription::create([
             'endpoint' => $subscriptionData['endpoint'],

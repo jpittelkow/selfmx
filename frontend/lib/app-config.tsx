@@ -15,6 +15,7 @@ export interface AppConfigFeatures {
   searchEnabled?: boolean;
   webpushEnabled?: boolean;
   webpushVapidPublicKey?: string;
+  graphqlEnabled?: boolean;
 }
 
 export interface NovuPublicConfig {
@@ -94,6 +95,7 @@ function useAppConfigQuery() {
                 searchEnabled: features.search_enabled !== false,
                 webpushEnabled: !!features.webpush_enabled,
                 webpushVapidPublicKey: features.webpush_vapid_public_key ?? undefined,
+                graphqlEnabled: !!features.graphql_enabled,
               }
             : null,
         };
