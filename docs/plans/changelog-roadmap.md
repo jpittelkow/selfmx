@@ -34,9 +34,9 @@ Add a user-facing changelog page in the frontend so users can see what's new, wh
 - [x] Add changelog to backend search index (`search-pages.php`)
 - [x] Add changelog to frontend search pages (`search-pages.ts`)
 
-### Phase 4: Release Integration (LOW Priority)
-- [ ] Auto-generate changelog entries from GitHub release notes (via release workflow)
-- [ ] Update `CHANGELOG.md` automatically on release (ties into versioning roadmap Phase 3 optional task)
+### Phase 4: Release Integration (LOW Priority) -- PARTIAL
+- [x] Auto-generate changelog entries from commit messages during `push.ps1` release
+- [x] Update `CHANGELOG.md` automatically on release (ties into versioning roadmap Phase 3 optional task)
 - [ ] Consider a "What's New" modal/banner on first login after an update
 
 ---

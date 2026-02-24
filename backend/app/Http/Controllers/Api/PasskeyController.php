@@ -12,6 +12,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Laragear\WebAuthn\Http\Requests\AssertedRequest;
+use Laragear\WebAuthn\Http\Requests\AssertionRequest;
+use Laragear\WebAuthn\Http\Requests\AttestationRequest;
+use Laragear\WebAuthn\Http\Requests\AttestedRequest;
 
 class PasskeyController extends Controller
 {
@@ -37,43 +41,29 @@ class PasskeyController extends Controller
     /**
      * Get registration (attestation) options for adding a new passkey.
      */
-    public function registerOptions(Request $request): JsonResponse
+    public function registerOptions(AttestationRequest $request)
     {
-        $user = $request->user();
-        $options = $this->passkeyService->generateRegistrationOptions($user);
-
-        return $this->dataResponse($options);
+        return $request->toCreate();
     }
 
     /**
      * Complete passkey registration.
      */
-    public function register(Request $request): JsonResponse
+    public function register(AttestedRequest $request): JsonResponse
     {
-        $request->validate([
-            'credential' => ['required', 'array'],
-            'credential.id' => ['required', 'string'],
-            'credential.rawId' => ['required', 'string'],
-            'credential.response' => ['required', 'array'],
-            'credential.type' => ['required', 'string', 'in:public-key'],
-            'name' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $user = $request->user();
-        $credential = $request->input('credential');
-        $name = $request->input('name') ?: 'Passkey';
+        $name = $request->input('name', 'Passkey');
 
         try {
-            $this->passkeyService->registerPasskey($user, $credential, $name);
-            $this->auditService->logAuth('passkey_registered', $user, ['alias' => $name]);
+            $request->save(['alias' => $name]);
+            $this->auditService->logAuth('passkey_registered', $request->user(), ['alias' => $name]);
 
             return $this->successResponse('Passkey registered successfully');
         } catch (\Throwable $e) {
             Log::warning('Passkey registration failed', [
-                'user_id' => $user->id,
+                'user_id' => $request->user()?->id,
                 'error' => $e->getMessage(),
             ]);
-            $this->auditService->logAuth('passkey_registration_failed', $user, ['error' => $e->getMessage()], 'warning');
+            $this->auditService->logAuth('passkey_registration_failed', $request->user(), ['error' => $e->getMessage()], 'warning');
 
             return $this->errorResponse('Passkey registration failed. Please try again.', 400);
         }
@@ -117,42 +107,28 @@ class PasskeyController extends Controller
      * Get login (assertion) options for passkey authentication.
      * Optional email narrows to that user's credentials (non-discoverable flow).
      */
-    public function loginOptions(Request $request): JsonResponse
+    public function loginOptions(AssertionRequest $request)
     {
         if ($this->settingService->get('auth', 'passkey_mode', 'disabled') === 'disabled') {
             return $this->errorResponse('Passkey sign-in is not enabled', 403);
         }
 
-        $user = null;
         $email = $request->input('email');
-        if ($email) {
-            $user = User::where('email', $email)->first();
-        }
 
-        $options = $this->passkeyService->generateAuthenticationOptions($user);
-
-        return $this->dataResponse($options);
+        return $request->toVerify($email ? ['email' => $email] : null);
     }
 
     /**
      * Authenticate with passkey and establish session.
      */
-    public function login(Request $request): JsonResponse
+    public function login(AssertedRequest $request): JsonResponse
     {
-        $request->validate([
-            'credential' => ['required', 'array'],
-            'credential.id' => ['required', 'string'],
-            'credential.rawId' => ['required', 'string'],
-            'credential.response' => ['required', 'array'],
-            'credential.type' => ['required', 'string', 'in:public-key'],
-        ]);
-
         if ($this->settingService->get('auth', 'passkey_mode', 'disabled') === 'disabled') {
             return $this->errorResponse('Passkey sign-in is not enabled', 403);
         }
 
         try {
-            $user = $this->passkeyService->verifyAuthentication($request->input('credential'));
+            $user = $request->login();
         } catch (\Throwable $e) {
             Log::warning('Passkey login verification failed', ['error' => $e->getMessage()]);
             $this->auditService->logAuth('passkey_login_failed', null, ['error' => $e->getMessage()], 'warning');
@@ -167,13 +143,12 @@ class PasskeyController extends Controller
         }
 
         if ($user->isDisabled()) {
+            Auth::logout();
+            $request->session()->invalidate();
             $this->auditService->logAuth('login_failed', $user, ['reason' => 'account_disabled'], 'warning');
 
             return $this->errorResponse('This account has been disabled.', 403);
         }
-
-        Auth::login($user, $request->boolean('remember'));
-        $request->session()->regenerate();
 
         $this->auditService->logAuth('passkey_login', $user);
 

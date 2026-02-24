@@ -150,7 +150,7 @@ export async function performPasskeyLogin(remember = false): Promise<
       },
     };
     const loginRes = await api.post("/auth/passkeys/login", {
-      credential: payload,
+      ...payload,
       remember,
     });
     const user = loginRes.data?.user;
@@ -214,7 +214,7 @@ export function usePasskeys() {
           },
         };
         await api.post("/auth/passkeys/register", {
-          credential: payload,
+          ...payload,
           name: name || "Passkey",
         });
         await fetchPasskeys();

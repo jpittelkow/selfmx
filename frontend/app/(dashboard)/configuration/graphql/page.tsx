@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
@@ -202,6 +203,7 @@ function formatRelativeTime(dateStr: string | null): string {
 // ---------------------------------------------------------------------------
 
 function SettingsSection() {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -231,8 +233,8 @@ function SettingsSection() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get<{ data: { settings: GraphQLSettings } }>("/graphql/settings");
-        const s = res.data.data.settings;
+        const res = await api.get<{ settings: GraphQLSettings }>("/graphql/settings");
+        const s = res.data.settings;
         reset({
           enabled: !!s.enabled,
           max_keys_per_user: s.max_keys_per_user ?? 5,
@@ -259,6 +261,8 @@ function SettingsSection() {
         await api.put("/graphql/settings", data);
         toast.success("GraphQL settings saved");
         reset(data);
+        // Invalidate app-config cache so graphqlEnabled feature flag updates immediately
+        queryClient.invalidateQueries({ queryKey: ["app-config"] });
       } catch (err: unknown) {
         toast.error(getErrorMessage(err, "Failed to save GraphQL settings"));
       } finally {

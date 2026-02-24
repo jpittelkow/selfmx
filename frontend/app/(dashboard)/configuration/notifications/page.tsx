@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { errorLogger } from "@/lib/error-logger";
 import { Button } from "@/components/ui/button";
@@ -667,6 +668,7 @@ function renderChannelFields(
 // ── Main page ────────────────────────────────────────────────────────────
 
 export default function NotificationsPage() {
+  const queryClient = useQueryClient();
   const [channels, setChannels] = useState<AdminChannel[]>([]);
   const [smsProvider, setSmsProvider] = useState<string | null>(null);
   const [smsProvidersConfigured, setSmsProvidersConfigured] = useState<string[]>([]);
@@ -687,6 +689,8 @@ export default function NotificationsPage() {
       setSmsProvider(channelData.sms_provider ?? null);
       setSmsProvidersConfigured(channelData.sms_providers_configured ?? []);
       setSettings(settingsRes.data?.settings ?? {});
+      // Invalidate app-config cache so feature flags (webpushEnabled etc.) update immediately
+      queryClient.invalidateQueries({ queryKey: ["app-config"] });
     } catch (e) {
       errorLogger.report(
         e instanceof Error ? e : new Error("Failed to fetch notification config"),
@@ -696,7 +700,7 @@ export default function NotificationsPage() {
       setChannels([]);
       setSmsProvidersConfigured([]);
     }
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     const load = async () => {

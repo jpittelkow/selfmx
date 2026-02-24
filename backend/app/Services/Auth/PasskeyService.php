@@ -3,50 +3,9 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
-use Laragear\WebAuthn\Facades\WebAuthn;
 
 class PasskeyService
 {
-    /**
-     * Generate registration (attestation) options for a new passkey.
-     */
-    public function generateRegistrationOptions(User $user): array
-    {
-        $request = WebAuthn::prepareAttestation($user);
-
-        return $request->toArray();
-    }
-
-    /**
-     * Register a new passkey for the user.
-     */
-    public function registerPasskey(User $user, array $credential, ?string $name = null): void
-    {
-        WebAuthn::register($user, $credential, $name);
-    }
-
-    /**
-     * Generate authentication (assertion) options for passkey login.
-     * Pass null for $user to support discoverable (usernameless) credentials.
-     */
-    public function generateAuthenticationOptions(?User $user = null): array
-    {
-        $request = WebAuthn::prepareAssertion($user);
-
-        return $request->toArray();
-    }
-
-    /**
-     * Verify passkey authentication and return the authenticated user, or null on failure.
-     */
-    public function verifyAuthentication(array $credential): ?User
-    {
-        $authenticatable = WebAuthn::login($credential);
-
-        return $authenticatable instanceof User ? $authenticatable : null;
-    }
-
     /**
      * List user's registered passkeys with safe metadata.
      */

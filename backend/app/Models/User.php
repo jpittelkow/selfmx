@@ -13,11 +13,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Scout\Searchable;
+use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
 use Laragear\WebAuthn\WebAuthnAuthentication;
 use App\Models\ApiToken;
 use App\Traits\HasGroups;
 
-class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVerifyEmail
+class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVerifyEmail, WebAuthnAuthenticatable
 {
     use HasApiTokens, HasFactory, HasGroups, MustVerifyEmail, Notifiable, Searchable, WebAuthnAuthentication;
 
