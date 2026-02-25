@@ -45,8 +45,10 @@ self.addEventListener('activate', (event) => {
 });
 
 // Push: display notification (payload from backend is decrypted by browser)
-// When the app is focused in the foreground, skip the system notification to avoid
-// duplicates with in-app notifications. Instead, notify the page to refresh its list.
+// On desktop, when the app is focused in the foreground, skip the system notification
+// to avoid duplicates with in-app notifications. On mobile/standalone PWAs, always
+// show the native notification since foreground detection is unreliable and users
+// expect OS-level notifications.
 self.addEventListener('push', (event) => {
   let data = {};
   try {
@@ -65,13 +67,30 @@ self.addEventListener('push', (event) => {
     data: data.data || {},
     timestamp: data.timestamp || Date.now(),
   };
+
+  // Detect mobile — always show native notification on mobile platforms because
+  // visibilityState/focused can be unreliable and users expect OS notifications.
+  const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: false }).then((windowClients) => {
+      // On mobile or standalone PWAs, always show native notification
+      if (isMobile) {
+        // Still notify foreground clients so the bell can update
+        windowClients.forEach((client) => {
+          client.postMessage({ type: 'PUSH_RECEIVED', data });
+        });
+        return self.registration.showNotification(title, options).catch((err) => {
+          console.error('[SW] showNotification failed:', err);
+        });
+      }
+
+      // Desktop: suppress native notification when app is focused to avoid duplicates
       const hasFocusedClient = windowClients.some(
         (client) => client.visibilityState === 'visible' && client.focused
       );
       if (hasFocusedClient) {
-        // App is in foreground — skip system notification to avoid duplicate.
         windowClients.forEach((client) => {
           client.postMessage({ type: 'PUSH_RECEIVED', data });
         });

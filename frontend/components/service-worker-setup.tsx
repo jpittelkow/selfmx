@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
 import {
   registerServiceWorker,
   activateWaitingServiceWorker,
@@ -9,7 +8,8 @@ import {
 } from "@/lib/service-worker";
 
 /**
- * Registers the service worker on mount and shows a toast when an update is available.
+ * Registers the service worker on mount and dispatches a custom event when an
+ * update is available so the notification bell can show a badge.
  * Also listens for NAVIGATE messages from the SW (fallback when client.navigate() is
  * unavailable, e.g. notification click on some mobile browsers).
  * Follows the ErrorHandlerSetup pattern - mounts once in app root, runs silently.
@@ -21,19 +21,11 @@ export function ServiceWorkerSetup() {
     let unregister: (() => void) | undefined;
     registerServiceWorker(
       (registration) => {
-        // New version available - show toast with refresh option
+        // New version available - notify via bell badge
         if (hasShownUpdateRef.current) return;
         hasShownUpdateRef.current = true;
 
-        toast.info("New version available", {
-          action: {
-            label: "Refresh",
-            onClick: async () => {
-              await activateWaitingServiceWorker();
-            },
-          },
-          duration: Infinity,
-        });
+        window.dispatchEvent(new CustomEvent("sw-update-available"));
       },
       () => {
         // New SW has taken control - reload to get fresh assets

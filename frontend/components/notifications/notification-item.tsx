@@ -5,6 +5,7 @@ import { Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Notification } from "@/lib/notifications";
 import { getNotificationType, getDefaultActionUrl } from "@/lib/notification-types";
+import { activateWaitingServiceWorker } from "@/lib/service-worker";
 
 function formatRelative(date: Date): string {
   const now = new Date();
@@ -43,9 +44,13 @@ export function NotificationItem({
   const actionUrl =
     rawActionUrl && rawActionUrl.startsWith("/") ? rawActionUrl : undefined;
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (isUnread) onMarkRead?.(notification.id);
     onClick?.(notification);
+    if (notification.data?.sw_update) {
+      await activateWaitingServiceWorker();
+      return;
+    }
     if (actionUrl) router.push(actionUrl);
   };
 

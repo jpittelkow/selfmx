@@ -34,6 +34,7 @@ import Link from "next/link";
 import {
   isWebPushSupported,
   getPermissionStatus,
+  getSubscription,
   subscribe,
   unsubscribe,
 } from "@/lib/web-push";
@@ -129,6 +130,7 @@ export default function PreferencesPage() {
   const [testingChannel, setTestingChannel] = useState<string | null>(null);
   const [webpushLoading, setWebpushLoading] = useState(false);
   const [webpushPermission, setWebpushPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [currentDeviceSubscribed, setCurrentDeviceSubscribed] = useState(false);
   const [installPrompting, setInstallPrompting] = useState(false);
   const [pushDevices, setPushDevices] = useState<Array<{ id: number; device_name: string; created_at: string | null; last_used_at: string | null }>>([]);
   const [removingDeviceId, setRemovingDeviceId] = useState<number | null>(null);
@@ -283,6 +285,7 @@ export default function PreferencesPage() {
 
   useEffect(() => {
     setWebpushPermission(getPermissionStatus());
+    getSubscription().then((sub) => setCurrentDeviceSubscribed(!!sub));
   }, []);
 
   const toggleChannel = async (channelId: string, enabled: boolean) => {
@@ -384,6 +387,7 @@ export default function PreferencesPage() {
         usage_accepted: true,
       });
       setWebpushPermission(getPermissionStatus());
+      setCurrentDeviceSubscribed(true);
       await fetchChannels();
       await fetchPushDevices();
       toast.success("Browser notifications enabled");
@@ -410,6 +414,7 @@ export default function PreferencesPage() {
         // The backend auto-disables webpush_enabled when the last subscription is removed,
         // so we don't unconditionally set enabled=false here (which would silence other devices).
         setWebpushPermission(getPermissionStatus());
+        setCurrentDeviceSubscribed(false);
         await fetchChannels();
         await fetchPushDevices();
         toast.success("Browser notifications disabled on this device");
@@ -704,7 +709,7 @@ export default function PreferencesPage() {
                     </div>
                     {channel.id === "webpush" ? (
                       <div className="flex items-center gap-2">
-                        {channel.configured ? (
+                        {channel.configured && currentDeviceSubscribed ? (
                           <>
                             <span className="text-sm text-muted-foreground">
                               {webpushPermission === "granted" ? "Subscribed" : webpushPermission === "denied" ? "Permission denied" : "Enabled"}
@@ -733,7 +738,7 @@ export default function PreferencesPage() {
                             ) : (
                               <Smartphone className="mr-2 h-4 w-4" />
                             )}
-                            Enable Browser Notifications
+                            {channel.configured ? "Add This Device" : "Enable Browser Notifications"}
                           </Button>
                         )}
                       </div>
@@ -801,7 +806,7 @@ export default function PreferencesPage() {
                       )}
                     </div>
                   )}
-                  {channel.id === "webpush" && !channel.configured && (
+                  {channel.id === "webpush" && !currentDeviceSubscribed && (
                     <WebPushHelperText webpushEnabled={!!features?.webpushEnabled} />
                   )}
                   {channel.settings.length > 0 && channel.id !== "webpush" && (

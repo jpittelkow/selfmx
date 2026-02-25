@@ -208,6 +208,25 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.id, prependNotification]);
 
+  // Listen for service worker update events and show as a notification in the bell
+  useEffect(() => {
+    const handler = () => {
+      prependNotification({
+        id: `sw-update-${Date.now()}`,
+        user_id: user?.id ?? 0,
+        type: "system.update",
+        title: "New version available",
+        message: "A new version is ready. Click to refresh.",
+        data: { sw_update: true },
+        read_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    };
+    window.addEventListener("sw-update-available", handler);
+    return () => window.removeEventListener("sw-update-available", handler);
+  }, [user?.id, prependNotification]);
+
   useEffect(() => {
     if (!user) disconnectEcho();
   }, [user]);

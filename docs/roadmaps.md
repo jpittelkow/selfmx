@@ -13,7 +13,6 @@ Currently in progress. Complete these before starting new work.
 Ready to start. These are unblocked and can begin immediately.
 
 - **[Theming Engine](plans/theming-engine-roadmap.md)** - Full theming engine with 8 pre-set color themes (Ocean, Forest, Sunset, Rose, Lavender, Midnight, Mono, Default), theme picker UI, per-user persistence, admin default theme setting, and optional custom theme builder. Each theme defines both light and dark mode variants using CSS custom properties. Includes patterns and instructions for adding or modifying themes.
-- **Mobile Header Styling Fixes** - Fix mobile layout issue where content runs too wide. The header appears to be the culprit causing horizontal overflow on mobile devices. Review header component styling, padding, and responsive breakpoints to ensure proper mobile-first constraints.
 
 ## Planned Features
 
