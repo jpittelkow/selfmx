@@ -112,6 +112,7 @@ COPY --from=frontend-builder --chown=www-data:www-data /app/frontend/public ./fr
 
 # Copy Docker configuration files
 COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx-security-headers.conf /etc/nginx/security-headers.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /entrypoint.sh
 COPY docker/start-nextjs.sh /start-nextjs.sh
@@ -153,9 +154,10 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost/api/health || exit 1
 
-# Note: supervisord runs as root to manage child processes and bind port 80.
+# nosemgrep: dockerfile.security.missing-user.missing-user
+# supervisord requires root to manage child processes and bind port 80.
 # All child services (nginx, php-fpm, node, queue, scheduler, meilisearch)
-# run as www-data. See supervisord.conf for per-service user directives.
+# run as www-data via per-service user directives in supervisord.conf.
 # For additional hardening, run with: --security-opt=no-new-privileges:true
 
 # Entrypoint
