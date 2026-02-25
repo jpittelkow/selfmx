@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+## [0.6.3] - 2026-02-24
+
+### Fixed
+- Resolve Semgrep CI findings with nosemgrep suppressions and shared security headers include
 ## [0.6.2] - 2026-02-24
 
 ### Changed
