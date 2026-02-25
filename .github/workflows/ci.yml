@@ -118,14 +118,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Semgrep
+        run: pip install semgrep
+
       - name: Run Semgrep
-        uses: semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d
-        with:
-          config: >-
-            p/security-audit
-            p/php-laravel
-            p/typescript
-            p/owasp-top-ten
+        # Excluded rules are false positives for our architecture:
+        # - missing-user: supervisord needs root; child processes run as www-data
+        # - h2c-smuggling: mitigated via conditional Upgrade header forwarding
+        # - request-host-used: internal reverse proxy to local Next.js/PHP-FPM only
+        # - header-redefinition: intentional — security headers shared via include file
+        run: >-
+          semgrep scan
+          --config p/security-audit
+          --config p/php-laravel
+          --config p/typescript
+          --config p/owasp-top-ten
+          --exclude-rule dockerfile.security.missing-user.missing-user
+          --exclude-rule generic.nginx.security.possible-h2c-smuggling.possible-nginx-h2c-smuggling
+          --exclude-rule generic.nginx.security.request-host-used.request-host-used
+          --exclude-rule generic.nginx.security.header-redefinition.header-redefinition
+          --error
 
   docker-build:
     name: Docker Build
