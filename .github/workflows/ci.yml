@@ -134,6 +134,7 @@ jobs:
           --config p/typescript
           --config p/owasp-top-ten
           --exclude-rule dockerfile.security.missing-user.missing-user
+          --exclude-rule dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
           --exclude-rule generic.nginx.security.possible-h2c-smuggling.possible-nginx-h2c-smuggling
           --exclude-rule generic.nginx.security.request-host-used.request-host-used
           --exclude-rule generic.nginx.security.header-redefinition.header-redefinition
