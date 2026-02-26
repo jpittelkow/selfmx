@@ -68,34 +68,15 @@ self.addEventListener('push', (event) => {
     timestamp: data.timestamp || Date.now(),
   };
 
-  // Detect mobile — always show native notification on mobile platforms because
-  // visibilityState/focused can be unreliable and users expect OS notifications.
-  const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // On mobile or standalone PWAs, always show native notification
-      if (isMobile) {
-        // Still notify foreground clients so the bell can update
-        windowClients.forEach((client) => {
-          client.postMessage({ type: 'PUSH_RECEIVED', data });
-        });
-        return self.registration.showNotification(title, options).catch((err) => {
-          console.error('[SW] showNotification failed:', err);
-        });
-      }
+      // Notify foreground clients so the in-app bell can update
+      windowClients.forEach((client) => {
+        client.postMessage({ type: 'PUSH_RECEIVED', data });
+      });
 
-      // Desktop: suppress native notification when app is focused to avoid duplicates
-      const hasFocusedClient = windowClients.some(
-        (client) => client.visibilityState === 'visible' && client.focused
-      );
-      if (hasFocusedClient) {
-        windowClients.forEach((client) => {
-          client.postMessage({ type: 'PUSH_RECEIVED', data });
-        });
-        return;
-      }
+      // Always show native OS notification — the bell handles in-app display
+      // separately, so there's no duplication.
       return self.registration.showNotification(title, options).catch((err) => {
         console.error('[SW] showNotification failed:', err);
       });
