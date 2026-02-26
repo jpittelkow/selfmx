@@ -74,7 +74,7 @@ self.addEventListener('push', (event) => {
   const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: false }).then((windowClients) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       // On mobile or standalone PWAs, always show native notification
       if (isMobile) {
         // Still notify foreground clients so the bell can update

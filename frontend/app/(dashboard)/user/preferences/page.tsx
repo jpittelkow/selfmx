@@ -84,8 +84,14 @@ function isStandaloneMode(): boolean {
     (window.navigator as unknown as { standalone?: boolean }).standalone === true;
 }
 
-function WebPushHelperText({ webpushEnabled }: { webpushEnabled: boolean }) {
+function isAndroidDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
+function WebPushHelperText({ webpushEnabled, isSubscribed }: { webpushEnabled: boolean; isSubscribed: boolean }) {
   const isIOS = isIOSDevice();
+  const isAndroid = isAndroidDevice();
   const standalone = isStandaloneMode();
 
   if (isIOS && !standalone) {
@@ -106,6 +112,13 @@ function WebPushHelperText({ webpushEnabled }: { webpushEnabled: boolean }) {
     return (
       <p className="text-sm text-muted-foreground">
         Push notifications are not available. Your administrator may need to configure VAPID keys.
+      </p>
+    );
+  }
+  if (isAndroid && isSubscribed) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        <strong>Android tip:</strong> If you&apos;re not receiving notifications, check that notifications are enabled for this app in your device&apos;s Settings &gt; Apps &gt; Sourdough &gt; Notifications.
       </p>
     );
   }
@@ -709,7 +722,7 @@ export default function PreferencesPage() {
                     </div>
                     {channel.id === "webpush" ? (
                       <div className="flex items-center gap-2">
-                        {channel.configured && currentDeviceSubscribed ? (
+                        {currentDeviceSubscribed ? (
                           <>
                             <span className="text-sm text-muted-foreground">
                               {webpushPermission === "granted" ? "Subscribed" : webpushPermission === "denied" ? "Permission denied" : "Enabled"}
@@ -757,21 +770,25 @@ export default function PreferencesPage() {
                       </div>
                     )}
                   </div>
-                  {channel.id === "webpush" && channel.configured && (
+                  {channel.id === "webpush" && (channel.configured || currentDeviceSubscribed) && (
                     <div className="space-y-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => testChannel("webpush")}
-                        disabled={testingChannel === "webpush" || isOffline}
-                      >
-                        {testingChannel === "webpush" ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="mr-2 h-4 w-4" />
+                      <div className="flex items-center gap-2">
+                        {currentDeviceSubscribed && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => testChannel("webpush")}
+                            disabled={testingChannel === "webpush" || isOffline}
+                          >
+                            {testingChannel === "webpush" ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Send className="mr-2 h-4 w-4" />
+                            )}
+                            Test
+                          </Button>
                         )}
-                        Test
-                      </Button>
+                      </div>
                       {pushDevices.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-sm font-medium text-muted-foreground">Registered Devices</p>
@@ -802,12 +819,15 @@ export default function PreferencesPage() {
                               </div>
                             ))}
                           </div>
+                          <p className="text-xs text-muted-foreground">
+                            To add another device, open this page in that device&apos;s browser and click &quot;Add This Device.&quot;
+                          </p>
                         </div>
                       )}
                     </div>
                   )}
-                  {channel.id === "webpush" && !currentDeviceSubscribed && (
-                    <WebPushHelperText webpushEnabled={!!features?.webpushEnabled} />
+                  {channel.id === "webpush" && (
+                    <WebPushHelperText webpushEnabled={!!features?.webpushEnabled} isSubscribed={currentDeviceSubscribed} />
                   )}
                   {channel.settings.length > 0 && channel.id !== "webpush" && (
                     <>

@@ -208,6 +208,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.id, prependNotification]);
 
+  // Listen for push messages from the service worker (fallback when Echo is unavailable)
+  useEffect(() => {
+    if (!user || typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "PUSH_RECEIVED") {
+        // Refresh notifications from the server to pick up the new one
+        fetchNotifications();
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, [user, fetchNotifications]);
+
   // Listen for service worker update events and show as a notification in the bell
   useEffect(() => {
     const handler = () => {

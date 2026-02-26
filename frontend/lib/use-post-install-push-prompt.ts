@@ -45,7 +45,10 @@ export function usePostInstallPushPrompt(): UsePostInstallPushPromptResult {
     }
 
     if (Notification.permission === "granted") {
-      // Already has permission — check if subscribed on this device
+      // Already has permission — check if subscribed on this device.
+      // On Android, Chrome and the installed PWA share the same origin and
+      // service worker, so a subscription from the browser tab is valid here.
+      // Still prompt if there's no subscription at all.
       navigator.serviceWorker.ready
         .then((reg) => reg.pushManager.getSubscription())
         .then((sub) => {
