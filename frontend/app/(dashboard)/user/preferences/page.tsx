@@ -36,7 +36,6 @@ import {
   getPermissionStatus,
   getSubscription,
   subscribe,
-  unsubscribe,
 } from "@/lib/web-push";
 import { useAppConfig } from "@/lib/app-config";
 import { HelpLink } from "@/components/help/help-link";
@@ -142,7 +141,6 @@ export default function PreferencesPage() {
   const [savingChannel, setSavingChannel] = useState<string | null>(null);
   const [testingChannel, setTestingChannel] = useState<string | null>(null);
   const [webpushLoading, setWebpushLoading] = useState(false);
-  const [webpushPermission, setWebpushPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [currentDeviceSubscribed, setCurrentDeviceSubscribed] = useState(false);
   const [installPrompting, setInstallPrompting] = useState(false);
   const [pushDevices, setPushDevices] = useState<Array<{ id: number; device_name: string; created_at: string | null; last_used_at: string | null }>>([]);
@@ -297,7 +295,6 @@ export default function PreferencesPage() {
   }, [fetchTypePreferences]);
 
   useEffect(() => {
-    setWebpushPermission(getPermissionStatus());
     getSubscription().then((sub) => setCurrentDeviceSubscribed(!!sub));
   }, []);
 
@@ -399,7 +396,6 @@ export default function PreferencesPage() {
         enabled: true,
         usage_accepted: true,
       });
-      setWebpushPermission(getPermissionStatus());
       setCurrentDeviceSubscribed(true);
       await fetchChannels();
       await fetchPushDevices();
@@ -413,36 +409,6 @@ export default function PreferencesPage() {
         err instanceof Error ? err : new Error("Web push subscribe failed"),
         { source: "preferences-webpush" }
       );
-    } finally {
-      setWebpushLoading(false);
-    }
-  };
-
-  const disableWebPush = async () => {
-    setWebpushLoading(true);
-    try {
-      const endpoint = await unsubscribe();
-      if (endpoint) {
-        await api.delete("/user/webpush-subscription", { data: { endpoint } });
-        // The backend auto-disables webpush_enabled when the last subscription is removed,
-        // so we don't unconditionally set enabled=false here (which would silence other devices).
-        setWebpushPermission(getPermissionStatus());
-        setCurrentDeviceSubscribed(false);
-        await fetchChannels();
-        await fetchPushDevices();
-        toast.success("Browser notifications disabled on this device");
-      } else {
-        // No local subscription found (e.g., cleared site data or different browser).
-        // Refresh the device list so the user can remove stale devices manually.
-        await fetchChannels();
-        await fetchPushDevices();
-        toast.info("No subscription found on this browser. Use the device list below to remove other devices.");
-      }
-    } catch (err: unknown) {
-      const msg = err && typeof err === "object" && "response" in err
-        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-        : null;
-      toast.error(msg ?? "Failed to disable browser notifications");
     } finally {
       setWebpushLoading(false);
     }
@@ -722,19 +688,12 @@ export default function PreferencesPage() {
                     </div>
                     {channel.id === "webpush" ? (
                       <div className="flex items-center gap-2">
-                        {currentDeviceSubscribed ? (
-                          <>
-                            <span className="text-sm text-muted-foreground">
-                              {webpushPermission === "granted" ? "Subscribed" : webpushPermission === "denied" ? "Permission denied" : "Enabled"}
-                            </span>
-                            <Switch
-                              checked={channel.enabled}
-                              onCheckedChange={(enabled) =>
-                                enabled ? enableWebPush() : disableWebPush()
-                              }
-                              disabled={webpushLoading || isOffline}
-                            />
-                          </>
+                        {channel.configured ? (
+                          <Switch
+                            checked={channel.enabled}
+                            onCheckedChange={(enabled) => toggleChannel("webpush", enabled)}
+                            disabled={webpushLoading || isOffline}
+                          />
                         ) : (
                           <Button
                             size="sm"
@@ -751,7 +710,7 @@ export default function PreferencesPage() {
                             ) : (
                               <Smartphone className="mr-2 h-4 w-4" />
                             )}
-                            {channel.configured ? "Add This Device" : "Enable Browser Notifications"}
+                            Enable Browser Notifications
                           </Button>
                         )}
                       </div>
@@ -819,10 +778,22 @@ export default function PreferencesPage() {
                               </div>
                             ))}
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            To add another device, open this page in that device&apos;s browser and click &quot;Add This Device.&quot;
-                          </p>
                         </div>
+                      )}
+                      {!currentDeviceSubscribed && isWebPushSupported() && features?.webpushEnabled && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={enableWebPush}
+                          disabled={webpushLoading || isOffline}
+                        >
+                          {webpushLoading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Smartphone className="mr-2 h-4 w-4" />
+                          )}
+                          Add This Device
+                        </Button>
                       )}
                     </div>
                   )}
