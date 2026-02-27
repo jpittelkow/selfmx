@@ -18,6 +18,7 @@ Ready to start. These are unblocked and can begin immediately.
 
 Requires foundation work or longer-term planning.
 
+- **[Database Tables Audit](plans/database-tables-audit-roadmap.md)** - Audit all database tables, migrations, and schema for consistency, correctness, proper indexing, unused tables, and cross-database compatibility (SQLite/MySQL/PostgreSQL).
 - **Stripe Revenue Log** - Add a revenue/transaction log page under the Logs & Monitoring section in Configuration. Display a filterable, sortable table of all Stripe payments and payouts: date, customer, amount, platform fee, net revenue, payment status (succeeded/refunded/failed), and Stripe payment ID. Include date range filtering, summary stats (total revenue, total fees, net earnings), and CSV export. Data sourced from the existing `payments` and `stripe_webhook_events` tables. Protected by admin permission consistent with other log pages.
 - **Get Cooking Wizard Audit** - Audit the onboarding startup wizard for accuracy and completeness. Verify all existing steps reflect current features and settings (e.g., theme step now has color themes, notification channels, Stripe config, GraphQL). Add new steps for features added since the wizard was built. Ensure step order makes sense, remove any stale references, and test the full flow end-to-end on both desktop and mobile.
 

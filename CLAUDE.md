@@ -1,4 +1,6 @@
-# Sourdough
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Quick Context (always loaded)
 
@@ -9,6 +11,47 @@
 - **Config pages**: `frontend/app/(dashboard)/configuration/`, nav in `configuration/layout.tsx` (`navigationGroups`)
 - **Settings schema**: `backend/config/settings-schema.php` (SettingService for DB + env fallback)
 - **Search registration**: dual — `backend/config/search-pages.php` + `frontend/lib/search-pages.ts`
+
+## Development Commands
+
+**PHP is not available locally** — run all backend commands via Docker (`sourdough-dev` container).
+
+```bash
+# Start/rebuild dev environment
+docker-compose up -d
+docker-compose up -d --build
+
+# Backend tests (Pest) — all tests
+docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan test"
+
+# Backend — single test file
+docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan test --filter=AuthTest"
+
+# Backend — single test method
+docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan test --filter='it can login with valid credentials'"
+
+# Backend — Laravel commands
+docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan migrate"
+docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan route:list"
+
+# Frontend tests (Vitest)
+docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npm test"
+
+# Frontend lint
+docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npm run lint"
+
+# Frontend build
+docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npm run build"
+
+# E2E tests (Playwright)
+docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npm run test:e2e"
+
+# Add shadcn component (from frontend/)
+docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npx shadcn@latest add <component>"
+
+# Release (bumps version, runs tests, tags, pushes)
+./scripts/push.ps1 patch "feat: description of changes"
+```
 
 ## Task-Type File Lookup
 

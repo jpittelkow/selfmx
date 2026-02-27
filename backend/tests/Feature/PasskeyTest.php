@@ -14,6 +14,7 @@ function createWebAuthnCredential(User $user, string $id, string $alias = 'Test 
     Model::unguard();
     $credential = $user->webauthnCredentials()->create([
         'id' => $id,
+        'user_id' => (string) \Illuminate\Support\Str::uuid(),
         'alias' => $alias,
         'counter' => 0,
         'rp_id' => 'localhost',

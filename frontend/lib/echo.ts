@@ -38,6 +38,7 @@ export function getEcho(): Echo<"pusher"> | null {
   echoInstance = new Echo({
     broadcaster: "pusher",
     key,
+    cluster: "", // Not used with Reverb, but Pusher.js requires it to be present
     wsHost,
     wsPort: parseInt(wsPort),
     wssPort: parseInt(wsPort),

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('id', 500)->primary();
             $table->string('authenticatable_type');
             $table->unsignedBigInteger('authenticatable_id');
+            $table->uuid('user_id');
             $table->string('alias')->nullable();
             $table->unsignedBigInteger('counter')->default(0);
             $table->string('rp_id');
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->uuid('aaguid')->nullable();
             $table->text('public_key');
             $table->string('attestation_format')->nullable();
+            $table->timestamp('disabled_at')->nullable();
             $table->timestamps();
 
             $table->index(['authenticatable_type', 'authenticatable_id']);

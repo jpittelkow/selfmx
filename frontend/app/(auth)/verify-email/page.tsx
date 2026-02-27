@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -14,7 +14,6 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { AuthStateCard } from "@/components/auth/auth-state-card";
 
 function VerifyEmailContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user, fetchUser } = useAuth();
   const [status, setStatus] = useState<"loading" | "success" | "error" | "pending">("loading");
@@ -23,29 +22,32 @@ function VerifyEmailContent() {
 
   const id = searchParams.get("id");
   const hash = searchParams.get("hash");
-
-  const verifyEmail = useCallback(async () => {
-    try {
-      await api.post("/auth/verify-email", { id, hash });
-      setStatus("success");
-      await fetchUser();
-      toast.success("Email verified successfully!");
-    } catch (error: unknown) {
-      setStatus("error");
-      setErrorMessage(getErrorMessage(error, "Verification failed"));
-    }
-  }, [id, hash, fetchUser]);
+  const verificationAttempted = useRef(false);
 
   useEffect(() => {
     if (id && hash) {
-      verifyEmail();
+      if (verificationAttempted.current) return;
+      verificationAttempted.current = true;
+
+      (async () => {
+        try {
+          await api.post("/auth/verify-email", { id, hash });
+          setStatus("success");
+          await fetchUser();
+          toast.success("Email verified successfully!");
+        } catch (error: unknown) {
+          setStatus("error");
+          setErrorMessage(getErrorMessage(error, "Verification failed"));
+        }
+      })();
     } else if (user) {
       setStatus("pending");
     } else {
       setStatus("error");
       setErrorMessage("Invalid verification link");
     }
-  }, [id, hash, user, verifyEmail]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, hash]);
 
   const handleResendVerification = async () => {
     setIsResending(true);
