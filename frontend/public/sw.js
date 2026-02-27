@@ -11,7 +11,7 @@ importScripts('/workbox/workbox-sw.js');
 
 workbox.setConfig({ debug: false, modulePathPrefix: '/workbox/' });
 
-const CACHE_VERSION = 'sourdough-v0.7.6';
+const CACHE_VERSION = 'sourdough-v0.7.7';
 const OFFLINE_URL = '/offline.html';
 const REQUEST_QUEUE_DB = 'sourdough-request-queue';
 const REQUEST_QUEUE_STORE = 'requests';
