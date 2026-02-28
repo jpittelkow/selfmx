@@ -13,8 +13,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWizard } from "@/components/onboarding/wizard-provider";
 import { useAppConfig } from "@/lib/app-config";
-import { useAuth, isAdminUser } from "@/lib/auth";
-
 // Step components
 import { WelcomeStep } from "@/components/onboarding/steps/welcome-step";
 import { ProfileStep } from "@/components/onboarding/steps/profile-step";
@@ -57,21 +55,17 @@ export function WizardModal() {
     dismissWizard,
   } = useWizard();
   const { features } = useAppConfig();
-  const { user } = useAuth();
-  const isAdmin = user ? isAdminUser(user) : false;
 
   const steps = useMemo(() => {
     const twoFactorMode = features?.twoFactorMode ?? "optional";
     const passkeyMode = features?.passkeyMode ?? "disabled";
     const securityDisabled =
       twoFactorMode === "disabled" && passkeyMode === "disabled";
-
-    return STEPS.filter((s) => {
-      if (s.id === "security" && securityDisabled) return false;
-      if (s.id === "theme" && !isAdmin) return false;
-      return true;
-    });
-  }, [features?.twoFactorMode, features?.passkeyMode, isAdmin]);
+    if (securityDisabled) {
+      return STEPS.filter((s) => s.id !== "security");
+    }
+    return STEPS;
+  }, [features?.twoFactorMode, features?.passkeyMode]);
 
   useEffect(() => {
     if (currentStep >= steps.length && steps.length > 0) {

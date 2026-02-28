@@ -7,7 +7,7 @@ import {
   WizardStepDescription,
   WizardStepContent,
 } from "@/components/onboarding/wizard-step";
-import { ThemePicker } from "@/components/theme-picker";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function ThemeStep() {
   return (
@@ -16,15 +16,14 @@ export function ThemeStep() {
         <Palette className="h-8 w-8 text-primary" />
       </div>
 
-      <WizardStepTitle>Choose your theme</WizardStepTitle>
+      <WizardStepTitle>Choose your mode</WizardStepTitle>
 
       <WizardStepDescription>
-        Select your preferred appearance and color palette. You can change these
-        anytime.
+        Select your preferred display mode. You can change this anytime.
       </WizardStepDescription>
 
       <WizardStepContent>
-        <ThemePicker compact />
+        <ThemeToggle />
       </WizardStepContent>
     </WizardStep>
   );
