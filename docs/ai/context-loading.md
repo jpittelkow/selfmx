@@ -66,6 +66,7 @@ frontend/app/(dashboard)/           # Existing page patterns
 frontend/components/ui/             # shadcn components (CLI-managed; frontend/components.json)
 frontend/components/ui/collapsible-card.tsx  # Collapsible sections (settings, config)
 frontend/components/provider-icons.tsx       # Provider/channel icons (SSO, LLM, etc.)
+frontend/components/app-breadcrumbs.tsx      # Path-based breadcrumbs (auto in header)
 frontend/components/                # App-specific components
 frontend/config/app.ts              # App configuration (branding, etc.)
 frontend/lib/api.ts                 # API call patterns
@@ -311,9 +312,9 @@ backend/app/Services/Auth/PasskeyService.php
 frontend/app/(auth)/                            # Auth pages (login, register, etc.)
 frontend/app/auth/callback/page.tsx             # SSO callback handler (post-OAuth redirect; NOT inside (auth) route group — see file comments)
 frontend/components/auth/                       # Auth components
-  - auth-page-layout.tsx                        # Layout wrapper
-  - auth-divider.tsx                            # SSO/email divider
-  - auth-state-card.tsx                         # Success/error states
+  - auth-page-layout.tsx                        # login-03 layout (bg-muted + Card)
+  - auth-divider.tsx                            # SSO/email divider (bg-card)
+  - auth-state-card.tsx                         # Success/error states (bg-muted + Card)
   - sso-buttons.tsx                             # SSO provider buttons (login/register)
 frontend/components/admin/
   - sso-setup-modal.tsx                         # SSO setup instructions per provider
@@ -495,19 +496,22 @@ frontend/lib/use-permission.ts             # usePermission() hook (help uses per
 ## Dashboard/Widget Work
 
 > **Note**: Dashboard uses static, developer-defined widgets (no user configuration).
-> Widgets are React components added directly to the dashboard page.
+> Layout: welcome banner (full-width) → metric cards + quick actions (3-col grid) → usage chart (admin).
+> Stats use `AuditStatsCard` for metric cards. Quick actions use 2x2 icon tile grid.
 
 **Read first:**
 ```
 frontend/app/(dashboard)/dashboard/page.tsx         # Main dashboard layout
 frontend/components/dashboard/                      # Widget components
+frontend/components/audit/audit-stats-card.tsx      # Metric card component (used by StatsWidget)
 docs/ai/recipes/add-dashboard-widget.md             # Widget creation guide
 ```
 
 **Also useful:**
 ```
 backend/app/Http/Controllers/Api/DashboardController.php  # Data endpoints for widgets
-frontend/components/dashboard/widgets/                    # Reference: welcome, stats, quick-actions
+frontend/components/dashboard/widgets/                    # Reference: welcome (greeting), stats (metric cards), quick-actions (icon tiles)
+frontend/components/usage/usage-dashboard-widget.tsx      # Usage chart with time range toggles
 frontend/lib/use-permission.ts                            # Permission-based visibility
 ```
 
@@ -667,6 +671,8 @@ frontend/__tests__/                             # Vitest tests (if exists)
 docs/adr/011-global-navigation-architecture.md
 frontend/components/sidebar.tsx
 frontend/components/header.tsx
+frontend/components/app-breadcrumbs.tsx     # Path-based breadcrumbs (in header)
+frontend/components/app-shell.tsx           # Main layout shell (container, content well)
 frontend/components/logo.tsx
 frontend/config/app.ts
 frontend/app/(dashboard)/layout.tsx

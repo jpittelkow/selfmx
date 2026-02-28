@@ -4,7 +4,7 @@ Step-by-step guide to add a new static widget to the dashboard.
 
 > **Note**: This project uses static, developer-defined widgets. Widgets are React components added directly to the dashboard page—no user configuration or widget selection system. This approach prioritizes simplicity and AI-friendly patterns.
 
-**Reference implementations:** See `frontend/components/dashboard/widgets/` for sample widgets: `welcome-widget.tsx` (static content), `stats-widget.tsx` (data-fetching), `quick-actions-widget.tsx` (navigation links).
+**Reference implementations:** See `frontend/components/dashboard/widgets/` for sample widgets: `welcome-widget.tsx` (greeting banner with date), `stats-widget.tsx` (metric cards using `AuditStatsCard`), `quick-actions-widget.tsx` (2x2 icon tile grid).
 
 ## Files to Create/Modify
 
@@ -124,6 +124,8 @@ export function ExampleWidget() {
 
 ## Step 2: Add to Dashboard Page
 
+> **Note:** The app shell provides container padding (`max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8`) and a `bg-muted/30` content well. Pages should NOT add their own `container`, `p-4`, or outer padding.
+
 ```tsx
 // frontend/app/(dashboard)/dashboard/page.tsx
 import { ExampleWidget } from '@/components/dashboard/example-widget';
@@ -131,24 +133,23 @@ import { ExampleWidget } from '@/components/dashboard/example-widget';
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your activity.
-        </p>
+      {/* Full-width welcome banner */}
+      <WelcomeWidget />
+
+      {/* Metric cards + actions in a grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatsWidget />  {/* Renders individual AuditStatsCard per metric */}
+        <QuickActionsWidget />
+        <ExampleWidget />
       </div>
 
-      {/* Stats Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <ExampleWidget />
-        {/* Other stat widgets */}
-      </div>
-
-      {/* Or for larger widgets */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <ExampleWidget />
-        {/* Other widgets */}
-      </div>
+      {/* Full-width sections below */}
+      {canViewUsage && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">Usage & Costs</h2>
+          <UsageDashboardWidget />
+        </div>
+      )}
     </div>
   );
 }
@@ -241,23 +242,21 @@ class DashboardController extends Controller
 
 ## Widget Variations
 
-### Stat Card (Simple Number)
+### Stat Card (Metric Card)
+
+Use `AuditStatsCard` for consistent metric card styling with large numbers, icons, and optional variant coloring:
 
 ```tsx
-export function StatWidget({ title, value, icon: Icon, description }) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
-  );
-}
+import { AuditStatsCard } from "@/components/audit/audit-stats-card";
+import { Users } from "lucide-react";
+
+<AuditStatsCard
+  title="Total Users"
+  value={42}
+  description="Active accounts"
+  icon={Users}
+  variant="default"  // "default" | "warning" | "error"
+/>
 ```
 
 ### Chart Widget
@@ -319,25 +318,32 @@ export function ListWidget({ title, items }) {
 }
 ```
 
-### Widget with Actions
+### Widget with Actions (Icon Tile Grid)
 
 ```tsx
 export function ActionWidget() {
+  const actions = [
+    { label: "Audit Logs", href: "/configuration/audit", icon: ClipboardList },
+    { label: "Users", href: "/configuration/users", icon: Users },
+    { label: "Settings", href: "/configuration/system", icon: Settings },
+    { label: "Security", href: "/configuration/security", icon: Shield },
+  ];
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Quick Actions</CardTitle>
-        <Button variant="outline" size="sm">View All</Button>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-2">
-        <Button variant="outline" className="justify-start">
-          <Plus className="mr-2 h-4 w-4" />
-          Create New
-        </Button>
-        <Button variant="outline" className="justify-start">
-          <Upload className="mr-2 h-4 w-4" />
-          Import
-        </Button>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-2">
+          {actions.map((action) => (
+            <Link key={action.href} href={action.href}
+              className="flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-colors hover:bg-muted min-h-[72px] justify-center">
+              <action.icon className="h-5 w-5 text-muted-foreground" />
+              <span className="text-xs font-medium">{action.label}</span>
+            </Link>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

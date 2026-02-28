@@ -13,10 +13,14 @@ Sourdough currently supports light/dark/system mode via CSS custom properties in
 - [x] Theme toggle component (`frontend/components/theme-toggle.tsx`)
 - [x] Theme onboarding step (`frontend/components/onboarding/steps/theme-step.tsx`)
 - [x] User preference persistence (localStorage + API sync)
-- [ ] Only one color palette (shadcn/ui default slate)
-- [ ] No way to switch between color themes
-- [ ] No admin-configurable default theme
-- [ ] No theme preview or theme builder
+- [x] Default theme extracted to `frontend/styles/themes/default.css`
+- [x] Theme registry in `frontend/lib/themes.ts`
+- [x] `data-theme` attribute on `<html>` managed by ThemeProvider
+- [x] Expanded variable surface: colors, radius, font sizes, font weights, spacing, layout sizing
+- [x] Recipe and pattern documentation for adding new themes
+- [ ] No way to switch between color themes (Phase 2: picker UI)
+- [ ] No admin-configurable default theme (Phase 3: backend)
+- [ ] No theme preview or theme builder (Phase 4: optional)
 
 ## Architecture
 
@@ -37,18 +41,23 @@ User picks theme ("Ocean") + mode ("dark")
   → All shadcn/ui components automatically use the new colors
 ```
 
-## Phase 1: Theme Registry & CSS Infrastructure
+## Phase 1: Theme Registry & CSS Infrastructure ✅ COMPLETE
 
-Define the theme format and ship pre-set themes.
+Define the theme format, ship the Default theme, and create recipes/patterns for adding new themes.
 
 ### Tasks
 
-- [ ] Create `frontend/lib/themes.ts` — theme registry with metadata (id, name, description, preview colors)
-- [ ] Create `frontend/styles/themes/` directory for theme CSS files
-- [ ] Define base theme format: each theme is a CSS file with `[data-theme="<id>"]` and `[data-theme="<id>"].dark` selectors
-- [ ] Move current `globals.css` color variables into `themes/default.css` as the "Default" theme
-- [ ] Import all theme CSS files in `globals.css` (or a `themes.css` barrel file)
-- [ ] Update `ThemeProvider` to manage `data-theme` attribute alongside the existing `dark`/`light` class
+- [x] Create `frontend/lib/themes.ts` — theme registry with metadata (id, name, description, preview colors)
+- [x] Create `frontend/styles/themes/` directory for theme CSS files
+- [x] Define base theme format: each theme is a CSS file with `[data-theme="<id>"]` and `[data-theme="<id>"].dark` selectors
+- [x] Move current `globals.css` color variables into `themes/default.css` as the "Default" theme
+- [x] Import all theme CSS files in `globals.css` (or a `themes.css` barrel file)
+- [x] Update `ThemeProvider` to manage `data-theme` attribute alongside the existing `dark`/`light` class
+- [x] Expand CSS variable surface: font sizes, font weights, spacing scale, layout sizing, radius scale
+- [x] Wire new variables into `tailwind.config.ts`
+- [x] Update `layout.tsx` SSR script for `data-theme` FOUC prevention
+- [x] Create recipe: `docs/ai/recipes/add-theme.md`
+- [x] Create pattern: `docs/ai/patterns/theming.md`
 
 ### Pre-Set Themes to Ship
 
@@ -138,118 +147,29 @@ Let advanced users create their own themes via a UI.
 
 ## How to Add a New Pre-Set Theme
 
-Follow these steps to add a new color theme:
+See the full recipe: [docs/ai/recipes/add-theme.md](../../ai/recipes/add-theme.md)
 
-### 1. Create the CSS file
+See the theming pattern: [docs/ai/patterns/theming.md](../../ai/patterns/theming.md)
 
-Create `frontend/styles/themes/<theme-id>.css`:
+### Quick Summary
 
-```css
-/* Theme: <Theme Name> */
-/* Description: <Short description> */
+1. Create `frontend/styles/themes/<theme-id>.css` with `[data-theme="<id>"]` and `[data-theme="<id>"].dark` selectors
+2. Register in `frontend/lib/themes.ts` with metadata and preview colors
+3. Add `@import` in `frontend/app/globals.css`
+4. Test both light and dark modes across all pages
 
-[data-theme="<theme-id>"] {
-  --background: <h> <s>% <l>%;
-  --foreground: <h> <s>% <l>%;
-  --card: <h> <s>% <l>%;
-  --card-foreground: <h> <s>% <l>%;
-  --popover: <h> <s>% <l>%;
-  --popover-foreground: <h> <s>% <l>%;
-  --primary: <h> <s>% <l>%;
-  --primary-foreground: <h> <s>% <l>%;
-  --secondary: <h> <s>% <l>%;
-  --secondary-foreground: <h> <s>% <l>%;
-  --muted: <h> <s>% <l>%;
-  --muted-foreground: <h> <s>% <l>%;
-  --accent: <h> <s>% <l>%;
-  --accent-foreground: <h> <s>% <l>%;
-  --destructive: <h> <s>% <l>%;
-  --destructive-foreground: <h> <s>% <l>%;
-  --border: <h> <s>% <l>%;
-  --input: <h> <s>% <l>%;
-  --ring: <h> <s>% <l>%;
-  --radius: 0.5rem;
-}
+### Theme Variable Groups
 
-[data-theme="<theme-id>"].dark {
-  --background: <h> <s>% <l>%;
-  --foreground: <h> <s>% <l>%;
-  --card: <h> <s>% <l>%;
-  --card-foreground: <h> <s>% <l>%;
-  --popover: <h> <s>% <l>%;
-  --popover-foreground: <h> <s>% <l>%;
-  --primary: <h> <s>% <l>%;
-  --primary-foreground: <h> <s>% <l>%;
-  --secondary: <h> <s>% <l>%;
-  --secondary-foreground: <h> <s>% <l>%;
-  --muted: <h> <s>% <l>%;
-  --muted-foreground: <h> <s>% <l>%;
-  --accent: <h> <s>% <l>%;
-  --accent-foreground: <h> <s>% <l>%;
-  --destructive: <h> <s>% <l>%;
-  --destructive-foreground: <h> <s>% <l>%;
-  --border: <h> <s>% <l>%;
-  --input: <h> <s>% <l>%;
-  --ring: <h> <s>% <l>%;
-}
-```
+Each theme can control **6 categories** of CSS custom properties (45+ variables total):
 
-**Important:** Values use the HSL space-separated format without `hsl()` wrapper (e.g., `222.2 84% 4.9%`), matching shadcn/ui's convention. Tailwind applies `hsl()` at build time via `hsl(var(--primary))`.
-
-### 2. Register the theme
-
-Add an entry to `frontend/lib/themes.ts`:
-
-```ts
-export const themes: ThemeDefinition[] = [
-  // ... existing themes
-  {
-    id: "<theme-id>",
-    name: "<Theme Name>",
-    description: "<Short description>",
-    preview: {
-      light: { primary: "#hex", secondary: "#hex", background: "#hex", foreground: "#hex" },
-      dark:  { primary: "#hex", secondary: "#hex", background: "#hex", foreground: "#hex" },
-    },
-  },
-];
-```
-
-### 3. Import the CSS
-
-Add the import to the theme CSS barrel (either `globals.css` or `themes/index.css`):
-
-```css
-@import "./themes/<theme-id>.css";
-```
-
-### 4. Test both modes
-
-- Switch to the new theme in the theme picker
-- Verify light mode: check cards, buttons, inputs, navigation, destructive actions
-- Verify dark mode: same checks, ensure sufficient contrast
-- Test on mobile viewport
-- Verify the theme picker swatch preview matches the actual theme
-
----
-
-## How to Modify an Existing Theme
-
-1. Open the theme's CSS file in `frontend/styles/themes/<theme-id>.css`
-2. Adjust the HSL values for the desired variables
-3. Both the `[data-theme="<id>"]` (light) and `[data-theme="<id>"].dark` blocks must be updated if the change affects both modes
-4. Use browser DevTools to live-edit `--variable` values for rapid iteration
-5. Check contrast ratios — WCAG AA requires 4.5:1 for normal text, 3:1 for large text
-
-### Tips for Good Themes
-
-- **Background/foreground contrast**: Ensure at least 7:1 ratio for body text (WCAG AAA)
-- **Primary on primary-foreground**: Must be readable as button text
-- **Muted-foreground on muted**: Used for placeholder text, needs 4.5:1 minimum
-- **Destructive**: Keep clearly red-ish for semantic meaning, even in creative themes
-- **Border and input**: Should be subtle but visible in both modes
-- **Dark mode**: Don't just invert — use slightly desaturated, lower-lightness backgrounds with brighter foregrounds
-- **Test with real content**: Use the app's actual pages, not just color swatches
+| Category | Variables | Example |
+|----------|-----------|---------|
+| **Colors** (19) | `--background`, `--foreground`, `--primary`, `--secondary`, `--muted`, `--accent`, `--destructive`, `--border`, `--input`, `--ring`, + foreground variants | `222.2 84% 4.9%` |
+| **Radius** (5) | `--radius`, `--radius-sm`, `--radius-lg`, `--radius-xl`, `--radius-full` | `0.5rem` |
+| **Font Sizes** (7) | `--text-xs` through `--text-3xl` | `1rem` |
+| **Font Weights** (4) | `--font-weight-normal`, `-medium`, `-semibold`, `-bold` | `400` |
+| **Spacing** (6) | `--spacing-xs` through `--spacing-2xl` | `1rem` |
+| **Layout Sizing** (4) | `--sidebar-width`, `--header-height`, `--container-max-width`, `--card-padding` | `16rem` |
 
 ### Useful Tools
 

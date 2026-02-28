@@ -176,35 +176,44 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id || typeof window === "undefined") return;
 
-    const echo = getEcho();
-    if (!echo) return;
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
 
-    const channel = echo.private(`user.${user.id}`);
-    channel.listen(".NotificationSent", (e: { id?: string; [k: string]: unknown }) => {
-      if (!mounted.current || !e) return;
-      const n = e as unknown as Notification;
-      if (n?.id && prependNotification) {
-        prependNotification({
-          id: n.id,
-          user_id: n.user_id,
-          type: n.type ?? "info",
-          title: n.title ?? "",
-          message: n.message ?? "",
-          data: (n.data as Record<string, unknown>) ?? null,
-          read_at: (n.read_at as string) ?? null,
-          created_at: n.created_at ?? new Date().toISOString(),
-          updated_at: n.updated_at ?? new Date().toISOString(),
-        });
-      }
+    getEcho().then((echo) => {
+      if (cancelled || !echo) return;
+
+      const channel = echo.private(`user.${user.id}`);
+      channel.listen(".NotificationSent", (e: { id?: string; [k: string]: unknown }) => {
+        if (!mounted.current || !e) return;
+        const n = e as unknown as Notification;
+        if (n?.id && prependNotification) {
+          prependNotification({
+            id: n.id,
+            user_id: n.user_id,
+            type: n.type ?? "info",
+            title: n.title ?? "",
+            message: n.message ?? "",
+            data: (n.data as Record<string, unknown>) ?? null,
+            read_at: (n.read_at as string) ?? null,
+            created_at: n.created_at ?? new Date().toISOString(),
+            updated_at: n.updated_at ?? new Date().toISOString(),
+          });
+        }
+      });
+
+      cleanup = () => {
+        try {
+          channel.stopListening(".NotificationSent");
+          echo.leave(`user.${user.id}`);
+        } catch {
+          // ignore
+        }
+      };
     });
 
     return () => {
-      try {
-        channel.stopListening(".NotificationSent");
-        echo.leave(`user.${user.id}`);
-      } catch {
-        // ignore
-      }
+      cancelled = true;
+      cleanup?.();
     };
   }, [user?.id, prependNotification]);
 

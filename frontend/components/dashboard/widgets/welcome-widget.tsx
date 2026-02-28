@@ -1,20 +1,35 @@
 "use client";
 
 import { useAuth } from "@/lib/auth";
-import { WidgetCard } from "@/components/dashboard/widget-card";
+import { Card, CardContent } from "@/components/ui/card";
+import { useAppConfig } from "@/lib/app-config";
 
-/**
- * Static welcome widget. Reference implementation for a widget with no data fetching.
- */
 export function WelcomeWidget() {
   const { user } = useAuth();
-  const firstName = user?.name?.split(" ")[0] || "User";
+  const { appName } = useAppConfig();
+  const firstName = user?.name?.split(" ")[0] || "there";
+
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  const dateStr = now.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
-    <WidgetCard title="Welcome">
-      <p className="text-sm text-muted-foreground">
-        Welcome back, {firstName}. Here&apos;s your dashboard overview.
-      </p>
-    </WidgetCard>
+    <Card className="col-span-full bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20">
+      <CardContent className="pt-6">
+        <h2 className="text-lg font-semibold">
+          {greeting}, {firstName}
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {dateStr} &middot; {appName}
+        </p>
+      </CardContent>
+    </Card>
   );
 }

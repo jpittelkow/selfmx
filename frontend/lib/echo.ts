@@ -1,13 +1,6 @@
 "use client";
 
-import Echo from "laravel-echo";
-import Pusher from "pusher-js";
-
-declare global {
-  interface Window {
-    Pusher?: typeof Pusher;
-  }
-}
+import type Echo from "laravel-echo";
 
 let echoInstance: Echo<"pusher"> | null = null;
 
@@ -20,8 +13,11 @@ function getAuthEndpoint(): string {
  * Returns a configured Laravel Echo instance for real-time notifications, or null
  * when Reverb is not configured (missing NEXT_PUBLIC_REVERB_APP_KEY).
  * Use only in browser (e.g. inside useEffect).
+ *
+ * Pusher and Laravel Echo are lazy-imported to avoid module-level side effects
+ * (Pusher.js validates options at import time in newer versions).
  */
-export function getEcho(): Echo<"pusher"> | null {
+export async function getEcho(): Promise<Echo<"pusher"> | null> {
   if (typeof window === "undefined") return null;
 
   const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
@@ -29,7 +25,15 @@ export function getEcho(): Echo<"pusher"> | null {
 
   if (echoInstance) return echoInstance;
 
-  (window as Window).Pusher = Pusher;
+  const [{ default: Echo }, { default: Pusher }] = await Promise.all([
+    import("laravel-echo"),
+    import("pusher-js"),
+  ]);
+
+  // Re-check after async imports in case another call already created the instance
+  if (echoInstance) return echoInstance;
+
+  (window as { Pusher?: typeof Pusher }).Pusher = Pusher;
 
   const wsHost = process.env.NEXT_PUBLIC_REVERB_HOST || window.location.hostname;
   const scheme = process.env.NEXT_PUBLIC_REVERB_SCHEME || (window.location.protocol === "https:" ? "https" : "http");
@@ -38,7 +42,7 @@ export function getEcho(): Echo<"pusher"> | null {
   echoInstance = new Echo({
     broadcaster: "pusher",
     key,
-    cluster: "", // Not used with Reverb, but Pusher.js requires it to be present
+    cluster: "mt1", // Not used with Reverb, but Pusher.js requires a non-empty value
     wsHost,
     wsPort: parseInt(wsPort),
     wssPort: parseInt(wsPort),

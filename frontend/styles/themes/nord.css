@@ -1,0 +1,87 @@
+/* Theme: Nord */
+/* Description: Arctic cool blue-gray — inspired by Nordic polar frost */
+
+[data-theme="nord"]:not(.dark) {
+  /* Colors — Nord Snow Storm + Frost */
+  --background: 219 28% 96%;
+  --foreground: 220 16% 22%;
+  --card: 219 28% 99%;
+  --card-foreground: 220 16% 22%;
+  --popover: 219 28% 99%;
+  --popover-foreground: 220 16% 22%;
+  --primary: 213 32% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 219 28% 90%;
+  --secondary-foreground: 220 16% 22%;
+  --muted: 219 24% 92%;
+  --muted-foreground: 220 12% 44%;
+  --accent: 179 25% 65%;
+  --accent-foreground: 220 16% 18%;
+  --destructive: 354 70% 54%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 219 22% 87%;
+  --input: 219 22% 84%;
+  --ring: 213 32% 52%;
+
+  /* Font families */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Layout sizing */
+  --sidebar-width: 16rem;
+  --header-height: 3.5rem;
+  --container-max-width: 80rem;
+  --card-padding: 1.5rem;
+}
+
+[data-theme="nord"].dark {
+  /* Colors — Nord Polar Night + Frost */
+  --background: 220 16% 22%;
+  --foreground: 219 28% 88%;
+  --card: 220 17% 24%;
+  --card-foreground: 219 28% 88%;
+  --popover: 220 17% 24%;
+  --popover-foreground: 219 28% 88%;
+  --primary: 213 32% 52%;
+  --primary-foreground: 219 28% 96%;
+  --secondary: 220 16% 28%;
+  --secondary-foreground: 219 28% 88%;
+  --muted: 220 16% 26%;
+  --muted-foreground: 219 16% 58%;
+  --accent: 179 25% 65%;
+  --accent-foreground: 220 16% 18%;
+  --destructive: 354 42% 40%;
+  --destructive-foreground: 219 28% 96%;
+  --border: 220 16% 28%;
+  --input: 220 16% 30%;
+  --ring: 213 32% 52%;
+}

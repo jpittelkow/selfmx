@@ -1,13 +1,40 @@
+/* Theme CSS files are imported OUTSIDE @layer so they always beat @layer base fallbacks.
+   Do NOT wrap these imports in @layer — theme overrides depend on unlayered specificity. */
+@import "../styles/themes/default.css";
+@import "../styles/themes/bubblegum.css";
+@import "../styles/themes/cyberpunk.css";
+@import "../styles/themes/dracula.css";
+@import "../styles/themes/forest.css";
+@import "../styles/themes/sunset.css";
+@import "../styles/themes/ocean.css";
+@import "../styles/themes/rose.css";
+@import "../styles/themes/lavender.css";
+@import "../styles/themes/midnight.css";
+@import "../styles/themes/mono.css";
+@import "../styles/themes/coffee.css";
+@import "../styles/themes/catppuccin.css";
+@import "../styles/themes/nord.css";
+@import "../styles/themes/solarized.css";
+@import "../styles/themes/sakura.css";
+@import "../styles/themes/amber.css";
+@import "../styles/themes/slate.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* Bare defaults for variables that themes can override.
+     These act as fallbacks when no theme explicitly sets them,
+     and also as the `:root` baseline before a `[data-theme]` selector applies. */
   :root {
+    /* Colors — copied from Default theme so the app works before data-theme is set */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
@@ -21,9 +48,46 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
+
+    /* Radius */
     --radius: 0.5rem;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --radius-sm: 0.25rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-full: 9999px;
+
+    /* Font families — set by Next.js font loader via className on <body>.
+       Themes can override these to change font families. */
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    /* Font sizes */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+
+    /* Font weights */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    /* Spacing scale */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    /* Layout sizing */
+    --sidebar-width: 16rem;
+    --header-height: 3.5rem;
+    --container-max-width: 80rem;
+    --card-padding: 1.5rem;
   }
 
   .dark {
@@ -47,9 +111,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }

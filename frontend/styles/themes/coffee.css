@@ -1,0 +1,86 @@
+/* Theme: Coffee */
+/* Description: Rich brown on warm cream — artisan cafe vibes */
+
+[data-theme="coffee"]:not(.dark) {
+  /* Font families */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Colors — frosted warm cream/tan background, rich brown accents */
+  --background: 36 55% 86%;
+  --foreground: 24 60% 8%;
+  --card: 36 48% 89%;
+  --card-foreground: 24 60% 8%;
+  --popover: 36 48% 89%;
+  --popover-foreground: 24 60% 8%;
+  --primary: 28 65% 28%;
+  --primary-foreground: 36 60% 96%;
+  --secondary: 36 45% 78%;
+  --secondary-foreground: 24 55% 14%;
+  --muted: 36 30% 80%;
+  --muted-foreground: 24 25% 36%;
+  --accent: 20 45% 78%;
+  --accent-foreground: 20 55% 16%;
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 36 40% 70%;
+  --input: 36 40% 70%;
+  --ring: 28 65% 28%;
+
+  /* Radius — classic rounded */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Font sizes — slightly larger for readability */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1.05rem;
+  --text-lg: 1.175rem;
+  --text-xl: 1.3rem;
+  --text-2xl: 1.55rem;
+  --text-3xl: 1.95rem;
+
+  /* Font weights */
+  --font-weight-normal: 300;
+  --font-weight-medium: 400;
+  --font-weight-semibold: 700;
+  --font-weight-bold: 900;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Layout sizing */
+  --sidebar-width: 16rem;
+  --header-height: 3.5rem;
+  --container-max-width: 80rem;
+  --card-padding: 1.5rem;
+}
+
+[data-theme="coffee"].dark {
+  --background: 24 30% 5%;
+  --foreground: 36 50% 90%;
+  --card: 24 25% 8%;
+  --card-foreground: 36 50% 90%;
+  --popover: 24 25% 8%;
+  --popover-foreground: 36 50% 90%;
+  --primary: 30 55% 65%;
+  --primary-foreground: 24 30% 5%;
+  --secondary: 24 25% 15%;
+  --secondary-foreground: 36 50% 85%;
+  --muted: 24 20% 15%;
+  --muted-foreground: 30 20% 55%;
+  --accent: 20 30% 18%;
+  --accent-foreground: 20 50% 78%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 24 25% 18%;
+  --input: 24 25% 18%;
+  --ring: 30 55% 65%;
+}

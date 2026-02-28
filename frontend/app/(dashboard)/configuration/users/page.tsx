@@ -105,7 +105,7 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
           <p className="text-muted-foreground mt-2">
             Manage application users and permissions.{" "}
             <HelpLink articleId="user-management" />

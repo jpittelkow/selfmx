@@ -134,7 +134,7 @@ export function Sidebar() {
     >
       <div
         className={cn(
-          "flex items-center border-b p-3 min-h-[57px]",
+          "flex items-center border-b p-3 h-14",
           isExpanded ? "justify-between" : "justify-center"
         )}
       >

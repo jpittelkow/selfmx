@@ -1,0 +1,86 @@
+/* Theme: Rose */
+/* Description: Deep crimson on blush — romantic and refined */
+
+[data-theme="rose"]:not(.dark) {
+  /* Font families */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Colors — frosted blush/pink background, deep crimson accents */
+  --background: 348 55% 89%;
+  --foreground: 350 50% 9%;
+  --card: 348 48% 92%;
+  --card-foreground: 350 50% 9%;
+  --popover: 348 48% 92%;
+  --popover-foreground: 350 50% 9%;
+  --primary: 347 77% 35%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 350 55% 82%;
+  --secondary-foreground: 347 65% 15%;
+  --muted: 350 30% 83%;
+  --muted-foreground: 348 22% 35%;
+  --accent: 340 50% 82%;
+  --accent-foreground: 340 55% 16%;
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 348 45% 74%;
+  --input: 348 45% 74%;
+  --ring: 347 77% 35%;
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Layout sizing */
+  --sidebar-width: 16rem;
+  --header-height: 3.5rem;
+  --container-max-width: 80rem;
+  --card-padding: 1.5rem;
+}
+
+[data-theme="rose"].dark {
+  --background: 350 35% 5%;
+  --foreground: 350 60% 92%;
+  --card: 350 30% 7%;
+  --card-foreground: 350 60% 92%;
+  --popover: 350 30% 7%;
+  --popover-foreground: 350 60% 92%;
+  --primary: 347 77% 68%;
+  --primary-foreground: 350 35% 5%;
+  --secondary: 348 30% 14%;
+  --secondary-foreground: 350 60% 90%;
+  --muted: 348 25% 14%;
+  --muted-foreground: 348 18% 55%;
+  --accent: 348 25% 16%;
+  --accent-foreground: 350 60% 82%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 348 25% 16%;
+  --input: 348 25% 16%;
+  --ring: 347 77% 68%;
+}

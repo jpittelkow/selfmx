@@ -2,6 +2,18 @@
 
 Patterns for building dashboard pages, settings pages, and forms with validation.
 
+## Layout & Shell
+
+Pages render inside the app shell which provides:
+- **Container**: `max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8` — pages should NOT add their own container or outer padding
+- **Background**: Subtle `bg-muted/30` content well behind the main area
+- **Breadcrumbs**: Auto-generated from the URL path via `AppBreadcrumbs` (in the header) — no per-page breadcrumb setup needed
+- **Header height**: Fixed `h-14` sticky header with `backdrop-blur-lg`
+
+### Page heading standard
+
+All pages use the same h1 pattern: `text-2xl font-bold tracking-tight`. Do not use `text-3xl` or `font-semibold`.
+
 ## Page Component Pattern
 
 ```tsx

@@ -2,6 +2,7 @@
 
 import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { UserDropdown } from "@/components/user-dropdown";
 import { useSidebar } from "@/components/sidebar-context";
 import { useSearch } from "@/components/search/search-provider";
@@ -9,6 +10,7 @@ import { SearchInline } from "@/components/search/search-inline";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HelpIcon } from "@/components/help/help-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 
 const isMac =
   typeof navigator !== "undefined" &&
@@ -19,8 +21,9 @@ export function Header() {
   const { setOpen: setSearchOpen, searchEnabled } = useSearch();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 w-full items-center justify-between md:justify-end px-4 gap-2 overflow-hidden">
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-14 w-full items-center px-4 gap-2 overflow-hidden">
+        {/* Left: mobile menu + breadcrumbs */}
         <Button
           variant="ghost"
           size="icon"
@@ -31,7 +34,13 @@ export function Header() {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-1 ml-auto md:ml-0">
+        <div className="hidden md:block min-w-0">
+          <AppBreadcrumbs />
+        </div>
+
+        {/* Right: actions */}
+        <div className="flex items-center gap-1 ml-auto">
+          {/* Search group */}
           {searchEnabled && (
             <>
               <Button
@@ -52,8 +61,16 @@ export function Header() {
               </div>
             </>
           )}
+
+          <Separator orientation="vertical" className="mx-1 hidden md:block h-5" />
+
+          {/* Utility group: help + notifications */}
           <HelpIcon className="shrink-0" />
           <NotificationBell />
+
+          <Separator orientation="vertical" className="mx-1 hidden sm:block h-5" />
+
+          {/* User group: theme + profile */}
           <div className="hidden sm:block">
             <ThemeToggle />
           </div>

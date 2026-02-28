@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
 
   if (!isConfigLoading && !features?.passwordResetAvailable) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
         <AuthStateCard
           variant="warning"
           title="Password Reset Unavailable"
@@ -128,52 +128,54 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Logo variant="full" size="lg" />
-          </div>
-          <CardTitle>Forgot Password</CardTitle>
-          <CardDescription>
-            Enter your email address and we'll send you a link to reset your
-            password.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <FormField
-              id="email"
-              label="Email Address"
-              error={errors.email?.message}
-            >
-              <Input
+    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex items-center gap-2 self-center">
+          <Logo variant="full" size="md" />
+        </div>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Forgot Password</CardTitle>
+            <CardDescription>
+              Enter your email address and we&apos;ll send you a link to reset your
+              password.
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              <FormField
                 id="email"
-                type="email"
-                placeholder="you@example.com"
-                {...register("email")}
-                disabled={isLoading}
-              />
-            </FormField>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <LoadingButton
-              type="submit"
-              className="w-full"
-              isLoading={isLoading}
-              loadingText="Sending..."
-            >
-              Send Reset Link
-            </LoadingButton>
-            <Link href="/login" className="w-full">
-              <Button variant="ghost" className="w-full">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Sign In
-              </Button>
-            </Link>
-          </CardFooter>
-        </form>
-      </Card>
+                label="Email Address"
+                error={errors.email?.message}
+              >
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  {...register("email")}
+                  disabled={isLoading}
+                />
+              </FormField>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <LoadingButton
+                type="submit"
+                className="w-full"
+                isLoading={isLoading}
+                loadingText="Sending..."
+              >
+                Send Reset Link
+              </LoadingButton>
+              <Link href="/login" className="w-full">
+                <Button variant="ghost" className="w-full">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Sign In
+                </Button>
+              </Link>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

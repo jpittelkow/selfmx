@@ -137,65 +137,67 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Logo variant="full" size="lg" />
-          </div>
-          <CardTitle>Reset Password</CardTitle>
-          <CardDescription>
-            Enter your new password for{" "}
-            <span className="font-medium text-foreground">{email}</span>
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <FormField
-              id="password"
-              label="New Password"
-              error={errors.password?.message}
-            >
-              <PasswordInput
+    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex items-center gap-2 self-center">
+          <Logo variant="full" size="md" />
+        </div>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Reset Password</CardTitle>
+            <CardDescription>
+              Enter your new password for{" "}
+              <span className="font-medium text-foreground">{email}</span>
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              <FormField
                 id="password"
-                placeholder="••••••••"
-                {...register("password")}
-                disabled={isLoading}
-              />
-            </FormField>
-            <PasswordStrength password={passwordValue ?? ""} showRequirements className="mt-1" />
+                label="New Password"
+                error={errors.password?.message}
+              >
+                <PasswordInput
+                  id="password"
+                  placeholder="••••••••"
+                  {...register("password")}
+                  disabled={isLoading}
+                />
+              </FormField>
+              <PasswordStrength password={passwordValue ?? ""} showRequirements className="mt-1" />
 
-            <FormField
-              id="password_confirmation"
-              label="Confirm New Password"
-              error={errors.password_confirmation?.message}
-            >
-              <PasswordInput
+              <FormField
                 id="password_confirmation"
-                placeholder="••••••••"
-                {...register("password_confirmation")}
-                disabled={isLoading}
-              />
-            </FormField>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <LoadingButton
-              type="submit"
-              className="w-full"
-              isLoading={isLoading}
-              loadingText="Resetting..."
-            >
-              Reset Password
-            </LoadingButton>
-            <Link href="/login" className="w-full">
-              <Button variant="ghost" className="w-full">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Sign In
-              </Button>
-            </Link>
-          </CardFooter>
-        </form>
-      </Card>
+                label="Confirm New Password"
+                error={errors.password_confirmation?.message}
+              >
+                <PasswordInput
+                  id="password_confirmation"
+                  placeholder="••••••••"
+                  {...register("password_confirmation")}
+                  disabled={isLoading}
+                />
+              </FormField>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <LoadingButton
+                type="submit"
+                className="w-full"
+                isLoading={isLoading}
+                loadingText="Resetting..."
+              >
+                Reset Password
+              </LoadingButton>
+              <Link href="/login" className="w-full">
+                <Button variant="ghost" className="w-full">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Sign In
+                </Button>
+              </Link>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -204,7 +206,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-muted flex min-h-svh items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       }

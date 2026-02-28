@@ -68,7 +68,7 @@ export default function EmailTemplatesListPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Email Templates</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Email Templates</h1>
         <p className="text-muted-foreground mt-2">
           Customize system-generated emails such as password reset and
           verification.{" "}

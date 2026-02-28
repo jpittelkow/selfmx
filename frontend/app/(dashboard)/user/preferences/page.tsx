@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { useTheme } from "@/components/theme-provider";
 import { api } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 import { errorLogger } from "@/lib/error-logger";
@@ -27,9 +26,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Moon, Sun, Monitor, Loader2, Palette, Bell, Brain, Send, Smartphone, Download, Globe, ChevronDown, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Loader2, Palette, Bell, Brain, Send, Smartphone, Download, Globe, ChevronDown, SlidersHorizontal, Trash2 } from "lucide-react";
 import { SaveButton } from "@/components/ui/save-button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import Link from "next/link";
 import {
   isWebPushSupported,
@@ -42,6 +41,7 @@ import { HelpLink } from "@/components/help/help-link";
 import { useInstallPrompt } from "@/lib/use-install-prompt";
 import { TIMEZONES } from "@/lib/timezones";
 import { setUserTimezone } from "@/lib/utils";
+import { ThemePicker } from "@/components/theme-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { getTypesByCategory } from "@/lib/notification-types";
@@ -124,8 +124,54 @@ function WebPushHelperText({ webpushEnabled, isSubscribed }: { webpushEnabled: b
   return null;
 }
 
+function InstallInstructions() {
+  const isIOS = isIOSDevice();
+  const isAndroid = isAndroidDevice();
+
+  if (isIOS) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Install on iOS</p>
+        <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+          <li>Tap the <strong>Share</strong> button <span className="inline-block align-text-bottom" aria-label="share icon">(&#xFEFF;↑&#xFEFF;)</span> in Safari&apos;s toolbar</li>
+          <li>Scroll down and tap <strong>&quot;Add to Home Screen&quot;</strong></li>
+          <li>Tap <strong>Add</strong> to confirm</li>
+        </ol>
+        <p className="text-xs text-muted-foreground">
+          Note: This must be done in Safari. Other iOS browsers do not support installing web apps.
+        </p>
+      </div>
+    );
+  }
+
+  if (isAndroid) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Install on Android</p>
+        <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+          <li>Tap the <strong>menu</strong> button <span className="inline-block align-text-bottom" aria-label="menu icon">(⋮)</span> in Chrome</li>
+          <li>Tap <strong>&quot;Add to Home screen&quot;</strong> or <strong>&quot;Install app&quot;</strong></li>
+          <li>Tap <strong>Install</strong> to confirm</li>
+        </ol>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">Install from your browser</p>
+      <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+        <li>In <strong>Chrome</strong> or <strong>Edge</strong>, click the install icon <span className="inline-block align-text-bottom" aria-label="install icon">(⊕)</span> in the address bar</li>
+        <li>Or open the browser menu and select <strong>&quot;Install app&quot;</strong></li>
+      </ol>
+      <p className="text-xs text-muted-foreground">
+        If you don&apos;t see an install option, try visiting this page in Chrome or Edge.
+      </p>
+    </div>
+  );
+}
+
 export default function PreferencesPage() {
-  const { theme, setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences>({
@@ -482,11 +528,6 @@ export default function PreferencesPage() {
     }
   };
 
-  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
-    setTheme(newTheme);
-    savePreferences({ theme: newTheme });
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -519,46 +560,11 @@ export default function PreferencesPage() {
             Appearance
           </CardTitle>
           <CardDescription>
-            Choose your preferred theme and visual style.
+            Choose your preferred mode and color theme.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Theme</Label>
-            <RadioGroup
-              value={theme}
-              onValueChange={(value) => {
-                if (isOffline) return;
-                const validTheme = ["light", "dark", "system"].includes(value)
-                  ? (value as "light" | "dark" | "system")
-                  : "system";
-                handleThemeChange(validTheme);
-              }}
-              disabled={isOffline}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="light" id="light" />
-                <Label htmlFor="light" className="flex items-center gap-2 cursor-pointer">
-                  <Sun className="h-4 w-4" />
-                  Light
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="dark" id="dark" />
-                <Label htmlFor="dark" className="flex items-center gap-2 cursor-pointer">
-                  <Moon className="h-4 w-4" />
-                  Dark
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="system" id="system" />
-                <Label htmlFor="system" className="flex items-center gap-2 cursor-pointer">
-                  <Monitor className="h-4 w-4" />
-                  System
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
+        <CardContent>
+          <ThemePicker />
         </CardContent>
       </Card>
 
@@ -974,9 +980,7 @@ export default function PreferencesPage() {
               Install App
             </Button>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Install is available in supported browsers (e.g. Chrome, Edge) when you visit this site. Use your browser&apos;s menu to add to home screen.
-            </p>
+            <InstallInstructions />
           )}
         </CardContent>
       </Card>

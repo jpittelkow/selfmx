@@ -373,7 +373,7 @@ export default function ConfigurationLayout({
   // Mobile layout: header with menu button + Sheet drawer
   if (isMobile) {
     return (
-      <div className="container py-6">
+      <div>
         {/* Mobile header */}
         <div className="mb-6 flex items-center gap-3">
           <Button
@@ -423,7 +423,7 @@ export default function ConfigurationLayout({
 
   // Desktop layout: sidebar + content (unchanged)
   return (
-    <div className="container py-6">
+    <div>
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar */}
         <aside className="lg:w-64 shrink-0 flex flex-col">

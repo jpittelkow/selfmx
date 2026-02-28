@@ -261,7 +261,7 @@ export default function JobsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Scheduled Jobs</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Scheduled Jobs</h1>
           <p className="text-muted-foreground mt-2">
             Monitor and manage background jobs and scheduled tasks.{" "}
             <HelpLink articleId="scheduled-jobs" />

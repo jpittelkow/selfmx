@@ -184,7 +184,7 @@ export default function FileManagerPage() {
     <>
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">File Manager</h1>
+          <h1 className="text-2xl font-bold tracking-tight">File Manager</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Browse and manage files in application storage. Admin only.
           </p>

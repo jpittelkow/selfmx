@@ -246,7 +246,7 @@ export default function ChangelogPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Changelog</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Changelog</h1>
         <p className="text-muted-foreground mt-1">
           Version history and release notes.{" "}
           <HelpLink articleId="changelog" />

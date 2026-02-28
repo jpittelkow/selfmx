@@ -1,0 +1,87 @@
+/* Theme: Solarized */
+/* Description: Ethan Schoonover's precision-engineered palette with signature yellow accent */
+
+[data-theme="solarized"]:not(.dark) {
+  /* Colors — Solarized Light */
+  --background: 44 87% 94%;
+  --foreground: 192 81% 14%;
+  --card: 44 87% 97%;
+  --card-foreground: 192 81% 14%;
+  --popover: 44 87% 97%;
+  --popover-foreground: 192 81% 14%;
+  --primary: 45 100% 35%;
+  --primary-foreground: 192 81% 14%;
+  --secondary: 46 42% 88%;
+  --secondary-foreground: 192 81% 14%;
+  --muted: 46 42% 89%;
+  --muted-foreground: 195 23% 38%;
+  --accent: 175 59% 40%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 1 71% 52%;
+  --destructive-foreground: 44 87% 97%;
+  --border: 46 30% 82%;
+  --input: 46 30% 79%;
+  --ring: 45 100% 35%;
+
+  /* Font families */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Layout sizing */
+  --sidebar-width: 16rem;
+  --header-height: 3.5rem;
+  --container-max-width: 80rem;
+  --card-padding: 1.5rem;
+}
+
+[data-theme="solarized"].dark {
+  /* Colors — Solarized Dark */
+  --background: 192 81% 14%;
+  --foreground: 44 87% 94%;
+  --card: 192 100% 11%;
+  --card-foreground: 44 87% 94%;
+  --popover: 192 100% 11%;
+  --popover-foreground: 44 87% 94%;
+  --primary: 45 100% 35%;
+  --primary-foreground: 44 87% 94%;
+  --secondary: 194 55% 18%;
+  --secondary-foreground: 44 87% 94%;
+  --muted: 194 55% 17%;
+  --muted-foreground: 180 7% 60%;
+  --accent: 175 59% 40%;
+  --accent-foreground: 44 87% 97%;
+  --destructive: 1 71% 42%;
+  --destructive-foreground: 44 87% 94%;
+  --border: 194 40% 20%;
+  --input: 194 40% 22%;
+  --ring: 45 100% 35%;
+}

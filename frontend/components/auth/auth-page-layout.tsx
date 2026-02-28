@@ -3,6 +3,13 @@
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { usePageTitle } from "@/lib/use-page-title";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface AuthPageLayoutProps {
   title: string;
@@ -21,33 +28,22 @@ export function AuthPageLayout({
   usePageTitle(title);
 
   return (
-    <div
-      className={cn(
-        "min-h-screen flex items-center justify-center p-4",
-        "bg-gradient-to-br from-primary/10 via-background to-secondary/10",
-        "transition-colors duration-300"
-      )}
-    >
-      <div
-        className={cn(
-          "w-full max-w-md rounded-2xl p-6 sm:p-8 space-y-6",
-          "backdrop-blur-xl bg-card/80",
-          "border border-border/20",
-          "shadow-2xl",
-          "animate-in fade-in-0 slide-in-from-bottom-4 duration-500",
-          className
-        )}
-      >
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <Logo variant="full" size="lg" />
-          </div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          {description && (
-            <p className="text-muted-foreground mt-2">{description}</p>
-          )}
+    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+      <div className={cn("flex w-full max-w-sm flex-col gap-6", className)}>
+        <div className="flex items-center gap-2 self-center">
+          <Logo variant="full" size="md" />
         </div>
-        {children}
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">{title}</CardTitle>
+            {description && (
+              <CardDescription>{description}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {children}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

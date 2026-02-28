@@ -1,0 +1,86 @@
+/* Theme: Ocean */
+/* Description: Deep navy and bright blue — nautical and crisp */
+
+[data-theme="ocean"]:not(.dark) {
+  /* Font families */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Colors — frosted blue background, strong navy/blue accents */
+  --background: 210 55% 88%;
+  --foreground: 222 60% 8%;
+  --card: 210 48% 91%;
+  --card-foreground: 222 60% 8%;
+  --popover: 210 48% 91%;
+  --popover-foreground: 222 60% 8%;
+  --primary: 221 83% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 55% 80%;
+  --secondary-foreground: 221 70% 14%;
+  --muted: 210 35% 82%;
+  --muted-foreground: 215 25% 33%;
+  --accent: 200 55% 80%;
+  --accent-foreground: 200 70% 14%;
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 45% 72%;
+  --input: 210 45% 72%;
+  --ring: 221 83% 45%;
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Layout sizing */
+  --sidebar-width: 16rem;
+  --header-height: 3.5rem;
+  --container-max-width: 80rem;
+  --card-padding: 1.5rem;
+}
+
+[data-theme="ocean"].dark {
+  --background: 222 50% 5%;
+  --foreground: 213 60% 92%;
+  --card: 222 45% 7%;
+  --card-foreground: 213 60% 92%;
+  --popover: 222 45% 7%;
+  --popover-foreground: 213 60% 92%;
+  --primary: 213 94% 68%;
+  --primary-foreground: 222 50% 5%;
+  --secondary: 222 40% 14%;
+  --secondary-foreground: 213 60% 90%;
+  --muted: 222 30% 14%;
+  --muted-foreground: 215 20% 58%;
+  --accent: 222 35% 16%;
+  --accent-foreground: 213 60% 82%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 222 35% 16%;
+  --input: 222 35% 16%;
+  --ring: 213 94% 68%;
+}

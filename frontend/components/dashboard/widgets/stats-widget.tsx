@@ -2,9 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { WidgetCard } from "@/components/dashboard/widget-card";
-import { WidgetSkeleton } from "@/components/dashboard/widget-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { errorLogger } from "@/lib/error-logger";
+import { Users, HardDrive } from "lucide-react";
+import { AuditStatsCard } from "@/components/audit/audit-stats-card";
+import type { LucideIcon } from "lucide-react";
 
 interface Metric {
   label: string;
@@ -15,9 +17,11 @@ interface StatsResponse {
   metrics?: Metric[];
 }
 
-/**
- * Stats widget. Reference implementation for a widget that fetches data from the API.
- */
+const metricIcons: Record<string, LucideIcon> = {
+  "Total Users": Users,
+  "Storage Used": HardDrive,
+};
+
 export function StatsWidget() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard", "stats"],
@@ -31,32 +35,30 @@ export function StatsWidget() {
     errorLogger.report(error instanceof Error ? error : new Error(String(error)), {
       context: "StatsWidget",
     });
-    return (
-      <WidgetCard title="System Stats">
-        <p className="text-sm text-destructive">Failed to load stats.</p>
-      </WidgetCard>
-    );
+    return null;
   }
 
   if (isLoading) {
-    return <WidgetSkeleton />;
+    return (
+      <>
+        <Skeleton className="h-[120px] rounded-lg" />
+        <Skeleton className="h-[120px] rounded-lg" />
+      </>
+    );
   }
 
   const metrics = data?.metrics ?? [];
 
   return (
-    <WidgetCard title="System Stats">
-      <div className="space-y-2">
-        {metrics.map((metric: Metric) => (
-          <div
-            key={metric.label}
-            className="flex justify-between text-sm"
-          >
-            <span className="text-muted-foreground">{metric.label}</span>
-            <span className="font-medium">{metric.value}</span>
-          </div>
-        ))}
-      </div>
-    </WidgetCard>
+    <>
+      {metrics.map((metric: Metric) => (
+        <AuditStatsCard
+          key={metric.label}
+          title={metric.label}
+          value={metric.value}
+          icon={metricIcons[metric.label] ?? Users}
+        />
+      ))}
+    </>
   );
 }

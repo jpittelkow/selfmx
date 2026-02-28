@@ -6,19 +6,18 @@ Development roadmaps and implementation history.
 
 Currently in progress. Complete these before starting new work.
 
-- **[Mobile PWA Native Push Notifications](plans/pwa-roadmap.md)** - Push notifications do not appear in the native OS notification tray on iOS or Android. Investigation tasks and code fixes tracked in PWA roadmap Phase 6.
+- **[Theming Engine](plans/theming-engine-roadmap.md)** - Phase 1 (infrastructure) complete. Phase 2 (theme picker UI) next.
 
 ## Next Up
 
 Ready to start. These are unblocked and can begin immediately.
 
-- **[Theming Engine](plans/theming-engine-roadmap.md)** - Full theming engine with 8 pre-set color themes (Ocean, Forest, Sunset, Rose, Lavender, Midnight, Mono, Default), theme picker UI, per-user persistence, admin default theme setting, and optional custom theme builder. Each theme defines both light and dark mode variants using CSS custom properties. Includes patterns and instructions for adding or modifying themes.
+- **[Database Tables Audit](plans/database-tables-audit-roadmap.md)** - Audit all database tables, migrations, and schema for consistency, correctness, proper indexing, unused tables, and cross-database compatibility (SQLite/MySQL/PostgreSQL).
 
 ## Planned Features
 
 Requires foundation work or longer-term planning.
 
-- **[Database Tables Audit](plans/database-tables-audit-roadmap.md)** - Audit all database tables, migrations, and schema for consistency, correctness, proper indexing, unused tables, and cross-database compatibility (SQLite/MySQL/PostgreSQL).
 - **Stripe Revenue Log** - Add a revenue/transaction log page under the Logs & Monitoring section in Configuration. Display a filterable, sortable table of all Stripe payments and payouts: date, customer, amount, platform fee, net revenue, payment status (succeeded/refunded/failed), and Stripe payment ID. Include date range filtering, summary stats (total revenue, total fees, net earnings), and CSV export. Data sourced from the existing `payments` and `stripe_webhook_events` tables. Protected by admin permission consistent with other log pages.
 - **Get Cooking Wizard Audit** - Audit the onboarding startup wizard for accuracy and completeness. Verify all existing steps reflect current features and settings (e.g., theme step now has color themes, notification channels, Stripe config, GraphQL). Add new steps for features added since the wizard was built. Ensure step order makes sense, remove any stale references, and test the full flow end-to-end on both desktop and mobile.
 

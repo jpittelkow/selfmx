@@ -202,25 +202,25 @@ No obvious code bugs found. The likely issues are **environmental/configuration*
 
 ### Investigation Tasks
 
-1. [ ] **Verify VAPID keys are configured** — Check that `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are set in production settings (via admin UI or env). Missing keys cause `WebPushChannel` to throw before sending.
-2. [ ] **Verify subscription is stored server-side** — After enabling Web Push in user preferences, confirm `settings` table has `group=notifications`, `key=webpush_subscription` with valid `endpoint` + `keys` JSON for the test user.
-3. [ ] **Test push delivery end-to-end on desktop first** — Use the "Test" button on user preferences to trigger a test notification. Check:
+1. [x] **Verify VAPID keys are configured** — Check that `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are set in production settings (via admin UI or env). Missing keys cause `WebPushChannel` to throw before sending.
+2. [x] **Verify subscription is stored server-side** — After enabling Web Push in user preferences, confirm `settings` table has `group=notifications`, `key=webpush_subscription` with valid `endpoint` + `keys` JSON for the test user.
+3. [x] **Test push delivery end-to-end on desktop first** — Use the "Test" button on user preferences to trigger a test notification. Check:
    - Backend logs for `WebPushChannel::send()` success/failure
    - Browser DevTools > Application > Service Workers > Push for incoming events
    - DevTools > Console for any SW errors during `push` handler
-4. [ ] **Test on Android Chrome (installed PWA)** — Install PWA to home screen, enable Web Push, send test notification while app is in background. Check:
+4. [x] **Test on Android Chrome (installed PWA)** — Install PWA to home screen, enable Web Push, send test notification while app is in background. Check:
    - Service worker is `active` and `running` (chrome://serviceworker-internals on Android via USB debug)
    - Push subscription endpoint uses `fcm.googleapis.com` (Android uses FCM as push transport)
    - Notification appears in system tray
    - Tapping notification opens PWA and navigates to correct URL
-5. [ ] **Test on iOS Safari (installed PWA)** — Requires iOS 16.4+ and PWA added to Home Screen. Check:
+5. [x] **Test on iOS Safari (installed PWA)** — Requires iOS 16.4+ and PWA added to Home Screen. Check:
    - Permission prompt appears when enabling Web Push (iOS only shows this for home screen PWAs)
    - Push subscription endpoint uses Apple's push service
    - Notification appears in system tray when app is closed
    - Note: iOS requires `userVisibleOnly: true` (already set) and the PWA must be added to home screen before push works
 6. [x] **Check payload size limits** — Payload size guard added to `WebPushChannel::send()` (3800 byte limit with progressive truncation).
 7. [x] **Verify `badge.png` exists** — Confirmed at `frontend/public/badge.png` (4455 bytes).
-8. [ ] **Test notification with app in different states** — Verify push arrives when:
+8. [x] **Test notification with app in different states** — Verify push arrives when:
    - App is open in foreground (should show in-app only — foreground deduplication now active)
    - App is in background/minimized
    - App is fully closed (SW should wake and show notification)

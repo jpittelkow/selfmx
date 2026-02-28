@@ -99,11 +99,11 @@ export default function RegisterPage() {
 
       {hasSSOProviders && <AuthDivider />}
 
-      {!features?.emailVerificationAvailable && features !== null && (
+      {features?.emailVerificationAvailable && (
         <Alert variant="default" className="mb-4">
           <AlertDescription>
-            Email verification is not configured. Your account will be active
-            immediately after registration.
+            After registration, you'll need to verify your email address before
+            your account is activated.
           </AlertDescription>
         </Alert>
       )}

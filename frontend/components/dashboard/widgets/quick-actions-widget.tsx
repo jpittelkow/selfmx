@@ -1,35 +1,33 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ClipboardList, Users, Settings } from "lucide-react";
+import { ClipboardList, Users, Settings, Shield } from "lucide-react";
 
 const actions = [
   { label: "Audit Logs", href: "/configuration/audit", icon: ClipboardList },
   { label: "Users", href: "/configuration/users", icon: Users },
-  { label: "System Settings", href: "/configuration/system", icon: Settings },
+  { label: "Settings", href: "/configuration/system", icon: Settings },
+  { label: "Security", href: "/configuration/security", icon: Shield },
 ];
 
-/**
- * Quick actions widget. Reference implementation for an action/navigation widget.
- */
 export function QuickActionsWidget() {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1">
-        {actions.map((action) => (
-          <Link key={action.href} href={action.href}>
-            <Button
-              variant="ghost"
-              className="w-full justify-start min-h-[44px]"
+      <CardContent>
+        <div className="grid grid-cols-2 gap-2">
+          {actions.map((action) => (
+            <Link
+              key={action.href}
+              href={action.href}
+              className="flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-colors hover:bg-muted min-h-[72px] justify-center"
             >
-              <action.icon className="mr-2 h-4 w-4 shrink-0" />
-              {action.label}
-            </Button>
-          </Link>
-        ))}
+              <action.icon className="h-5 w-5 text-muted-foreground" />
+              <span className="text-xs font-medium">{action.label}</span>
+            </Link>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

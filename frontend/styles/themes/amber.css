@@ -1,0 +1,87 @@
+/* Theme: Amber */
+/* Description: Rich golden amber with warm neutrals — luxury editorial warmth */
+
+[data-theme="amber"]:not(.dark) {
+  /* Colors — Light Amber */
+  --background: 40 33% 96%;
+  --foreground: 30 20% 15%;
+  --card: 40 33% 99%;
+  --card-foreground: 30 20% 15%;
+  --popover: 40 33% 99%;
+  --popover-foreground: 30 20% 15%;
+  --primary: 32 95% 44%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 38 28% 90%;
+  --secondary-foreground: 30 20% 18%;
+  --muted: 38 22% 91%;
+  --muted-foreground: 30 12% 44%;
+  --accent: 24 80% 50%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 38 24% 86%;
+  --input: 38 24% 83%;
+  --ring: 32 95% 44%;
+
+  /* Font families */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Layout sizing */
+  --sidebar-width: 16rem;
+  --header-height: 3.5rem;
+  --container-max-width: 80rem;
+  --card-padding: 1.5rem;
+}
+
+[data-theme="amber"].dark {
+  /* Colors — Dark Amber */
+  --background: 30 18% 11%;
+  --foreground: 38 30% 90%;
+  --card: 30 18% 13%;
+  --card-foreground: 38 30% 90%;
+  --popover: 30 18% 13%;
+  --popover-foreground: 38 30% 90%;
+  --primary: 36 90% 55%;
+  --primary-foreground: 30 18% 10%;
+  --secondary: 30 14% 18%;
+  --secondary-foreground: 38 30% 90%;
+  --muted: 30 14% 17%;
+  --muted-foreground: 34 14% 52%;
+  --accent: 24 75% 48%;
+  --accent-foreground: 38 30% 95%;
+  --destructive: 0 60% 38%;
+  --destructive-foreground: 38 30% 95%;
+  --border: 30 14% 20%;
+  --input: 30 14% 22%;
+  --ring: 36 90% 55%;
+}

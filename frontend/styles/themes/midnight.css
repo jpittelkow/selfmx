@@ -1,0 +1,86 @@
+/* Theme: Midnight */
+/* Description: Electric indigo on pitch black — high contrast hacker */
+
+[data-theme="midnight"]:not(.dark) {
+  /* Font families */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Colors — frosted indigo background, electric blue accents */
+  --background: 234 45% 88%;
+  --foreground: 234 60% 8%;
+  --card: 234 38% 91%;
+  --card-foreground: 234 60% 8%;
+  --popover: 234 38% 91%;
+  --popover-foreground: 234 60% 8%;
+  --primary: 234 89% 34%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 230 50% 80%;
+  --secondary-foreground: 234 65% 14%;
+  --muted: 230 28% 82%;
+  --muted-foreground: 232 22% 35%;
+  --accent: 250 45% 82%;
+  --accent-foreground: 250 55% 16%;
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 232 38% 72%;
+  --input: 232 38% 72%;
+  --ring: 234 89% 34%;
+
+  /* Radius — minimal for sharp look */
+  --radius: 0.375rem;
+  --radius-sm: 0.125rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Layout sizing */
+  --sidebar-width: 16rem;
+  --header-height: 3.5rem;
+  --container-max-width: 80rem;
+  --card-padding: 1.5rem;
+}
+
+[data-theme="midnight"].dark {
+  --background: 234 50% 3%;
+  --foreground: 230 60% 92%;
+  --card: 234 45% 5%;
+  --card-foreground: 230 60% 92%;
+  --popover: 234 45% 5%;
+  --popover-foreground: 230 60% 92%;
+  --primary: 230 94% 82%;
+  --primary-foreground: 234 50% 3%;
+  --secondary: 234 40% 13%;
+  --secondary-foreground: 230 60% 90%;
+  --muted: 234 35% 13%;
+  --muted-foreground: 230 20% 56%;
+  --accent: 234 35% 15%;
+  --accent-foreground: 230 60% 82%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 234 35% 15%;
+  --input: 234 35% 15%;
+  --ring: 230 94% 82%;
+}

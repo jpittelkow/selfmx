@@ -11,9 +11,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { getThemeById } from "@/lib/themes";
 
-export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+interface ThemeToggleProps {
+  showThemeName?: boolean;
+}
+
+export function ThemeToggle({ showThemeName }: ThemeToggleProps) {
+  const { theme, setTheme, colorTheme } = useTheme();
   const { user } = useAuth();
 
   const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
@@ -31,12 +36,20 @@ export function ThemeToggle() {
     { value: "system", icon: Monitor, label: "System" },
   ];
 
+  const currentTheme = getThemeById(colorTheme);
+
   return (
-    <div
-      role="group"
-      aria-label="Theme"
-      className="flex items-center gap-0.5 rounded-md border border-transparent p-0.5"
-    >
+    <div className="flex items-center gap-2">
+      {showThemeName && currentTheme && currentTheme.id !== "default" && (
+        <span className="text-xs text-muted-foreground hidden sm:inline">
+          {currentTheme.name}
+        </span>
+      )}
+      <div
+        role="group"
+        aria-label="Theme"
+        className="flex items-center gap-0.5 rounded-md border border-transparent p-0.5"
+      >
       {modes.map(({ value, icon: Icon, label }) => (
         <Tooltip key={value}>
           <TooltipTrigger asChild>
@@ -59,6 +72,7 @@ export function ThemeToggle() {
           </TooltipContent>
         </Tooltip>
       ))}
+      </div>
     </div>
   );
 }

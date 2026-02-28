@@ -44,47 +44,61 @@ export function useAuditStream(
       return;
     }
 
-    const echo = getEcho();
-    if (!echo) {
-      setStatus("unavailable");
-      return;
-    }
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
 
     setStatus("connecting");
 
-    const channel = echo.private("audit-logs");
-
-    channel.listen(".AuditLogCreated", (payload: unknown) => {
-      const data = payload as AuditLogStreamPayload;
-      if (data?.id != null && typeof data.action === "string") {
-        onNewLogRef.current({
-          id: data.id,
-          user_id: data.user_id ?? null,
-          action: data.action,
-          severity: data.severity ?? "info",
-          auditable_type: data.auditable_type ?? null,
-          auditable_id: data.auditable_id ?? null,
-          old_values: data.old_values ?? null,
-          new_values: data.new_values ?? null,
-          ip_address: data.ip_address ?? null,
-          user_agent: data.user_agent ?? null,
-          correlation_id: data.correlation_id ?? null,
-          created_at: data.created_at ?? new Date().toISOString(),
-          user: data.user,
-        });
+    getEcho().then((echo) => {
+      if (cancelled) {
+        setStatus("disconnected");
+        return;
       }
+      if (!echo) {
+        setStatus("unavailable");
+        return;
+      }
+
+      const channel = echo.private("audit-logs");
+
+      channel.listen(".AuditLogCreated", (payload: unknown) => {
+        const data = payload as AuditLogStreamPayload;
+        if (data?.id != null && typeof data.action === "string") {
+          onNewLogRef.current({
+            id: data.id,
+            user_id: data.user_id ?? null,
+            action: data.action,
+            severity: data.severity ?? "info",
+            auditable_type: data.auditable_type ?? null,
+            auditable_id: data.auditable_id ?? null,
+            old_values: data.old_values ?? null,
+            new_values: data.new_values ?? null,
+            ip_address: data.ip_address ?? null,
+            user_agent: data.user_agent ?? null,
+            correlation_id: data.correlation_id ?? null,
+            created_at: data.created_at ?? new Date().toISOString(),
+            user: data.user,
+          });
+        }
+      });
+
+      setStatus("connected");
+
+      cleanup = () => {
+        try {
+          channel.stopListening(".AuditLogCreated");
+          echo.leave("audit-logs");
+        } catch {
+          // ignore
+        }
+        setStatus("disconnected");
+      };
     });
 
-    setStatus("connected");
-
     return () => {
-      try {
-        channel.stopListening(".AuditLogCreated");
-        echo.leave("audit-logs");
-      } catch {
-        // ignore
-      }
-      setStatus("disconnected");
+      cancelled = true;
+      cleanup?.();
+      if (!cleanup) setStatus("disconnected");
     };
   }, [enabled]);
 

@@ -42,7 +42,7 @@ Implemented a unified Integration Usage Dashboard to track, aggregate, and visua
 - Added daily scheduled task for budget alerts
 - CSV export button integrated into the dashboard page
 - Per-user breakdown support in the breakdown API endpoint
-- Created `UsageDashboardWidget` with monthly cost summary and sparkline
+- Created `UsageDashboardWidget` with cost summary cards and full-width area chart with time range toggles (7d/14d/30d)
 - Added widget to admin dashboard
 
 ## Files Created

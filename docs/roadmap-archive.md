@@ -14,7 +14,7 @@ High-priority work complete. Only optional/lower-priority items remain.
 | [Changelog Page](plans/changelog-roadmap.md) | 2026-02-14 | Optional: Phase 4 (auto-generate from GitHub releases, "What's New" modal) |
 | UI Issues: Toggles & Theme Adherence | 2026-02-14 | Manual testing recommended during build verification |
 | [In-App Documentation & Onboarding](plans/in-app-documentation-roadmap.md) | 2026-02-05 | Optional: additional help articles, advanced onboarding flows |
-| [Progressive Web App (PWA)](plans/pwa-roadmap.md) | 2026-01-31 | Optional: periodic sync, protocol handlers, rich notifications |
+| [Progressive Web App (PWA)](plans/pwa-roadmap.md) | 2026-02-27 | Optional: periodic sync, protocol handlers, rich notifications. Phase 6 (Mobile Native Push Notifications) complete — all investigations done, tested on desktop/Android/iOS. |
 | [Storage Settings Enhancement](plans/storage-settings-roadmap.md) | 2026-01-31 | Optional: usage-over-time chart, orphaned/duplicate file detection |
 | [Web Push Notifications](plans/web-push-notifications-roadmap.md) | 2026-01-31 | Merged into PWA roadmap; core complete |
 | [Auth UI Redesign](plans/auth-ui-redesign-roadmap.md) | 2026-01-29 | Optional: illustrations, page transitions |

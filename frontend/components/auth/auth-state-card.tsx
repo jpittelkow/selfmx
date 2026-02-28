@@ -55,30 +55,32 @@ export function AuthStateCard({
   const isSpinner = variant === "loading" && IconComponent === Loader2;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Logo variant="full" size="lg" />
-          </div>
-          <div
-            className={cn(
-              "mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4",
-              config.bg
-            )}
-          >
-            {isSpinner ? (
-              <IconComponent className={cn("h-6 w-6 animate-spin", config.iconColor)} />
-            ) : (
-              <IconComponent className={cn("h-6 w-6", config.iconColor)} />
-            )}
-          </div>
-          <CardTitle>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
-        </CardHeader>
-        {children && <CardContent>{children}</CardContent>}
-        {footer && <CardFooter>{footer}</CardFooter>}
-      </Card>
+    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex items-center gap-2 self-center">
+          <Logo variant="full" size="md" />
+        </div>
+        <Card>
+          <CardHeader className="text-center">
+            <div
+              className={cn(
+                "mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4",
+                config.bg
+              )}
+            >
+              {isSpinner ? (
+                <IconComponent className={cn("h-6 w-6 animate-spin", config.iconColor)} />
+              ) : (
+                <IconComponent className={cn("h-6 w-6", config.iconColor)} />
+              )}
+            </div>
+            <CardTitle className="text-xl">{title}</CardTitle>
+            {description && <CardDescription>{description}</CardDescription>}
+          </CardHeader>
+          {children && <CardContent>{children}</CardContent>}
+          {footer && <CardFooter>{footer}</CardFooter>}
+        </Card>
+      </div>
     </div>
   );
 }

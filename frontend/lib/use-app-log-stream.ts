@@ -48,50 +48,64 @@ export function useAppLogStream(enabled: boolean): {
       return;
     }
 
-    const echo = getEcho();
-    if (!echo) {
-      setStatus("unavailable");
-      return;
-    }
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
 
     setStatus("connecting");
 
-    const channel = echo.private("app-logs");
-
-    channel.listen(".AppLogCreated", (payload: unknown) => {
-      const data = payload as AppLogStreamPayload;
-      if (
-        !data ||
-        typeof data.level !== "string" ||
-        typeof data.message !== "string"
-      ) {
+    getEcho().then((echo) => {
+      if (cancelled) {
+        setStatus("disconnected");
         return;
       }
-      const entry: AppLogEntry = {
-        id: `app-log-${idRef.current++}-${Date.now()}`,
-        level: data.level ?? "info",
-        message: data.message,
-        context: data.context ?? {},
-        correlation_id: data.correlation_id ?? null,
-        user_id: data.user_id ?? null,
-        timestamp: data.timestamp ?? new Date().toISOString(),
-      };
-      setLogs((prev) => {
-        const next = [entry, ...prev];
-        return next.length > MAX_LOGS ? next.slice(0, MAX_LOGS) : next;
+      if (!echo) {
+        setStatus("unavailable");
+        return;
+      }
+
+      const channel = echo.private("app-logs");
+
+      channel.listen(".AppLogCreated", (payload: unknown) => {
+        const data = payload as AppLogStreamPayload;
+        if (
+          !data ||
+          typeof data.level !== "string" ||
+          typeof data.message !== "string"
+        ) {
+          return;
+        }
+        const entry: AppLogEntry = {
+          id: `app-log-${idRef.current++}-${Date.now()}`,
+          level: data.level ?? "info",
+          message: data.message,
+          context: data.context ?? {},
+          correlation_id: data.correlation_id ?? null,
+          user_id: data.user_id ?? null,
+          timestamp: data.timestamp ?? new Date().toISOString(),
+        };
+        setLogs((prev) => {
+          const next = [entry, ...prev];
+          return next.length > MAX_LOGS ? next.slice(0, MAX_LOGS) : next;
+        });
       });
+
+      setStatus("connected");
+
+      cleanup = () => {
+        try {
+          channel.stopListening(".AppLogCreated");
+          echo.leave("app-logs");
+        } catch {
+          // ignore
+        }
+        setStatus("disconnected");
+      };
     });
 
-    setStatus("connected");
-
     return () => {
-      try {
-        channel.stopListening(".AppLogCreated");
-        echo.leave("app-logs");
-      } catch {
-        // ignore
-      }
-      setStatus("disconnected");
+      cancelled = true;
+      cleanup?.();
+      if (!cleanup) setStatus("disconnected");
     };
   }, [enabled]);
 

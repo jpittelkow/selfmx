@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import { getErrorMessage } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SSOButtons } from "@/components/auth/sso-buttons";
 import { TwoFactorForm } from "@/components/auth/two-factor-form";
 import { PasskeyLoginButton } from "@/components/auth/passkey-login-button";
@@ -42,6 +43,7 @@ export default function LoginPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>({
@@ -55,7 +57,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const result = await login(data.email, data.password, data.remember);
-      
+
       if (result.requires_2fa) {
         setRequires2FA(true);
         return;
@@ -86,7 +88,7 @@ export default function LoginPage() {
 
   return (
     <AuthPageLayout
-      title="Sign In"
+      title="Welcome back"
       description="Enter your credentials to access your account"
     >
       <SSOButtons onLoad={setHasSSOProviders} />
@@ -129,7 +131,7 @@ export default function LoginPage() {
               {!isConfigLoading && features?.passwordResetAvailable && (
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-primary hover:underline"
+                  className="text-sm underline-offset-4 hover:underline"
                 >
                   Forgot password?
                 </Link>
@@ -147,11 +149,16 @@ export default function LoginPage() {
         </FormField>
 
         <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="remember"
-            {...register("remember")}
-            className="h-4 w-4 rounded border-border"
+          <Controller
+            name="remember"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                id="remember"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            )}
           />
           <Label htmlFor="remember" className="text-sm font-normal">
             Remember me
@@ -170,7 +177,7 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-primary hover:underline">
+        <Link href="/register" className="underline-offset-4 hover:underline">
           Create one
         </Link>
       </p>

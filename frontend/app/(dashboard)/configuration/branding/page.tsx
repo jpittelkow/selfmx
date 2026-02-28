@@ -24,11 +24,12 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { SaveButton } from "@/components/ui/save-button";
-import { Loader2, Upload, RotateCcw, Trash2 } from "lucide-react";
+import { Loader2, Upload, RotateCcw, Trash2, Palette } from "lucide-react";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { BrandingPreview } from "@/components/branding-preview";
 import { HelpLink } from "@/components/help/help-link";
 import { useAppConfig } from "@/lib/app-config";
+import { ThemePicker } from "@/components/theme-picker";
 
 const brandingSchema = z.object({
   logo_url: z.string().optional(),
@@ -331,12 +332,27 @@ export default function BrandingSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Theme & Branding</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Theme & Branding</h1>
         <p className="text-muted-foreground mt-2">
           Customize the appearance of your application.{" "}
           <HelpLink articleId="branding" />
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Color Theme
+          </CardTitle>
+          <CardDescription>
+            Choose your mode and color palette.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemePicker />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         <form onSubmit={handleSubmit(onSubmit)}>

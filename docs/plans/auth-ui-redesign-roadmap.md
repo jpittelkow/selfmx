@@ -2,9 +2,9 @@
 
 Modernize the login, registration, and related authentication pages with improved visual design and UX.
 
-**Priority**: MEDIUM  
-**Status**: Completed (Core Done)  
-**Last Updated**: 2026-01-30
+**Priority**: MEDIUM
+**Status**: Completed (Core Done)
+**Last Updated**: 2026-02-27
 
 **Remaining Work**: Optional visual polish (illustrations, page transitions, cross-browser testing)
 
@@ -20,7 +20,7 @@ Update the authentication pages (login, register, forgot password, reset passwor
 - [x] SSO buttons integration
 - [x] Two-factor authentication flow
 - [x] Responsive centered card layout
-- [x] Modern visual design (gradient + glassmorphism card)
+- [x] Modern visual design (shadcn login-03 pattern: `bg-muted` + Card)
 - [ ] Engaging imagery/illustrations
 - [x] Password strength indicator
 - [x] Enhanced form interactions (password toggle, email availability)
@@ -46,25 +46,23 @@ Update the authentication pages (login, register, forgot password, reset passwor
 
 Update the `AuthPageLayout` with a modern split-screen or enhanced card design.
 
-### Option A: Split-Screen Layout
+### Adopted: shadcn login-03 Pattern
 
-- [ ] Left panel: Branding, illustration, or feature highlights
-- [ ] Right panel: Auth form
-- [ ] Responsive: Stack on mobile
-
-### Option B: Enhanced Card Layout
-
-- [x] Subtle background pattern or gradient
-- [x] Card with shadow and rounded corners
-- [ ] Animated background elements (optional)
+- [x] `bg-muted` full-page surface
+- [x] Logo centered above Card
+- [x] Card with title/description CardHeader
+- [x] Consistent across all auth pages (login, register, forgot-password, reset-password, verify-email, SSO callback)
+- [x] `AuthStateCard` updated to match the same pattern
+- [x] `AuthDivider` uses `bg-card` for correct rendering inside Card
 
 ### Tasks
 
 - [x] Design mockup/decision on layout approach
-- [x] Update `AuthPageLayout` component
-- [x] Add background styling (gradient, pattern, or illustration)
+- [x] Update `AuthPageLayout` component to login-03 pattern
+- [x] Update standalone auth pages (forgot-password, reset-password) to match
+- [x] Update `AuthStateCard` to use `bg-muted` + logo-above-card layout
+- [x] Replace raw checkbox with shadcn `Checkbox` on login page
 - [x] Improve spacing and typography
-- [x] Add subtle animations on load
 
 ## Phase 2: Form Enhancements
 
@@ -120,23 +118,18 @@ Final accessibility and cross-browser polish.
 - [ ] Cross-browser testing
 - [x] Mobile touch target sizes (48x48 min for SSO buttons)
 
-## Design Inspiration
+## Design Pattern
 
-Modern auth page patterns to consider:
-
-1. **Split-screen**: Form on one side, branding/illustration on other (Linear, Notion)
-2. **Gradient backgrounds**: Subtle gradients with glassmorphism card (Stripe)
-3. **Illustration-heavy**: Friendly illustrations alongside form (Slack, Dropbox)
-4. **Minimal**: Clean white/dark with strong typography (Apple)
-5. **Animated**: Subtle background animations or particles (Vercel)
+Using **shadcn login-03**: Muted background with centered branding above a clean Card. This is the pattern used by most modern SaaS products (GitHub, Linear, Vercel). All auth pages follow this pattern for visual consistency.
 
 ## Key Files
 
 | File | Changes |
 |------|---------|
-| `frontend/components/auth/auth-page-layout.tsx` | Major layout redesign |
+| `frontend/components/auth/auth-page-layout.tsx` | login-03 pattern (bg-muted + Card) |
+| `frontend/components/auth/auth-state-card.tsx` | Matching bg-muted + logo-above-card layout |
 | `frontend/components/auth/sso-buttons.tsx` | Enhanced styling |
-| `frontend/components/auth/auth-divider.tsx` | Visual update |
+| `frontend/components/auth/auth-divider.tsx` | bg-card (renders inside Card) |
 | `frontend/components/ui/password-input.tsx` | New: password toggle |
 | `frontend/components/ui/password-strength.tsx` | New: strength indicator |
 | `frontend/app/(auth)/login/page.tsx` | Use new components |

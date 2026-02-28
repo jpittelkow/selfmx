@@ -32,6 +32,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // IMPORTANT: localStorage keys here MUST match:
+  //   - ThemeProvider's default storageKey ("sourdough-theme")
+  //   - COLOR_THEME_STORAGE_KEY in lib/themes.ts ("sourdough-color-theme")
   const themeScript = `
 (function() {
   var key = 'sourdough-theme';
@@ -43,6 +46,8 @@ export default function RootLayout({
     resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.classList.add(resolved);
+  var colorTheme = localStorage.getItem('sourdough-color-theme') || 'default';
+  document.documentElement.setAttribute('data-theme', colorTheme);
 })();
   `.trim();
 
