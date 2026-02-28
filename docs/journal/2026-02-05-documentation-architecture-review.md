@@ -12,7 +12,7 @@ Comprehensive documentation-only review and fixes across 4 phases, addressing cr
 
 - **Fixed request flow diagram** (`docs/ai/architecture-map.md`): Corrected to show Nginx as the single entry point (Browser -> Nginx -> Next.js or PHP-FPM), not Browser -> Next.js -> Nginx
 - **Aligned LLM orchestration modes** (`docs/ai/architecture-map.md`): Removed incorrect `failover` and `consensus` modes; aligned to canonical ADR-006 names (Single, Aggregation, Council)
-- **Fixed SSE vs WebSocket discrepancy** (`docs/adr/023-audit-logging-system.md`): Removed incorrect `/api/audit-logs/stream` SSE endpoint reference; documented that real-time streaming uses WebSocket via Laravel Echo/Pusher
+- **Fixed SSE vs WebSocket discrepancy** (`docs/adr/023-audit-logging-system.md`): Removed incorrect `/api/audit-logs/stream` SSE endpoint reference; documented that real-time streaming uses WebSocket via Laravel Echo/Reverb
 - **Fixed settings flow ambiguity** (`docs/ai/architecture-map.md`): Changed ambiguous "system_settings table (or settings with user_id = null)" to definitive "system_settings table (global, no user_id)"
 - **Updated backup format diagram** (`docs/adr/007-backup-system-design.md`): Changed `database.sql` to show actual format: `database.sqlite` (file copy) or `database.json` (JSON export with SHA-256 hash); updated database backup strategy table
 

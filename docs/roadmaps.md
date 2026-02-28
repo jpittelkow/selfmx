@@ -12,7 +12,7 @@ Currently in progress. Complete these before starting new work.
 
 Ready to start. These are unblocked and can begin immediately.
 
-- **[Database Tables Audit](plans/database-tables-audit-roadmap.md)** - Audit all database tables, migrations, and schema for consistency, correctness, proper indexing, unused tables, and cross-database compatibility (SQLite/MySQL/PostgreSQL).
+_(None — pick from Planned Features below or add new items)_
 
 ## Planned Features
 
@@ -85,7 +85,7 @@ Reference for paid third-party integrations used by Sourdough. All integrations 
 
 | Provider | Pricing Model | Notes |
 |----------|--------------|-------|
-| Pusher | Per connection + messages | Free tier: 200k messages/day, 100 connections. Required only for live streaming features (audit logs, app logs) |
+| Reverb | Self-hosted (free) | Included in Docker container. Used for live streaming features (audit logs, app logs, notifications) |
 
 ### Notification Services (optional)
 

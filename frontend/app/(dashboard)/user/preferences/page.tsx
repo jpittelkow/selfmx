@@ -42,6 +42,7 @@ import { useInstallPrompt } from "@/lib/use-install-prompt";
 import { TIMEZONES } from "@/lib/timezones";
 import { setUserTimezone } from "@/lib/utils";
 import { ThemePicker } from "@/components/theme-picker";
+import { useAuth, isAdminUser } from "@/lib/auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { getTypesByCategory } from "@/lib/notification-types";
@@ -194,6 +195,8 @@ export default function PreferencesPage() {
   const [typePreferences, setTypePreferences] = useState<Record<string, Record<string, boolean>>>({});
   const [typePrefsOpen, setTypePrefsOpen] = useState(false);
   const { features, novu } = useAppConfig();
+  const { user } = useAuth();
+  const isAdmin = user ? isAdminUser(user) : false;
   const { isOffline } = useOnline();
   const { canPrompt, isInstalled, promptInstall } = useInstallPrompt();
 
@@ -552,21 +555,23 @@ export default function PreferencesPage() {
         <OfflineBadge />
       </div>
 
-      {/* Appearance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Appearance
-          </CardTitle>
-          <CardDescription>
-            Choose your preferred mode and color theme.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ThemePicker />
-        </CardContent>
-      </Card>
+      {/* Appearance — admin only */}
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Appearance
+            </CardTitle>
+            <CardDescription>
+              Choose your preferred mode and color theme.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ThemePicker />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Defaults */}
       <Card>

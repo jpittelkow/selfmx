@@ -209,7 +209,7 @@ View and manage notifications from the header and dedicated notifications page:
 - **Dropdown**: Lists recent notifications, **Mark all read**, and **View all** to open the full list.
 - **Notifications page**: Go to **/notifications** (or click **View all**). Filter by **All** or **Unread**, mark items read, delete selected, and paginate through the list.
 
-When real-time updates are enabled (Pusher/broadcasting), new in-app notifications appear immediately without refreshing.
+When real-time updates are enabled (Reverb/broadcasting), new in-app notifications appear immediately without refreshing.
 
 ### Notification Channels
 

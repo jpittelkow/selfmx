@@ -27,7 +27,7 @@ export type AuditStreamStatus = "disconnected" | "connecting" | "connected" | "u
 
 /**
  * Subscribe to real-time audit log events on the private audit-logs channel.
- * Only works when Pusher is configured and the user is an admin (channel auth).
+ * Only works when Reverb is configured and the user is an admin (channel auth).
  * Call only when enabled and in the browser.
  */
 export function useAuditStream(

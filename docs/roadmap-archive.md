@@ -34,6 +34,7 @@ All tasks complete.
 
 | Roadmap | Completed |
 |---------|-----------|
+| [Database Tables Audit](plans/database-tables-audit-roadmap.md) | 2026-02-28 |
 | Mobile Header Styling Fixes | 2026-02-24 |
 | [GraphQL API with User API Keys](plans/graphql-api-roadmap.md) | 2026-02-22 |
 | Stripe Connect Fork Experience | 2026-02-22 |

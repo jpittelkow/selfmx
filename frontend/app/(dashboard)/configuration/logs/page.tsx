@@ -85,7 +85,7 @@ export default function ApplicationLogsPage() {
           </h1>
           <p className="text-muted-foreground mt-1">
             Real-time console logs. Enable Live, set LOG_BROADCAST_ENABLED=true,
-            add &quot;broadcast&quot; to LOG_STACK, and configure Pusher.{" "}
+            add &quot;broadcast&quot; to LOG_STACK, and configure Reverb.{" "}
             <HelpLink articleId="application-logs" />
           </p>
         </div>
@@ -96,7 +96,7 @@ export default function ApplicationLogsPage() {
             onClick={() => setLiveEnabled((v) => !v)}
             title={
               status === "unavailable"
-                ? "Real-time requires Pusher configuration"
+                ? "Real-time requires Reverb configuration"
                 : liveEnabled
                   ? "Turn off live updates"
                   : "Stream logs in real time"
@@ -114,7 +114,7 @@ export default function ApplicationLogsPage() {
                 status === "connected"
                   ? "Connected to real-time stream"
                   : status === "unavailable"
-                    ? "Pusher not configured or auth failed"
+                    ? "Reverb not configured or auth failed"
                     : "Connecting…"
               }
             >
@@ -338,7 +338,7 @@ export default function ApplicationLogsPage() {
             {!liveEnabled ? (
               <p className="text-zinc-500">
                 Enable Live to stream application logs. Set LOG_BROADCAST_ENABLED=true,
-                add &quot;broadcast&quot; to LOG_STACK, and configure Pusher.
+                add &quot;broadcast&quot; to LOG_STACK, and configure Reverb.
               </p>
             ) : filtered.length === 0 ? (
               <p className="text-zinc-500">

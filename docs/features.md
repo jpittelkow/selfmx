@@ -91,7 +91,7 @@ Core functionality and feature documentation:
 
 **Capabilities:**
 - In-app notification UI: header bell with unread badge, dropdown of recent items, full `/notifications` page with filters and bulk actions (or Novu Inbox when Novu is enabled)
-- Real-time updates via Laravel Echo + Pusher when broadcasting is configured (local mode)
+- Real-time updates via Laravel Echo + Reverb when broadcasting is configured (local mode)
 - NotificationContext provider for client-side state (local mode)
 - **Global vs per-user config:** Admins enable which channels are available in Configuration > Notifications (`/configuration/notifications`); users enable channels, add webhooks/phone, test, and accept usage in User Preferences (`/user/preferences`). Users cannot enable a channel until an admin has made it available. SMS: admin chooses preferred provider (Twilio/Vonage/SNS); users enter phone number and test.
 
@@ -234,10 +234,10 @@ Core functionality and feature documentation:
 
 **Capabilities:**
 - **Configuration > Audit** (`/configuration/audit`): Paginated audit log with filters (user, action, severity, correlation ID, date range), search, severity badges, detail modal (old/new values, IP, user agent), CSV export. Admin only.
-- **Configuration > Application Logs** (`/configuration/logs`): Real-time console log viewer and export. Enable "Live" to stream `Log::` output via private `app-logs` channel (requires `LOG_BROADCAST_ENABLED=true`, `broadcast` in `LOG_STACK`, Pusher). Export card: export log files by date range, level, correlation ID as CSV or JSON Lines (`GET /api/app-logs/export`). Admin only.
+- **Configuration > Application Logs** (`/configuration/logs`): Real-time console log viewer and export. Enable "Live" to stream `Log::` output via private `app-logs` channel (requires `LOG_BROADCAST_ENABLED=true`, `broadcast` in `LOG_STACK`, Reverb). Export card: export log files by date range, level, correlation ID as CSV or JSON Lines (`GET /api/app-logs/export`). Admin only.
 - **Configuration > Access Logs (HIPAA)** (`/configuration/access-logs`): PHI access audit trail. Table shows date, user, action, resource type, resource ID, IP, and **fields accessed** (extracted automatically by middleware). Filters (user, action, resource type, correlation ID, dates), CSV export. AccessLogService + LogResourceAccess middleware on profile, user, user-settings, and search/suggestions (when returning user data) routes. Admin only.
 - **Configuration > Log retention** (`/configuration/log-retention`): Configure retention days for application logs (1–365), audit logs (30–730), access logs (6 years minimum for HIPAA). Toggle **HIPAA access logging** (enable/disable). When disabled, “Delete all access logs” is available (with HIPAA violation warning). Cleanup via `php artisan log:cleanup` (optional `--dry-run`, `--archive`). Admin only.
-- **Live streaming (audit)**: "Live" toggle on audit page streams new logs in real time via private `audit-logs` channel (Pusher); connection status and highlight animation for new entries. Requires BROADCAST_CONNECTION=pusher and admin user.
+- **Live streaming (audit)**: "Live" toggle on audit page streams new logs in real time via private `audit-logs` channel (Reverb); connection status and highlight animation for new entries. Requires BROADCAST_CONNECTION=reverb and admin user.
 - **Dashboard analytics** (admin dashboard): “System Activity” widget with stats cards (total actions, warnings/errors), severity donut chart, activity trends area chart (last 30 days), recent warnings list, and “View all logs” link.
 - **Stats API** (`GET /audit-logs/stats`): `total_actions`, `by_severity`, `daily_trends`, `recent_warnings`, `actions_by_type`, `actions_by_user`. Query params: `date_from`, `date_to`.
 - **Suspicious activity**: Banner on admin dashboard when 5+ failed logins in 15 min or 10+ export actions in 1 hour; `GET /api/suspicious-activity`. Scheduled `log:check-suspicious` notifies admins (in-app + email).

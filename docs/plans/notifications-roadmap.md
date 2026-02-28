@@ -21,7 +21,7 @@ Complete the notifications system with in-app UI, real-time updates, and user pr
 
 ### Notifications Backend (MEDIUM Priority)
 - [x] Implement per-user notification channel preferences
-- [x] Add WebSocket/polling for real-time notification updates (Laravel Echo + Pusher)
+- [x] Add WebSocket/polling for real-time notification updates (Laravel Echo + Reverb)
 
 ### Additional Providers (MEDIUM Priority)
 - [x] Implement ntfy channel for self-hosted push notifications (2026-01-27)
@@ -114,7 +114,7 @@ interface NotificationContext {
 **Options**:
 
 1. **Polling (Simple)**: Fetch unread count every 30-60 seconds
-2. **WebSocket (Recommended)**: Laravel Echo + Pusher/Soketi for instant updates
+2. **WebSocket (Recommended)**: Laravel Echo + Reverb for instant updates
 3. **Server-Sent Events**: Lightweight alternative to WebSocket
 
 **WebSocket Implementation** (Laravel Echo):
@@ -126,7 +126,7 @@ Backend:
 - Broadcast to user's private channel
 
 Frontend:
-- Install laravel-echo and pusher-js
+- Install laravel-echo and pusher-js (Reverb uses Pusher protocol)
 - Subscribe to user's notification channel
 - Update notification context on new events
 ```

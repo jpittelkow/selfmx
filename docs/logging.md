@@ -22,7 +22,7 @@ Use **structured context** (arrays) with every log: include `user_id`, `provider
 - **LOG_STACK**: Comma-separated channels, e.g. `single`, `daily`, or `single,json`. Add `broadcast` for real-time admin log streaming.
 - **LOG_LEVEL**: `debug` (development), `info` (staging), `warning` (production).
 - **LOG_DAILY_DAYS**: Retention in days when using the `daily` channel (default 14).
-- **LOG_BROADCAST_ENABLED**: Set `true` to stream logs to the admin Application Logs page (requires Pusher and `broadcast` in LOG_STACK).
+- **LOG_BROADCAST_ENABLED**: Set `true` to stream logs to the admin Application Logs page (requires Reverb and `broadcast` in LOG_STACK).
 - **LOG_BROADCAST_LEVEL**: Minimum level to broadcast (`info`, `warning`, `error`; default `info`).
 
 Add `json` to LOG_STACK for JSON output to stderr (correlation_id, user_id, request_uri in each line). Use for production or containers with log aggregation.
@@ -91,7 +91,7 @@ Configuration > **Application Logs** (`/configuration/logs`) streams application
 
 - `LOG_BROADCAST_ENABLED=true`
 - `broadcast` is in `LOG_STACK`
-- Pusher is configured (`BROADCAST_CONNECTION=pusher`)
+- Reverb is configured (`BROADCAST_CONNECTION=reverb`)
 - User is admin (private `app-logs` channel)
 
 Logs are broadcast via `AppLogCreated`; the **BroadcastLogHandler** sanitizes sensitive context before sending.

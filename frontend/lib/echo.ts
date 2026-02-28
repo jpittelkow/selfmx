@@ -14,8 +14,8 @@ function getAuthEndpoint(): string {
  * when Reverb is not configured (missing NEXT_PUBLIC_REVERB_APP_KEY).
  * Use only in browser (e.g. inside useEffect).
  *
- * Pusher and Laravel Echo are lazy-imported to avoid module-level side effects
- * (Pusher.js validates options at import time in newer versions).
+ * Pusher.js (used as the transport protocol for Reverb) and Laravel Echo are
+ * lazy-imported to avoid module-level side effects.
  */
 export async function getEcho(): Promise<Echo<"pusher"> | null> {
   if (typeof window === "undefined") return null;

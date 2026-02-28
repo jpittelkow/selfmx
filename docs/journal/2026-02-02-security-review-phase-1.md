@@ -29,7 +29,7 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsaf
 
 CSP Notes:
 - `unsafe-inline` and `unsafe-eval` required for Next.js/React hydration
-- `ws: wss:` allows Laravel Echo/Pusher websocket connections
+- `ws: wss:` allows Laravel Echo/Reverb websocket connections
 - `blob:` and `data:` needed for image handling
 
 ### 3. CORS Configuration Tightening

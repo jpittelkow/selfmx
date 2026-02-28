@@ -26,13 +26,13 @@ Implemented two extensions to the audit logging system: real-time audit log stre
 
 ## Observations
 
-- Real-time streaming reuses the existing Pusher/Echo setup and follows the same pattern as `NotificationSent` and the user notification channel.
+- Real-time streaming reuses the existing Reverb/Echo setup and follows the same pattern as `NotificationSent` and the user notification channel.
 - Correlation ID in the response header allows frontend or API clients to correlate requests with server logs when debugging.
 - JSON logs with correlation_id, user_id, and request_uri are suitable for log aggregation tools (e.g. Datadog, ELK) without further middleware.
 
 ## Trade-offs
 
-- Live stream only works when `BROADCAST_CONNECTION=pusher` and Pusher credentials are set; otherwise the UI shows "Unavailable" and no error is thrown.
+- Live stream only works when `BROADCAST_CONNECTION=reverb` and Reverb is configured; otherwise the UI shows "Unavailable" and no error is thrown.
 - Context processor runs on every log call; cost is minimal (a few array lookups and auth check).
 
 ## Next Steps (Future Considerations)
@@ -42,7 +42,7 @@ Implemented two extensions to the audit logging system: real-time audit log stre
 
 ## Testing Notes
 
-- As admin, enable "Live" on Configuration > Audit; trigger an action (e.g. login, change setting); confirm new log appears at top with brief highlight; confirm status shows "Live" when Pusher is configured.
-- Without Pusher (or with BROADCAST_CONNECTION=null), confirm "Live" shows "Unavailable".
+- As admin, enable "Live" on Configuration > Audit; trigger an action (e.g. login, change setting); confirm new log appears at top with brief highlight; confirm status shows "Live" when Reverb is configured.
+- Without Reverb (or with BROADCAST_CONNECTION=null), confirm "Live" shows "Unavailable".
 - Check response headers for `X-Correlation-ID` on any API request; send `X-Correlation-ID: my-id` and confirm same value in response.
 - Set `LOG_STACK=single,json`, trigger a log (e.g. failed login); confirm stderr has a JSON line with `correlation_id`, `user_id`, `ip_address`, `request_uri`.

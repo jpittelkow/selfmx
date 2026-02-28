@@ -116,7 +116,7 @@ To stream application logs to **Configuration > Application Logs** in real time:
 
 1. Add a `broadcast` channel to `LOG_STACK` (e.g. `LOG_STACK=single,broadcast`).
 2. Set `LOG_BROADCAST_ENABLED=true` and `LOG_BROADCAST_LEVEL=info` (or `warning`/`error`).
-3. Configure Pusher (`BROADCAST_CONNECTION=pusher`). Admin users can then enable **Live** on the Application Logs page.
+3. Configure Reverb (`BROADCAST_CONNECTION=reverb`). Admin users can then enable **Live** on the Application Logs page.
 
 See [Logging](../../logging.md#live-console-log-viewer-admin) and `backend/app/Logging/BroadcastLogHandler.php`.
 

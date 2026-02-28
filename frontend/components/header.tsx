@@ -10,6 +10,7 @@ import { SearchInline } from "@/components/search/search-inline";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HelpIcon } from "@/components/help/help-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth, isAdminUser } from "@/lib/auth";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
 
 const isMac =
@@ -19,6 +20,8 @@ const isMac =
 export function Header() {
   const { setMobileMenuOpen } = useSidebar();
   const { setOpen: setSearchOpen, searchEnabled } = useSearch();
+  const { user } = useAuth();
+  const isAdmin = user ? isAdminUser(user) : false;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
@@ -70,10 +73,12 @@ export function Header() {
 
           <Separator orientation="vertical" className="mx-1 hidden sm:block h-5" />
 
-          {/* User group: theme + profile */}
-          <div className="hidden sm:block">
-            <ThemeToggle />
-          </div>
+          {/* User group: theme (admin only) + profile */}
+          {isAdmin && (
+            <div className="hidden sm:block">
+              <ThemeToggle />
+            </div>
+          )}
           <UserDropdown />
         </div>
       </div>

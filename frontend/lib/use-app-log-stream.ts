@@ -26,7 +26,7 @@ const MAX_LOGS = 500;
 
 /**
  * Subscribe to real-time application log events on the private app-logs channel.
- * Only works when Pusher is configured and the user is an admin (channel auth).
+ * Only works when Reverb is configured and the user is an admin (channel auth).
  * Call only when enabled and in the browser.
  */
 export function useAppLogStream(enabled: boolean): {

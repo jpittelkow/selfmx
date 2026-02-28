@@ -243,7 +243,7 @@ Nginx is configured with security headers in `docker/nginx.conf`:
 
 Notes:
 - `unsafe-inline` and `unsafe-eval` are required for Next.js/React hydration
-- `ws: wss:` allows Laravel Echo/Pusher websocket connections
+- `ws: wss:` allows Laravel Echo/Reverb websocket connections
 - `blob:` and `data:` are needed for image handling
 
 ## Meilisearch (Search Engine)

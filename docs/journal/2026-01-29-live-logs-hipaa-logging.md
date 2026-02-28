@@ -47,7 +47,7 @@ Implemented the Live Console Log Viewer (real-time application log streaming to 
 ## Observations
 
 - Access logs are always included in backup (no opt-in); restore merge avoids duplicates when re-restoring.
-- Live log broadcast is off by default; enable explicitly to avoid noise and Pusher cost.
+- Live log broadcast is off by default; enable explicitly to avoid noise.
 
 ## Trade-offs
 
@@ -61,6 +61,6 @@ Implemented the Live Console Log Viewer (real-time application log streaming to 
 
 ## Testing Notes
 
-- Live logs: Set `LOG_BROADCAST_ENABLED=true`, add `broadcast` to `LOG_STACK`, configure Pusher, open Application Logs, enable Live, trigger `Log::info()`; verify entry appears.
+- Live logs: Set `LOG_BROADCAST_ENABLED=true`, add `broadcast` to `LOG_STACK`, configure Reverb (`BROADCAST_CONNECTION=reverb`), open Application Logs, enable Live, trigger `Log::info()`; verify entry appears.
 - HIPAA: Visit profile, users, or user settings; confirm rows in `access_logs` and in Access Logs UI.
 - Backup: Create backup, confirm `access_logs.json` in ZIP and `access_logs` in manifest; restore and verify merge behavior.

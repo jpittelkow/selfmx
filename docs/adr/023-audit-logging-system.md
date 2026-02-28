@@ -170,7 +170,7 @@ GET  /api/audit-logs/stats        - Audit statistics
 GET  /api/audit-logs/export       - Export to CSV
 ```
 
-Real-time streaming uses WebSocket via Laravel Echo/Pusher on a private `audit-logs` channel (not SSE). The frontend subscribes using `use-audit-stream.ts`.
+Real-time streaming uses WebSocket via Laravel Echo/Reverb on a private `audit-logs` channel (not SSE). The frontend subscribes using `use-audit-stream.ts`.
 
 ## Consequences
 

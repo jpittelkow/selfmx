@@ -59,7 +59,7 @@ Improve the audit logs page UI/UX and enhance general console/application loggin
 
 **Console/App Logging (2026-01-29)**: Backend logging added to LLMOrchestrator, EmailChannel, BackupService, ScheduledBackup, AuthController. Per-environment LOG_LEVEL and LOG_DAILY_DAYS in .env.example; daily channel has context tap. Frontend: errorLogger (frontend/lib/error-logger.ts), ErrorBoundary, ErrorHandlerSetup, POST /api/client-errors. Ad-hoc console.* replaced with errorLogger. docs/logging.md, extend-logging recipe, patterns and context-loading updated; errorLogger in global-components.
 
-**Real-time Audit Streaming (2026-01-29)**: AuditLogCreated event broadcasts on private `audit-logs` channel (admin-only); audit page has Live toggle and connection status; new logs prepend with highlight. Requires Pusher (BROADCAST_CONNECTION=pusher). See same journal entry.
+**Real-time Audit Streaming (2026-01-29)**: AuditLogCreated event broadcasts on private `audit-logs` channel (admin-only); audit page has Live toggle and connection status; new logs prepend with highlight. Requires Reverb (BROADCAST_CONNECTION=reverb). See same journal entry.
 
 ---
 

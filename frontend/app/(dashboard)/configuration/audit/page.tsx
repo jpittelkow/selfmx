@@ -276,7 +276,7 @@ export default function AuditLogPage() {
             onClick={() => setLiveEnabled((v) => !v)}
             title={
               streamStatus === "unavailable"
-                ? "Real-time requires Pusher configuration"
+                ? "Real-time requires Reverb configuration"
                 : liveEnabled
                   ? "Turn off live updates"
                   : "Stream new logs in real time"
@@ -294,7 +294,7 @@ export default function AuditLogPage() {
                 streamStatus === "connected"
                   ? "Connected to real-time stream"
                   : streamStatus === "unavailable"
-                    ? "Pusher not configured or auth failed"
+                    ? "Reverb not configured or auth failed"
                     : "Connecting…"
               }
             >

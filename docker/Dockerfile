@@ -19,6 +19,12 @@ RUN npm install
 # Copy frontend source
 COPY frontend/ ./
 
+# NEXT_PUBLIC_* vars are inlined at build time by Next.js.
+# Set Reverb app key so real-time features (live logs, notifications) work in production.
+# Must match the backend REVERB_APP_KEY (defaults defined in Stage 2 ENV declarations).
+ARG NEXT_PUBLIC_REVERB_APP_KEY=sourdough-key
+ENV NEXT_PUBLIC_REVERB_APP_KEY=${NEXT_PUBLIC_REVERB_APP_KEY}
+
 # Build Next.js app
 RUN npm run build
 
@@ -45,6 +51,17 @@ ENV LOG_CHANNEL=stack
 ENV LOG_STACK=daily,broadcast
 ENV LOG_BROADCAST_ENABLED=true
 ENV BROADCAST_CONNECTION=reverb
+# Reverb defaults — must match the NEXT_PUBLIC_REVERB_APP_KEY baked into the frontend build.
+# To change the key, rebuild the image with --build-arg NEXT_PUBLIC_REVERB_APP_KEY=your-key
+# and set REVERB_APP_KEY=your-key at runtime. Runtime-only changes will NOT update the frontend.
+ENV REVERB_APP_ID=sourdough
+ENV REVERB_APP_KEY=sourdough-key
+ENV REVERB_APP_SECRET=sourdough-secret
+ENV REVERB_HOST=127.0.0.1
+ENV REVERB_PORT=6001
+ENV REVERB_SCHEME=http
+ENV REVERB_SERVER_HOST=0.0.0.0
+ENV REVERB_SERVER_PORT=6001
 # Meilisearch defaults (can be overridden at runtime)
 ENV MEILI_ENV=production
 ENV MEILI_MASTER_KEY=""

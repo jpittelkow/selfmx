@@ -212,6 +212,6 @@ TWILIO_FROM=+15551234567
 ### WebSocket for Real-Time
 
 For real-time in-app notifications:
-- Laravel Reverb (self-hosted) or Pusher
+- Laravel Reverb (self-hosted)
 - Frontend listens on user's private channel
 - New notifications pushed instantly

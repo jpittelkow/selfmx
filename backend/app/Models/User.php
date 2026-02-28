@@ -24,6 +24,13 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
         HasEmailNotifications::sendEmailVerificationNotification insteadof MustVerifyEmail;
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user): void {
+            $user->flushCredentials();
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      */
