@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.8.0] - 2026-02-28
+
+### Added
+- Admin-only theming, Reverb defaults, inline migration seeders
 ## [0.7.11] - 2026-02-27
 
 ### Added
