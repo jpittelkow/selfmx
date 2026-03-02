@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.2.0] - 2026-03-01
+
+### Added
+- Implement email app Phase 1 - domains, mailboxes, threads, compose, contacts, labels, rules, spam filters, AI, and provider settings
+
+### Changed
+- Release v0.8.2
 ## [Unreleased]
 
 ### Added
