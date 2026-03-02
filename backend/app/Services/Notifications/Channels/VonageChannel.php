@@ -26,7 +26,7 @@ class VonageChannel implements ChannelInterface
 
         $apiKey = config('notifications.channels.vonage.api_key');
         $apiSecret = config('notifications.channels.vonage.api_secret');
-        $from = config('notifications.channels.vonage.from', 'Sourdough');
+        $from = config('notifications.channels.vonage.from', 'selfmx');
 
         if (!$apiKey || !$apiSecret) {
             throw new \RuntimeException('Vonage configuration incomplete');
@@ -96,7 +96,7 @@ class VonageChannel implements ChannelInterface
         }
         $variables = array_merge([
             'user' => ['name' => $user->name, 'email' => $user->email],
-            'app_name' => config('app.name', 'Sourdough'),
+            'app_name' => config('app.name', 'selfmx'),
         ], $data);
         return $service->renderTemplate($template, $variables);
     }

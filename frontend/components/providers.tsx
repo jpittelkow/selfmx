@@ -59,7 +59,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ErrorBoundary>
         <AppConfigProvider>
           <VersionProvider>
-            <ThemeProvider defaultTheme="system" storageKey="sourdough-theme">
+            <ThemeProvider defaultTheme="system" storageKey="selfmx-theme">
               <TooltipProvider delayDuration={300}>
                 <ErrorHandlerSetup />
                 <ServiceWorkerSetup />

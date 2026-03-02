@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { User, Settings, Shield, LogOut, ChevronDown, Info, Sparkles, HelpCircle } from "lucide-react";
+import { User, Settings, Shield, LogOut, ChevronDown, Info, Sparkles, HelpCircle, ListFilter } from "lucide-react";
 import { AboutDialog } from "@/components/about-dialog";
 import { useWizard } from "@/components/onboarding/wizard-provider";
 import { useHelp } from "@/components/help/help-provider";
@@ -109,6 +109,10 @@ export function UserDropdown() {
         <DropdownMenuItem onClick={() => router.push("/user/security")}>
           <Shield className="mr-2 h-4 w-4" />
           Security
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/user/rules")}>
+          <ListFilter className="mr-2 h-4 w-4" />
+          Email Rules
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleShowWizard}>

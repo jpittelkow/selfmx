@@ -40,18 +40,22 @@ const SEGMENT_LABELS: Record<string, string> = {
   stripe: "Stripe",
   audit: "Audit Log",
   logs: "Application Logs",
-  "access-logs": "Access Logs",
   "log-retention": "Log Retention",
   jobs: "Jobs",
   usage: "Usage & Costs",
   payments: "Payment History",
+  mail: "Mail",
+  contacts: "Contacts",
+  "email-provider": "Email Provider",
+  "email-domains": "Email Domains",
+  mailboxes: "Mailboxes",
   profile: "Profile",
   preferences: "Preferences",
   files: "File Manager",
 };
 
 /** Routes where breadcrumbs should not be shown. */
-const HIDDEN_ON = new Set(["/dashboard"]);
+const HIDDEN_ON = new Set(["/mail"]);
 
 function labelForSegment(segment: string): string {
   return SEGMENT_LABELS[segment] ?? segment.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());

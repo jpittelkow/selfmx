@@ -1,4 +1,4 @@
-# Sourdough Dockerfile
+# selfmx Dockerfile
 # Multi-stage build for Laravel + Next.js in a single container
 
 #==============================================================================
@@ -22,7 +22,7 @@ COPY frontend/ ./
 # NEXT_PUBLIC_* vars are inlined at build time by Next.js.
 # Set Reverb app key so real-time features (live logs, notifications) work in production.
 # Must match the backend REVERB_APP_KEY (defaults defined in Stage 2 ENV declarations).
-ARG NEXT_PUBLIC_REVERB_APP_KEY=sourdough-key
+ARG NEXT_PUBLIC_REVERB_APP_KEY=selfmx-key
 ENV NEXT_PUBLIC_REVERB_APP_KEY=${NEXT_PUBLIC_REVERB_APP_KEY}
 
 # Build Next.js app
@@ -33,8 +33,8 @@ RUN npm run build
 #==============================================================================
 FROM php:8.3-fpm
 
-LABEL maintainer="Sourdough"
-LABEL description="Sourdough - Foundation Application Framework"
+LABEL maintainer="selfmx"
+LABEL description="selfmx - Self-hosted Email the easy way"
 
 # Build arguments for version info
 ARG APP_VERSION=0.0.0
@@ -54,9 +54,9 @@ ENV BROADCAST_CONNECTION=reverb
 # Reverb defaults — must match the NEXT_PUBLIC_REVERB_APP_KEY baked into the frontend build.
 # To change the key, rebuild the image with --build-arg NEXT_PUBLIC_REVERB_APP_KEY=your-key
 # and set REVERB_APP_KEY=your-key at runtime. Runtime-only changes will NOT update the frontend.
-ENV REVERB_APP_ID=sourdough
-ENV REVERB_APP_KEY=sourdough-key
-ENV REVERB_APP_SECRET=sourdough-secret
+ENV REVERB_APP_ID=selfmx
+ENV REVERB_APP_KEY=selfmx-key
+ENV REVERB_APP_SECRET=selfmx-secret
 ENV REVERB_HOST=127.0.0.1
 ENV REVERB_PORT=6001
 ENV REVERB_SCHEME=http

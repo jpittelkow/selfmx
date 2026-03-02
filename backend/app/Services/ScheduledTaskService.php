@@ -23,7 +23,7 @@ class ScheduledTaskService
             'dangerous' => true,
         ],
         'log:check-suspicious' => [
-            'description' => 'Check audit and access logs for suspicious activity',
+            'description' => 'Check audit logs for suspicious activity',
             'dangerous' => false,
         ],
         'storage:check-alerts' => [

@@ -24,7 +24,7 @@ We will implement a **ZIP-based backup system** with a manifest file for version
 ### Backup Format
 
 ```
-backup_sourdough_2026-01-24_143052.zip
+backup_selfmx_2026-01-24_143052.zip
 ├── manifest.json           # Backup metadata
 ├── database/
 │   └── database.sqlite     # SQLite: file copy

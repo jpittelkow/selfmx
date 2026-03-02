@@ -50,8 +50,8 @@ export default function Home() {
           {isLoading ? (
             <div className="animate-pulse h-10 w-32 bg-muted rounded-md" />
           ) : user ? (
-            <Link href="/dashboard">
-              <Button size="lg">Go to Dashboard</Button>
+            <Link href="/mail">
+              <Button size="lg">Go to Inbox</Button>
             </Link>
           ) : (
             <>

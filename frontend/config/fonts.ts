@@ -22,18 +22,18 @@
  *   4. Tailwind config and globals.css reference these variables automatically
  */
 
-import { Inter, Newsreader } from "next/font/google";
+import { DM_Sans, DM_Serif_Display } from "next/font/google";
 
 /** Body font — used for all body text, UI elements, and labels */
-export const bodyFont = Inter({
+export const bodyFont = DM_Sans({
   subsets: ["latin"],
   variable: "--font-body",
 });
 
 /** Heading font — used for h1-h6 elements */
-export const headingFont = Newsreader({
+export const headingFont = DM_Serif_Display({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400"],
   variable: "--font-heading",
   adjustFontFallback: false,
 });

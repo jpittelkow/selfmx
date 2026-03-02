@@ -1,6 +1,6 @@
-# Sourdough AI Development Instructions
+# selfmx AI Development Instructions
 
-This file provides GitHub Copilot with context about the Sourdough codebase. For comprehensive documentation, see `docs/ai/README.md`.
+This file provides GitHub Copilot with context about the selfmx codebase. For comprehensive documentation, see `docs/ai/README.md`.
 
 ## Getting Started
 
@@ -66,14 +66,6 @@ docs/ai/           AI development guide
 - User password uses `hashed` cast - pass plaintext, don't use `Hash::make()`
 
 ## Logging Requirements
-
-### Access Logging (HIPAA)
-
-Routes accessing user data MUST have `log.access` middleware:
-- User profile endpoints
-- User data modification endpoints
-- User listing endpoints
-- Data export endpoints
 
 ### Audit Logging
 

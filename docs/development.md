@@ -14,8 +14,8 @@ Development setup, tooling, and configuration:
 
 ```bash
 # Clone
-git clone https://github.com/Sourdough-start/sourdough.git
-cd sourdough
+git clone https://github.com/selfmx/selfmx.git
+cd selfmx
 
 # Backend
 cd backend
@@ -51,7 +51,7 @@ If you're running multiple apps, change the port and container name in `.env`:
 
 ```env
 APP_PORT=8081
-CONTAINER_NAME=sourdough-project-name
+CONTAINER_NAME=selfmx-project-name
 ```
 
 ## Settings Import (Env to Database)
@@ -70,7 +70,7 @@ Imported values are stored in `system_settings`; sensitive keys are encrypted. C
 
 ## Configuration
 
-Sourdough is configured via environment variables. See `.env.example` for all options. Many settings can also be managed in the database (see [ADR-014](adr/014-database-settings-env-fallback.md)); database values override env when present. **Settings that must stay in env** (bootstrap/security): `APP_KEY`, `APP_ENV`, `APP_DEBUG`, `DB_*`, `LOG_*`, `CACHE_STORE`. See [Env to Database Roadmap](plans/env-to-database-roadmap.md#23-settings-that-must-stay-in-env).
+selfmx is configured via environment variables. See `.env.example` for all options. Many settings can also be managed in the database (see [ADR-014](adr/014-database-settings-env-fallback.md)); database values override env when present. **Settings that must stay in env** (bootstrap/security): `APP_KEY`, `APP_ENV`, `APP_DEBUG`, `DB_*`, `LOG_*`, `CACHE_STORE`. See [Env to Database Roadmap](plans/env-to-database-roadmap.md#23-settings-that-must-stay-in-env).
 
 ### Required Variables
 

@@ -194,7 +194,7 @@ describe('Authentication', function () {
                 'email' => 'user@example.com',
             ]);
 
-            $hash = sha1($user->getEmailForVerification());
+            $hash = hash_hmac('sha256', $user->getEmailForVerification(), config('app.key'));
 
             $response = $this->postJson('/api/auth/verify-email', [
                 'id' => $user->id,
@@ -225,7 +225,7 @@ describe('Authentication', function () {
                 'email_verified_at' => now(),
                 'email' => 'user@example.com',
             ]);
-            $hash = sha1($user->getEmailForVerification());
+            $hash = hash_hmac('sha256', $user->getEmailForVerification(), config('app.key'));
 
             $response = $this->postJson('/api/auth/verify-email', [
                 'id' => $user->id,

@@ -42,11 +42,11 @@ Implemented Phase 4 (Install Experience) and Phase 5 (Advanced Features) of the 
 
 - Add real screenshot images for install prompts.
 - Optional: Periodic Background Sync for cached data refresh (Chrome).
-- Optional: Protocol handler (`web+sourdough://`) for deep links.
+- Optional: Protocol handler (`web+selfmx://`) for deep links.
 
 ## Testing Notes
 
 - Run `node scripts/generate-pwa-icons.mjs` to ensure all icons exist (requires `sharp` in frontend).
 - Test install banner: Chrome/Edge, 2+ visits, not installed; dismiss with and without "Don't show again."
 - Test Install App in User Preferences when install is available vs when already installed.
-- Test Share Target: install PWA, share a link from another app and choose Sourdough; confirm /share shows title/text/url.
+- Test Share Target: install PWA, share a link from another app and choose selfmx; confirm /share shows title/text/url.

@@ -23,7 +23,7 @@ class DiscordChannel implements ChannelInterface
         }
 
         $payload = [
-            'username' => config('notifications.channels.discord.username', 'Sourdough'),
+            'username' => config('notifications.channels.discord.username', 'selfmx'),
             'embeds' => [
                 [
                     'title' => $title,
@@ -63,7 +63,7 @@ class DiscordChannel implements ChannelInterface
         }
         $variables = array_merge([
             'user' => ['name' => $user->name, 'email' => $user->email],
-            'app_name' => config('app.name', 'Sourdough'),
+            'app_name' => config('app.name', 'selfmx'),
         ], $data);
         return $service->renderTemplate($template, $variables);
     }

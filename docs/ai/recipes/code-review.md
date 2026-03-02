@@ -147,7 +147,7 @@ Use this combined checklist for a full pass. For detailed examples, see [anti-pa
 - [ ] Mobile-first CSS; touch targets ≥ 44px; tables in `overflow-x-auto`
 - [ ] No debug code left in changes
 - [ ] No deprecated patterns (see [Deprecated Patterns to Flag](#deprecated-patterns-to-flag))
-- [ ] **Logging** – PHI access routes have `log.access`; services use `Log::` with structured context; frontend uses `errorLogger` (not `console.error`/`console.warn`). See [Logging Guide](../../logging.md).
+- [ ] **Logging** – Services use `Log::` with structured context; frontend uses `errorLogger` (not `console.error`/`console.warn`). See [Logging Guide](../../logging.md).
 
 ## References
 

@@ -64,7 +64,7 @@ export default function LoginPage() {
       }
 
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      router.push("/mail");
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Login failed"));
     } finally {
@@ -79,7 +79,7 @@ export default function LoginPage() {
         description="Enter the code from your authenticator app"
       >
         <TwoFactorForm
-          onSuccess={() => router.push("/dashboard")}
+          onSuccess={() => router.push("/mail")}
           onCancel={() => setRequires2FA(false)}
         />
       </AuthPageLayout>
@@ -97,7 +97,7 @@ export default function LoginPage() {
         <>
           {hasSSOProviders && <AuthDivider text="Or continue with passkey" />}
           <PasskeyLoginButton
-            onSuccess={() => router.push("/dashboard")}
+            onSuccess={() => router.push("/mail")}
             className="w-full"
           />
         </>

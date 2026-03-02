@@ -68,7 +68,7 @@ If changes still aren't detected, clear the Next.js cache volume:
 
 ```bash
 docker-compose down
-docker volume rm sourdough_frontend_next_cache
+docker volume rm selfmx_frontend_next_cache
 docker-compose up -d
 ```
 
@@ -100,7 +100,7 @@ Edit `.env` to configure:
 |----------|---------|---------|
 | `APP_PORT` | `8080` | Host port |
 | `APP_URL` | `http://localhost` | Public URL (set to your domain when behind a reverse proxy) |
-| `CONTAINER_NAME` | `sourdough-dev` | Container name |
+| `CONTAINER_NAME` | `selfmx-dev` | Container name |
 | `TRUSTED_PROXIES` | *(empty)* | Proxy IPs or `*` for all (Cloudflare Tunnel, Traefik) |
 
 ## NAS Deployment (Unraid, Synology, TrueNAS)
@@ -132,9 +132,9 @@ The following are **auto-generated or auto-derived** on first boot and do not ne
 
 | Container Path | Host Path Example | Purpose |
 |----------------|-------------------|---------|
-| `/var/www/html/data` | `/mnt/user/appdata/sourdough/data` | SQLite database |
-| `/var/www/html/backend/storage/app` | `/mnt/user/appdata/sourdough/storage` | File uploads, backups |
-| `/var/lib/meilisearch` | `/mnt/user/appdata/sourdough/meilisearch` | Search index |
+| `/var/www/html/data` | `/mnt/user/appdata/selfmx/data` | SQLite database |
+| `/var/www/html/backend/storage/app` | `/mnt/user/appdata/selfmx/storage` | File uploads, backups |
+| `/var/lib/meilisearch` | `/mnt/user/appdata/selfmx/meilisearch` | Search index |
 
 ### Permission Configuration (PUID/PGID)
 
@@ -166,7 +166,7 @@ PGID=100
 
 **"attempt to write a readonly database" error:**
 - Ensure `DB_DATABASE=/var/www/html/data/database.sqlite` is set as an environment variable
-- Check volume permissions: `ls -la /mnt/user/appdata/sourdough/data/`
+- Check volume permissions: `ls -la /mnt/user/appdata/selfmx/data/`
 - Verify PUID/PGID match host directory ownership
 
 **Meilisearch "Permission denied" errors:**
@@ -185,8 +185,8 @@ PGID=100
 - Fixed in v0.1.0+: the entrypoint now runs a second `chown`/`chmod` pass after all artisan commands
 - For older images, fix manually:
   ```bash
-  docker exec sourdough chown -R 99:100 /var/www/html/backend/storage/framework/cache
-  docker exec sourdough chmod -R 775 /var/www/html/backend/storage/framework/cache
+  docker exec selfmx chown -R 99:100 /var/www/html/backend/storage/framework/cache
+  docker exec selfmx chmod -R 775 /var/www/html/backend/storage/framework/cache
   ```
   (Replace `99:100` with your PUID:PGID values)
 

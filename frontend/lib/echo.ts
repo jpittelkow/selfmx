@@ -1,8 +1,9 @@
 "use client";
 
-import type Echo from "laravel-echo";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Avoid static import() type that causes Turbopack HMR issues
+type EchoInstance = any;
 
-let echoInstance: Echo<"pusher"> | null = null;
+let echoInstance: EchoInstance | null = null;
 
 function getAuthEndpoint(): string {
   const base = process.env.NEXT_PUBLIC_API_URL || "";
@@ -17,7 +18,7 @@ function getAuthEndpoint(): string {
  * Pusher.js (used as the transport protocol for Reverb) and Laravel Echo are
  * lazy-imported to avoid module-level side effects.
  */
-export async function getEcho(): Promise<Echo<"pusher"> | null> {
+export async function getEcho(): Promise<EchoInstance | null> {
   if (typeof window === "undefined") return null;
 
   const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;

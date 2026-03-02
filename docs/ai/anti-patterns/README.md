@@ -24,7 +24,6 @@ Before submitting code, verify:
 - [ ] **Shared components used** - Reusable functionality in `frontend/components/` or `frontend/lib/`
 - [ ] Business logic is in Services, not Controllers
 - [ ] All queries are user-scoped where appropriate
-- [ ] PHI access routes have `log.access` middleware
 - [ ] FormRequest classes used for validation
 - [ ] Response format is consistent (`data`, `message`, `meta`)
 - [ ] Last-admin checks use `AdminAuthorizationTrait`; pagination uses `config('app.pagination.default')`

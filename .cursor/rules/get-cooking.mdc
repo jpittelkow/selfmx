@@ -116,7 +116,6 @@ If the user stops early, tell them which tier they completed and what's left.
    - [ ] Backup/restore — which destinations? (Local, S3, SFTP, Google Drive)
    - [ ] PWA (installable app, offline support)
    - [ ] Full-text search (Meilisearch)
-   - [ ] HIPAA/access logging (warn: this is woven into core middleware — removal is deeper surgery)
 
 2. **Auth model?** Each tier builds on the previous:
    - Email/password only (simplest)

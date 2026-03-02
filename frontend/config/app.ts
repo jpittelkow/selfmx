@@ -11,7 +11,7 @@
  */
 export const APP_CONFIG = {
   /** Short name for collapsed states (1-3 characters recommended) */
-  shortName: process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'SD',
+  shortName: process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'MX',
   
   /** Full logo path (null = use text fallback) - use useAppConfig() for dynamic value */
   logo: null as string | null,

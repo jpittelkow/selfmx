@@ -88,7 +88,7 @@ export default function PaymentHistoryPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight">
             Payment History
           </h1>
           <p className="text-muted-foreground mt-1">

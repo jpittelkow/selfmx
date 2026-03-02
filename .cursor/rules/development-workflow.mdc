@@ -28,6 +28,5 @@ alwaysApply: true
 - No hardcoded secrets - use config() and env
 - User scoping on data queries (user_id filter)
 - Admin routes protected (auth:sanctum + can:permission)
-- PHI access routes have log.access middleware
 - Frontend errors use errorLogger, not console.error
 - Mobile-first CSS (base styles for mobile, md:/lg: for larger)

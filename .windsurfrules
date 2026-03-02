@@ -46,9 +46,6 @@ Before any implementation:
 
 ## Logging Requirements
 
-### Access Logging (HIPAA)
-Routes accessing user data need log.access middleware
-
 ### Audit Logging
 Use AuditService::log() for: auth events, settings changes, admin actions
 

@@ -18,13 +18,9 @@ Use `SearchService` for full-text search with Meilisearch/Scout. The service cen
 
 Transform methods must escape all user-provided text (title, subtitle) with `htmlspecialchars(..., ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')` before returning. Use `highlightMatch()` for highlight text (it escapes then wraps the query in `<mark>`); the frontend renders highlights with `dangerouslySetInnerHTML`.
 
-## Access Logging
-
-Routes that return user/PHI search results use `log.access:User` middleware (`GET /api/search`, `GET /api/search/suggestions`). See [Logging Guide](../../logging.md).
-
 ## Adding a New Searchable Model
 
-Add the model to `SearchService::$searchableModels` and `SearchReindexCommand::$searchableModels`, implement a type branch and transform method (with escaping) in SearchService, add the result type icon in `frontend/components/search/search-result-icon.tsx`, and ensure routes have access logging if returning PHI.
+Add the model to `SearchService::$searchableModels` and `SearchReindexCommand::$searchableModels`, implement a type branch and transform method (with escaping) in SearchService, and add the result type icon in `frontend/components/search/search-result-icon.tsx`.
 
 ## Page Search
 
@@ -34,6 +30,6 @@ Pages are indexed in Meilisearch with content keywords for discoverability. The 
 
 User groups are searchable by name, slug, and description. Admin-only — non-admin users do not see group results. Use `searchUserGroups(query, limit)` or include in `globalSearch()` with `type=user_groups`.
 
-**Key files:** `backend/app/Services/Search/SearchService.php`, `backend/config/search-pages.php`, `backend/app/Http/Controllers/Api/SearchController.php`, `backend/app/Http/Controllers/Api/Admin/SearchAdminController.php`, `backend/app/Console/Commands/SearchReindexCommand.php`, `backend/routes/api.php` (search/suggestions + log.access), `frontend/lib/search.ts`, `frontend/components/search/search-modal.tsx`, `frontend/components/search/search-provider.tsx`.
+**Key files:** `backend/app/Services/Search/SearchService.php`, `backend/config/search-pages.php`, `backend/app/Http/Controllers/Api/SearchController.php`, `backend/app/Http/Controllers/Api/Admin/SearchAdminController.php`, `backend/app/Console/Commands/SearchReindexCommand.php`, `backend/routes/api.php`, `frontend/lib/search.ts`, `frontend/components/search/search-modal.tsx`, `frontend/components/search/search-provider.tsx`.
 
 **Related:** [Recipe: Add searchable model](../recipes/add-searchable-model.md), [Recipe: Add searchable page](../recipes/add-searchable-page.md).

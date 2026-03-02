@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Sourdough is a starter application framework for AI to develop other apps, designed to be:
+selfmx is a starter application framework for AI to develop other apps, designed to be:
 - Self-hosted with minimal external dependencies
 - Flexible for building various applications on top of
 - Enterprise-grade with robust authentication and notification systems

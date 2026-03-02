@@ -51,9 +51,9 @@ export function CompletionStep({ onComplete }: CompletionStepProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleNavigate("/dashboard")}
+              onClick={() => handleNavigate("/mail")}
             >
-              Go to Dashboard
+              Go to Inbox
             </Button>
             <Button
               variant="ghost"

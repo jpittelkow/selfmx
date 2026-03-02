@@ -13,7 +13,6 @@ Backup and restore is a core feature for self-hosted deployments. This page is t
 - **Database** – All application data (users, settings, notifications, etc.). SQLite: file copy; MySQL/PostgreSQL: JSON export with SHA-256 integrity hash for tamper detection.
 - **Files** – Uploaded files under `storage/app/public` (avatars, attachments, etc.).
 - **Settings** – Application settings stored in the database (exported; sensitive values handled securely).
-- **Access logs** – HIPAA access logs (`access_logs` table) exported as `access_logs.json`; restored with merge-by-ID. See [Logging](logging.md#hipaa-access-logging).
 
 Backups are ZIP archives with a `manifest.json` that describes version and contents ([ADR-007: Backup System Design](adr/007-backup-system-design.md)).
 
@@ -45,7 +44,7 @@ Backups are ZIP archives with a `manifest.json` that describes version and conte
 
 ### Backups tab
 
-- **Create Backup** – Creates a full backup (database, files, settings). Filename format: `sourdough-backup-YYYY-MM-DD_HH-mm-ss.zip`.
+- **Create Backup** – Creates a full backup (database, files, settings). Filename format: `selfmx-backup-YYYY-MM-DD_HH-mm-ss.zip`.
 - **Download** – Download a backup file to keep off-server.
 - **Restore** – Restore from an existing backup (by filename) or by uploading a `.zip` file. Restore runs in a transaction and rolls back on error.
 - **Delete** – Remove a backup from the server.

@@ -12,7 +12,7 @@ backend/routes/api.php                     # Routes to clean up
 ```
 
 **Inputs needed:**
-- Features to remove (AI/LLM, notification channels, backup destinations, PWA, search, HIPAA)
+- Features to remove (AI/LLM, notification channels, backup destinations, PWA, search)
 - Auth model choice (email/password only, +SSO, +2FA, +Passkeys)
 - SSO providers to keep (if SSO selected)
 
@@ -142,29 +142,6 @@ If the user chose to remove search:
 
 ---
 
-## Step 6: Remove HIPAA / Access Logging
-
-**Warning:** HIPAA access logging is woven into the core middleware pattern. Removing it is deeper surgery than other features. Make sure the user understands this.
-
-If the user confirms removal:
-
-**Delete these files:**
-- `backend/app/Services/AccessLogService.php`
-- `backend/app/Http/Middleware/LogResourceAccess.php`
-- `backend/app/Models/AccessLog.php`
-- `backend/app/Http/Controllers/Api/AccessLogController.php`
-- `frontend/app/(dashboard)/configuration/access-logs/` (if exists)
-
-**Edit these files:**
-- `backend/routes/api.php` — Remove `log.access` middleware from all routes that use it, remove access-logs route group
-- `backend/bootstrap/app.php` — Remove middleware alias registration for `log.access`
-- `backend/database/migrations/` — Remove access_logs table migration
-- `backend/.env.example` — Remove `ACCESS_LOG_RETENTION_DAYS`, `HIPAA_ACCESS_LOGGING_ENABLED`
-- `frontend/app/(dashboard)/configuration/layout.tsx` — Remove access logs nav item
-- `frontend/app/(dashboard)/configuration/log-retention/page.tsx` — Remove HIPAA toggle section (keep the rest of log retention if it has other settings)
-
----
-
 ## Step 7: Configure Auth Model
 
 The auth model is tiered — each level adds to the previous:
@@ -254,7 +231,6 @@ Common nav items to check:
 - AI / LLM Configuration
 - SSO Settings
 - Search Settings
-- Access Logs
 - Any feature-specific config pages
 
 ---
@@ -284,7 +260,6 @@ When a feature is removed, the corresponding help article and search entry must 
 | Backup destinations | N/A (keep general backup article) | N/A |
 | PWA | N/A (no dedicated help article) | N/A |
 | Search | `search-config` | `help-search-config` |
-| HIPAA logging | `access-logs` | `help-access-logs` |
 | SSO | `sso-configuration` | `help-sso-configuration` |
 | 2FA | Remove 2FA references from `two-factor` article | N/A |
 | Passkeys | `passkeys` | `help-passkeys` |
@@ -300,7 +275,6 @@ Also remove any `HelpLink` components from deleted config pages (these are delet
 - [ ] Backup destinations trimmed — destination files, settings schema, env vars
 - [ ] PWA removed (if chosen) — SW, manifest route, install prompt, web push, app-shell cleanup
 - [ ] Search removed (if chosen) — search service, controllers, frontend components, supervisord, env vars, volumes
-- [ ] HIPAA logging removed (if chosen) — service, middleware, model, controller, routes, migrations
 - [ ] Auth model configured — SSO/2FA/Passkeys removed per choice
 - [ ] Configuration navigation updated — no broken nav items
 - [ ] Environment files cleaned — no orphaned env vars

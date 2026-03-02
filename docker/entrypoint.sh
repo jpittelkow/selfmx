@@ -4,27 +4,16 @@ set -e
 # ASCII Art Banner
 cat << 'BANNER'
 
-   ____                      _                   _
-  / ___|  ___  _   _ _ __ __| | ___  _   _  __ _| |__
-  \___ \ / _ \| | | | '__/ _` |/ _ \| | | |/ _` | '_ \
-   ___) | (_) | |_| | | | (_| | (_) | |_| | (_| | | | |
-  |____/ \___/ \__,_|_|  \__,_|\___/ \__,_|\__, |_| |_|
-                                            |___/
-                    (  )  (  )
-                     (  )  (  )
-                      ~ ~  ~ ~
-                   .-----------.
-                  /   ~~~~~~~   \
-                 /  ~~~~~~~~~~~  \
-                /  ~~~~ ~~~~ ~~~  \
-               |  ~ ~~~ ~~~~ ~~   |
-               |  ~~~ ~~~~ ~~~~ ~ |
-               |  ~ ~~~ ~~~~ ~~   |
-                \_________________/
+                               _ _
+     ___ _____ __ ___   __ _(_) |
+    / _ \_  / '_ ` _ \ / _` | | |
+   |  __// /| | | | | | (_| | | |
+    \___/___|_| |_| |_|\__,_|_|_|
 
 BANNER
-echo "  ${APP_NAME:-Sourdough} - powered by Sourdough ${APP_VERSION:-unknown}"
+echo "  ${APP_NAME:-selfmx} v${APP_VERSION:-unknown}"
 echo "  Build: ${APP_BUILD_SHA:-development}"
+echo "  Built on Sourdough v0.8.2 (github.com/Sourdough-start/sourdough)"
 echo ""
 
 #==============================================================================
@@ -62,10 +51,10 @@ FRONTEND_DIR="/var/www/html/frontend"
 DATA_DIR="/var/www/html/data"
 DB_PATH="${DATA_DIR}/database.sqlite"
 
-# Restore migrations if they were overwritten by volume mount
+# Restore migrations if they were overwritten by volume mount (skip existing files)
 if [ -d "/var/www/migrations-backup" ]; then
     echo "Syncing migrations from backup..."
-    cp -r /var/www/migrations-backup/* ${BACKEND_DIR}/database/migrations/ 2>/dev/null || true
+    cp -rn /var/www/migrations-backup/* ${BACKEND_DIR}/database/migrations/ 2>/dev/null || true
 fi
 
 # Create .next directory for development mode (volume mount overwrites built .next)
@@ -242,7 +231,7 @@ chmod -R 775 ${BACKEND_DIR}/storage
 chown -R www-data:www-data ${BACKEND_DIR}/bootstrap/cache
 chmod -R 775 ${BACKEND_DIR}/bootstrap/cache
 
-echo "  === ${APP_NAME:-Sourdough} is Ready! ==="
+echo "  === ${APP_NAME:-selfmx} is Ready! ==="
 echo ""
 
 # Execute the main command

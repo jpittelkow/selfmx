@@ -2,7 +2,6 @@
 
 namespace App\Services\Backup;
 
-use App\Models\AccessLog;
 use App\Services\SettingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -126,7 +125,7 @@ class BackupService
         ]);
 
         $timestamp = now()->format('Y-m-d_H-i-s');
-        $filename = "sourdough-backup-{$timestamp}.zip";
+        $filename = "selfmx-backup-{$timestamp}.zip";
         $tempPath = storage_path("app/temp/{$filename}");
 
         // Ensure temp directory exists
@@ -166,11 +165,6 @@ class BackupService
             $zip->addFromString('settings.json', json_encode($settings, JSON_PRETTY_PRINT));
             $manifest['contents']['settings'] = true;
         }
-
-        // Backup access logs (HIPAA)
-        $accessLogs = AccessLog::orderBy('id')->get()->map(fn ($log) => $log->toArray());
-        $zip->addFromString('access_logs.json', json_encode($accessLogs->toArray(), JSON_PRETTY_PRINT));
-        $manifest['contents']['access_logs'] = true;
 
         // Add manifest
         $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
@@ -309,13 +303,6 @@ class BackupService
                 $settings = json_decode($zip->getFromName('settings.json'), true);
                 $this->importSettings($settings);
                 $result['restored']['settings'] = true;
-            }
-
-            // Restore access logs (merge, skip duplicates by ID)
-            if (isset($manifest['contents']['access_logs']) && $manifest['contents']['access_logs']
-                && $zip->locateName('access_logs.json') !== false) {
-                $this->importAccessLogs($zip->getFromName('access_logs.json'));
-                $result['restored']['access_logs'] = true;
             }
 
             // Restore files
@@ -649,31 +636,6 @@ class BackupService
                 })
                 ->toArray(),
         ];
-    }
-
-    /**
-     * Import access logs from JSON. Skips duplicates by ID.
-     */
-    private function importAccessLogs(string $json): void
-    {
-        $rows = json_decode($json, true);
-        if (! is_array($rows)) {
-            return;
-        }
-
-        $fillable = ['user_id', 'action', 'resource_type', 'resource_id', 'fields_accessed', 'ip_address', 'user_agent', 'correlation_id'];
-
-        foreach ($rows as $row) {
-            $id = $row['id'] ?? null;
-            if (! $id) {
-                continue;
-            }
-            if (AccessLog::where('id', $id)->exists()) {
-                continue;
-            }
-            $data = array_intersect_key($row, array_flip($fillable));
-            AccessLog::create($data);
-        }
     }
 
     /**

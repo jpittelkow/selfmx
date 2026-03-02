@@ -13,7 +13,7 @@ class EmailTemplateSeeder extends Seeder
      */
     protected static function defaults(): array
     {
-        $appName = config('app.name', 'Sourdough');
+        $appName = config('app.name', 'selfmx');
         return [
             'password_reset' => [
                 'key' => 'password_reset',

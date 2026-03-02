@@ -14,7 +14,8 @@ import {
 import { GroupTable, type Group } from "@/components/admin/group-table";
 import { GroupDialog } from "@/components/admin/group-dialog";
 import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
-import { Plus } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus, UsersRound } from "lucide-react";
 import { HelpLink } from "@/components/help/help-link";
 
 interface GroupsResponse {
@@ -51,10 +52,10 @@ export default function GroupsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight">
             User Groups
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-1 text-muted-foreground">
             Manage user groups and permissions.{" "}
             <HelpLink articleId="groups-management" />
           </p>
@@ -77,13 +78,12 @@ export default function GroupsPage() {
         </CardHeader>
         <CardContent>
           {groups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-              <p className="mb-4">No groups yet.</p>
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create your first group
-              </Button>
-            </div>
+            <EmptyState
+              icon={UsersRound}
+              title="No groups yet"
+              description="Create groups to organize users and manage permissions."
+              action={{ label: "Create Group", onClick: () => setCreateDialogOpen(true) }}
+            />
           ) : (
             <GroupTable groups={groups} onGroupsUpdated={fetchGroups} />
           )}

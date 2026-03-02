@@ -63,9 +63,9 @@ fi
 # Update CACHE_VERSION in service worker so caches bust on release
 if [ -f "$SW_JS" ]; then
   if sed --version 2>/dev/null | grep -q GNU; then
-    sed -i "s/const CACHE_VERSION = 'sourdough-v[^']*'/const CACHE_VERSION = 'sourdough-v$NEW_VERSION'/" "$SW_JS"
+    sed -i "s/const CACHE_VERSION = 'selfmx-v[^']*'/const CACHE_VERSION = 'selfmx-v$NEW_VERSION'/" "$SW_JS"
   else
-    sed -i '' "s/const CACHE_VERSION = 'sourdough-v[^']*'/const CACHE_VERSION = 'sourdough-v$NEW_VERSION'/" "$SW_JS"
+    sed -i '' "s/const CACHE_VERSION = 'selfmx-v[^']*'/const CACHE_VERSION = 'selfmx-v$NEW_VERSION'/" "$SW_JS"
   fi
 fi
 

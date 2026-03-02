@@ -89,8 +89,8 @@ function SharePageContent() {
 
             <div className="flex gap-2 pt-2">
               {!isLoading && user ? (
-                <Link href="/dashboard">
-                  <Button>Go to Dashboard</Button>
+                <Link href="/mail">
+                  <Button>Go to Inbox</Button>
                 </Link>
               ) : !isLoading ? (
                 <Link href="/login">

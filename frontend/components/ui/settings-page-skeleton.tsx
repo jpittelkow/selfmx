@@ -1,13 +1,14 @@
-import { Loader2 } from "lucide-react";
+import { ContentSkeleton } from "@/components/ui/content-skeleton";
 
 interface SettingsPageSkeletonProps {
   minHeight?: string;
+  variant?: "settings" | "table";
 }
 
-export function SettingsPageSkeleton({ minHeight = "400px" }: SettingsPageSkeletonProps) {
+export function SettingsPageSkeleton({ minHeight = "400px", variant = "settings" }: SettingsPageSkeletonProps) {
   return (
-    <div className="flex items-center justify-center" style={{ minHeight }}>
-      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    <div style={{ minHeight }}>
+      <ContentSkeleton variant={variant} />
     </div>
   );
 }

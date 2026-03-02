@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Sourdough should offer a native app-like experience: installable, faster loads via caching, offline support, and later push notifications. We need a service worker implementation that works with Next.js App Router and provides a solid foundation for future PWA phases.
+selfmx should offer a native app-like experience: installable, faster loads via caching, offline support, and later push notifications. We need a service worker implementation that works with Next.js App Router and provides a solid foundation for future PWA phases.
 
 ## Decision
 
@@ -27,9 +27,9 @@ We will implement a **manual service worker** using **Workbox runtime** (loaded 
 
 | Request Type | Strategy | Cache Name | Rationale |
 |--------------|----------|------------|-----------|
-| `/_next/static/*`, scripts, styles, images, fonts | Cache-first | `sourdough-v1-static` | Versioned assets; cache forever with 30-day expiry. Fast loads. |
-| `/api/*` (GET) | Network-first | `sourdough-v1-api` | Data freshness priority; cache fallback for offline. 5-min expiry. |
-| Navigation | Network-first | `sourdough-v1-pages` | Fresh HTML when online; fallback to offline.html when offline. |
+| `/_next/static/*`, scripts, styles, images, fonts | Cache-first | `selfmx-v1-static` | Versioned assets; cache forever with 30-day expiry. Fast loads. |
+| `/api/*` (GET) | Network-first | `selfmx-v1-api` | Data freshness priority; cache fallback for offline. 5-min expiry. |
+| Navigation | Network-first | `selfmx-v1-pages` | Fresh HTML when online; fallback to offline.html when offline. |
 
 ### Update Handling
 

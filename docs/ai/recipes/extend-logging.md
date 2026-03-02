@@ -139,10 +139,6 @@ Admins can export application log files (from `storage/logs/laravel*.log`) as CS
 
 The system checks for 5+ failed logins in 15 minutes and 10+ data export actions in 1 hour. When detected, admins are notified (in-app + email). Scheduled: `log:check-suspicious` every 15 minutes. Admins can also run it manually from **Configuration > Jobs** (Run Now). Dashboard shows an alert banner when current checks detect suspicious activity. API: `GET /api/suspicious-activity` (admin). Key files: `SuspiciousActivityService`, `CheckSuspiciousActivityCommand`, `SuspiciousActivityController`.
 
-## Related
-
-- **PHI access logging (HIPAA)**: When adding features that read or modify user data, use access logging (middleware or `AccessLogService`). See [Add access logging](add-access-logging.md).
-
 ## Verification
 
 - [ ] Log messages appear at the correct level (info/warning/error)

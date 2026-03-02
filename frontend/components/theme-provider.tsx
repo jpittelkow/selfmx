@@ -24,7 +24,7 @@ const ThemeProviderContext = React.createContext<ThemeProviderState | undefined>
 export function ThemeProvider({
   children,
   defaultTheme = "light",
-  storageKey = "sourdough-theme",
+  storageKey = "selfmx-theme",
 }: ThemeProviderProps) {
   const [theme, setTheme] = React.useState<Theme>(defaultTheme);
   const [resolvedTheme, setResolvedTheme] = React.useState<"dark" | "light">("light");

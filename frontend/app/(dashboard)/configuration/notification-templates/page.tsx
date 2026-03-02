@@ -104,7 +104,7 @@ export default function NotificationTemplatesListPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Notification Templates</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground mt-1">
           Customize per-type notification messages for push, in-app, chat, and
           email channels.{" "}
           <HelpLink articleId="notification-templates" />

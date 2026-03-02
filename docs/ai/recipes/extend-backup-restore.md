@@ -88,8 +88,6 @@ Use this when backups should include or exclude new kinds of data (e.g. a new ta
 
 **Pattern:** Manifest is the contract between create and restore; document new keys in ADR-007 or inline.
 
-**Example:** Access logs (HIPAA) are exported as `access_logs.json` with `contents.access_logs => true`. Restore reads the JSON and merges by skipping rows whose ID already exists. See `BackupService::create()` and `importAccessLogs()`.
-
 ---
 
 ## UI-only changes

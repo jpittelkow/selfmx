@@ -1,4 +1,4 @@
-import { type LucideIcon, Book, Shield, Bell, Settings, User, Users, FileText, Brain, Database, BarChart3, Send } from "lucide-react";
+import { type LucideIcon, Book, Shield, Bell, Settings, User, Users, FileText, Brain, Database, BarChart3, Send, Mail } from "lucide-react";
 
 export interface HelpArticle {
   id: string;
@@ -27,11 +27,11 @@ export const userHelpCategories: HelpCategory[] = [
     articles: [
       {
         id: "welcome",
-        title: "Welcome to Sourdough",
+        title: "Welcome to selfmx",
         tags: ["intro", "overview", "start"],
-        content: `# Welcome to Sourdough
+        content: `# Welcome to selfmx
 
-Sourdough is a modern application template designed for building secure, feature-rich web applications.
+selfmx is a modern application template designed for building secure, feature-rich web applications.
 
 ## Key Features
 
@@ -426,6 +426,105 @@ Some critical security notifications cannot be disabled.`,
       },
     ],
   },
+  {
+    slug: "email",
+    name: "Email",
+    icon: Mail,
+    articles: [
+      {
+        id: "email-overview",
+        title: "Using the Email Client",
+        tags: ["email", "mail", "inbox", "compose", "send", "receive"],
+        content: `# Using the Email Client
+
+selfmx includes a full email client for sending and receiving email through your own domains.
+
+## Inbox
+
+The **Mail** page shows your inbox in a three-panel layout:
+
+- **Left panel** — System folders (Inbox, Starred, Sent, Drafts, Spam, Trash) and your custom labels
+- **Middle panel** — Thread list showing conversations
+- **Right panel** — Email detail view for reading messages
+
+## Reading Email
+
+Click any thread in the list to view it. Emails in the same conversation are grouped together. HTML emails are rendered safely in a sandboxed frame.
+
+## Composing Email
+
+Click **Compose** to open the compose dialog. Select a **From** address, enter recipients (comma-separated for multiple), add a subject and message, then click **Send**.
+
+## Actions
+
+For each email you can:
+- **Star** — Mark important messages
+- **Mark read / unread** — Toggle read status
+- **Report spam** — Flag unwanted messages
+- **Delete** — Move to trash (delete again to permanently remove)
+
+## Labels
+
+Create custom labels to organize your email. Click the **+** button in the labels section to create a new label. Labels work like Gmail-style tags — an email can have multiple labels.`,
+      },
+      {
+        id: "email-attachments",
+        title: "Attachments",
+        tags: ["email", "attachments", "download", "files"],
+        content: `# Email Attachments
+
+## Viewing Attachments
+
+When an email has attachments, they appear at the bottom of the message with a paperclip icon. Each attachment shows the filename and file size.
+
+## Downloading
+
+Click any attachment to download it directly to your device.
+
+## Limits
+
+The maximum attachment size is configured by your administrator (default: 25 MB per file).`,
+      },
+      {
+        id: "email-ai-features",
+        title: "AI Email Features",
+        tags: ["ai", "llm", "summary", "labels", "priority", "smart replies", "email"],
+        content: `# AI Email Features
+
+selfmx can use your configured AI provider to help manage your email with intelligent features.
+
+## Requirements
+
+AI features require an LLM provider to be configured in **Configuration** → **AI / LLM**. Each feature can be toggled independently in **Preferences** → **Email AI Features**.
+
+## Thread Summarization
+
+For threads with multiple emails, AI can generate a summary with key points and action items. Click **Summarize thread** at the top of a conversation to generate one. Summaries refresh automatically when new messages arrive.
+
+## Smart Labeling
+
+AI analyzes incoming emails and suggests labels based on content. Suggestions appear as badges below the email's labels with a confidence percentage. You can apply individual suggestions or apply all high-confidence ones at once.
+
+Enable **Auto-apply high-confidence labels** in settings to automatically apply labels with 80%+ confidence that match your existing labels.
+
+## Priority Inbox
+
+AI scores email importance using a combination of rule-based signals (sender frequency, direct vs. CC, urgency keywords) and content analysis. Access the **Priority** view from the sidebar to see emails ranked by importance.
+
+## Smart Replies
+
+When viewing an email, click **Suggest replies** to generate reply suggestions with different tones. Click a suggestion to open the compose dialog with the text pre-filled. Replies are generated on-demand and cached per email.
+
+## Cost Controls
+
+- All AI features use "single" mode (one provider) to minimize costs
+- Results are cached and reused until content changes
+- A daily token limit prevents runaway usage (configurable in settings)
+- Priority scoring uses free rule-based filtering for ~50% of emails
+- Smart replies are only generated when explicitly requested`,
+      },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -708,7 +807,7 @@ Manage personal API keys for programmatic access to the GraphQL API.
 
 ## What Are API Keys?
 
-API keys let you access Sourdough programmatically via the GraphQL API. Each key is unique to you and acts as your identity for API requests. Keys must be kept secret — treat them like passwords.
+API keys let you access selfmx programmatically via the GraphQL API. Each key is unique to you and acts as your identity for API requests. Keys must be kept secret — treat them like passwords.
 
 > **Note:** The API Keys section is only visible when the GraphQL API is enabled by an administrator.
 
@@ -925,6 +1024,87 @@ Novu is a notification infrastructure platform that provides workflow orchestrat
 ## When Novu is Disabled
 
 The built-in notification system and templates are used instead. You can switch between modes at any time.`,
+      },
+    ],
+  },
+  // --- Email Hosting (settings.view) ---
+  {
+    slug: "email-hosting",
+    name: "Email Hosting",
+    icon: Mail,
+    permission: "settings.view",
+    articles: [
+      {
+        id: "email-provider-setup",
+        title: "Email Provider Setup",
+        tags: ["email", "provider", "mailgun", "api", "webhook", "hosting"],
+        content: `# Email Provider Setup
+
+selfmx uses email providers (like Mailgun) to handle sending and receiving email for your domains.
+
+## Configuring Mailgun
+
+1. Go to **Configuration** → **Email Provider**
+2. Enter your **Mailgun API Key** (from your Mailgun dashboard)
+3. Select the **Region** (US or EU)
+4. Enter the **Webhook Signing Key** for inbound email verification
+5. Set the **Spam Threshold** (default: 5.0 — lower is stricter)
+6. Set the **Max Attachment Size** in MB (default: 25)
+
+## How It Works
+
+- **Inbound email**: Mailgun receives email for your domains and forwards it to selfmx via webhook
+- **Outbound email**: selfmx sends email through Mailgun's API
+- **Spam filtering**: Mailgun provides a spam score; emails above the threshold are flagged`,
+      },
+      {
+        id: "email-domain-management",
+        title: "Managing Email Domains",
+        tags: ["email", "domain", "dns", "verify", "catchall"],
+        content: `# Managing Email Domains
+
+## Adding a Domain
+
+1. Go to **Configuration** → **Email Domains**
+2. Click **Add Domain**
+3. Enter the domain name (e.g., \`example.com\`)
+4. The domain will be registered with your email provider
+
+## DNS Verification
+
+After adding a domain, you need to verify DNS records:
+
+1. Add the required DNS records to your domain's DNS settings
+2. Click **Verify** to check if records are configured correctly
+3. The domain status will change to **Verified** once DNS propagates
+
+## Catchall Address
+
+A catchall mailbox receives email sent to any address at the domain that doesn't have a specific mailbox. Configure it when editing a domain.`,
+      },
+      {
+        id: "mailbox-management",
+        title: "Managing Mailboxes",
+        tags: ["email", "mailbox", "address", "catchall"],
+        content: `# Managing Mailboxes
+
+## Creating a Mailbox
+
+1. Go to **Configuration** → **Mailboxes**
+2. Click **Add Mailbox**
+3. Select the domain
+4. Enter the local part (the part before @)
+5. Optionally set a display name
+
+## Catchall Mailbox
+
+To create a catchall mailbox that receives mail for any unmatched address:
+- Set the address to \`*\` (asterisk)
+- Only one catchall per domain is allowed
+
+## Display Names
+
+The display name appears in the **From** field when composing emails. If not set, just the email address is shown.`,
       },
     ],
   },
@@ -1275,38 +1455,6 @@ Use the Export card to download log files:
 
 Each request gets a unique correlation ID. Use it to trace all log entries from a single request across the system.`,
       },
-      {
-        id: "access-logs",
-        title: "Access Logs (HIPAA)",
-        tags: ["hipaa", "phi", "access", "compliance", "audit trail"],
-        content: `# Access Logs (HIPAA)
-
-Track access to protected health information (PHI) for HIPAA compliance.
-
-## What's Tracked
-
-Access logs record every time sensitive data is accessed:
-
-- **User** who accessed the data
-- **Action** performed (view, search, export)
-- **Resource type** and ID accessed
-- **Fields accessed** (extracted automatically)
-- **IP address** and timestamp
-
-## Viewing Access Logs
-
-1. Go to **Configuration** → **Access Logs**
-2. Browse the log entries
-3. Filter by user, action, resource type, or date range
-
-## Exporting
-
-Click **Export CSV** to download access log data for compliance audits.
-
-## Enabling/Disabling
-
-HIPAA access logging can be toggled in **Configuration** → **Log Retention**. When disabled, you can optionally delete all existing access logs (with a compliance warning).`,
-      },
     ],
   },
   {
@@ -1318,7 +1466,7 @@ HIPAA access logging can be toggled in **Configuration** → **Log Retention**. 
       {
         id: "log-retention",
         title: "Log Retention",
-        tags: ["retention", "cleanup", "logs", "hipaa", "storage"],
+        tags: ["retention", "cleanup", "logs", "storage"],
         content: `# Log Retention
 
 Configure how long different types of logs are kept.
@@ -1329,15 +1477,6 @@ Configure how long different types of logs are kept.
 2. Set retention periods for each log type:
    - **Application Logs** - 1 to 365 days
    - **Audit Logs** - 30 to 730 days
-   - **Access Logs** - Minimum 6 years (HIPAA requirement)
-
-## HIPAA Access Logging
-
-Toggle HIPAA access logging on or off. When disabled:
-
-- Access log collection stops
-- A **Delete All Access Logs** button becomes available
-- A compliance warning is shown before deletion
 
 ## Automatic Cleanup
 

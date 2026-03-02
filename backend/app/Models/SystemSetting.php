@@ -132,7 +132,7 @@ class SystemSetting extends Model
 
     /**
      * Get all public settings.
-     * Ensures app_name always has a default value of 'Sourdough' if not set in database.
+     * Ensures app_name always has a default value of 'selfmx' if not set in database.
      */
     public static function getPublic(): array
     {
@@ -149,7 +149,7 @@ class SystemSetting extends Model
         
         // Ensure app_name always has a default value
         if (!isset($settings['general']['app_name']) || empty($settings['general']['app_name'])) {
-            $settings['general']['app_name'] = 'Sourdough';
+            $settings['general']['app_name'] = 'selfmx';
         }
         
         return $settings;

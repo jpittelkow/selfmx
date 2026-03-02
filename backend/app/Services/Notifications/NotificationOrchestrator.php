@@ -69,7 +69,7 @@ class NotificationOrchestrator
     ): array {
         $baseVariables = [
             'user' => ['name' => $user->name, 'email' => $user->email],
-            'app_name' => config('app.name', 'Sourdough'),
+            'app_name' => config('app.name', 'selfmx'),
         ];
         $results = [];
         if ($this->novuService->isEnabled() && $this->novuService->getWorkflowIdForType($type) !== null) {
@@ -235,7 +235,7 @@ class NotificationOrchestrator
                     'title' => $title,
                     'message' => $message,
                     'user' => ['name' => $user->name, 'email' => $user->email],
-                    'app_name' => config('app.name', 'Sourdough'),
+                    'app_name' => config('app.name', 'selfmx'),
                 ]);
                 $novuResult = $this->sendViaNovu($user, $type, $payload);
                 if ($novuResult['novu']['success'] ?? false) {
@@ -338,7 +338,7 @@ class NotificationOrchestrator
             $user,
             'test',
             'Test Notification',
-            'This is a test notification from ' . config('app.name', 'Sourdough') . '.',
+            'This is a test notification from ' . config('app.name', 'selfmx') . '.',
             ['test' => true, 'timestamp' => now()->toISOString()]
         );
     }

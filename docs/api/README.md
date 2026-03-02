@@ -1,6 +1,6 @@
-# Sourdough API Documentation
+# selfmx API Documentation
 
-This document provides an overview of the Sourdough REST API. For complete API specification, see [openapi.yaml](./openapi.yaml).
+This document provides an overview of the selfmx REST API. For complete API specification, see [openapi.yaml](./openapi.yaml).
 
 ## Base URL
 
@@ -9,7 +9,7 @@ This document provides an overview of the Sourdough REST API. For complete API s
 
 ## Authentication
 
-Sourdough uses Laravel Sanctum for session-based authentication. Include credentials with every request:
+selfmx uses Laravel Sanctum for session-based authentication. Include credentials with every request:
 
 ```javascript
 const response = await fetch('/api/auth/user', {
@@ -106,17 +106,6 @@ Requires `admin` ability. See [Audit Logs roadmap](../plans/audit-logs-roadmap.m
 | GET | `/audit-logs` | List audit logs (paginated). Query: `page`, `per_page`, `user_id`, `action` (search), `severity`, `date_from`, `date_to`. Response: Laravel pagination (`data`, `current_page`, `last_page`, `per_page`, `total`). |
 | GET | `/audit-logs/export` | Export as CSV. Query: same filters as list. |
 | GET | `/audit-logs/stats` | Statistics. Query: `date_from`, `date_to` (default last 30 days). Response: `total_actions`, `by_severity` (severity→count), `daily_trends` (date→count), `recent_warnings` (latest 5 warning/error/critical with user), `actions_by_type`, `actions_by_user`. |
-
-### Access Logs (Admin, HIPAA)
-
-Requires `admin` ability. Tracks PHI access for compliance. See [Logging](logging.md#hipaa-access-logging), [Recipe: Add access logging](../ai/recipes/add-access-logging.md).
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/access-logs` | List access logs (paginated). Query: `page`, `per_page`, `user_id`, `action`, `resource_type`, `date_from`, `date_to`. Response: Laravel pagination (`data`, `current_page`, `last_page`, `per_page`, `total`). |
-| GET | `/access-logs/export` | Export as CSV. Query: same filters as list. |
-| GET | `/access-logs/stats` | Statistics. Query: `date_from`, `date_to` (default last 30 days). Response: `total`, `by_action`, `by_resource_type`, `by_user`, `daily_trends`. |
-| DELETE | `/access-logs` | Delete all access logs. **Only when HIPAA logging disabled** (Configuration > Log retention). Returns 422 if enabled. On success: `{ message, deleted_count }`. |
 
 ### Settings
 
@@ -218,7 +207,7 @@ Requires `manage-backups` ability. See [Backup & Restore documentation](../backu
 | GET | `/backup` | List backups (response: `backups` array with `filename`, `size`, `created_at`) |
 | POST | `/backup/create` | Create backup. Body (optional): `include_database`, `include_files`, `include_settings` (all default true). Response: `filename`, `size`, `manifest` |
 | GET | `/backup/download/{filename}` | Download backup file (stream) |
-| POST | `/backup/restore` | Restore. Body: either `{ "filename": "sourdough-backup-....zip" }` (restore from existing) or multipart form with backup file (restore from upload) |
+| POST | `/backup/restore` | Restore. Body: either `{ "filename": "selfmx-backup-....zip" }` (restore from existing) or multipart form with backup file (restore from upload) |
 | DELETE | `/backup/{filename}` | Delete a backup |
 
 ### Backup Settings (Admin)
@@ -348,7 +337,7 @@ Response:
 ```json
 {
   "backup": {
-    "filename": "sourdough-backup-2024-01-01_12-00-00.zip",
+    "filename": "selfmx-backup-2024-01-01_12-00-00.zip",
     "size": 1048576,
     "manifest": {
       "version": "2.0",

@@ -18,10 +18,10 @@ const MAX_PAGE_RESULTS = 5;
 export const SEARCH_PAGES: SearchPage[] = [
   // User pages (all users)
   {
-    id: "dashboard",
-    title: "Dashboard",
-    url: "/dashboard",
-    keywords: ["home", "overview"],
+    id: "mail",
+    title: "Inbox",
+    url: "/mail",
+    keywords: ["inbox", "email", "mail"],
   },
   {
     id: "notifications",
@@ -194,14 +194,6 @@ export const SEARCH_PAGES: SearchPage[] = [
     keywords: ["console", "log viewer"],
   },
   {
-    id: "config-access-logs",
-    title: "Configuration > Access Logs (HIPAA)",
-    subtitle: "PHI access audit trail",
-    url: "/configuration/access-logs",
-    adminOnly: true,
-    keywords: ["hipaa", "phi"],
-  },
-  {
     id: "config-log-retention",
     title: "Configuration > Log retention",
     subtitle: "Retention and cleanup config",
@@ -264,6 +256,69 @@ export const SEARCH_PAGES: SearchPage[] = [
     url: "/configuration/graphql",
     adminOnly: true,
     keywords: ["graphql", "api", "keys", "rate limit", "introspection", "usage"],
+  },
+  // Email AI
+  {
+    id: "help-email-ai-features",
+    title: "Help: AI Email Features",
+    subtitle: "Help article",
+    url: "help:email-ai-features",
+    keywords: ["ai", "llm", "email", "summary", "labels", "priority", "smart replies"],
+  },
+  // Email Hosting
+  {
+    id: "mail",
+    title: "Mail",
+    subtitle: "Email inbox and client",
+    url: "/mail",
+    keywords: ["email", "inbox", "compose", "send", "receive"],
+  },
+  {
+    id: "contacts",
+    title: "Contacts",
+    subtitle: "Manage email contacts",
+    url: "/contacts",
+    keywords: ["contacts", "address", "book", "people", "email", "autocomplete"],
+  },
+  {
+    id: "config-email-provider",
+    title: "Configuration > Email Provider",
+    subtitle: "Provider API keys and settings",
+    url: "/configuration/email-provider",
+    adminOnly: true,
+    keywords: ["mailgun", "email", "provider", "api", "webhook", "spam"],
+  },
+  {
+    id: "config-email-domains",
+    title: "Configuration > Email Domains",
+    subtitle: "Manage email domains",
+    url: "/configuration/email-domains",
+    adminOnly: true,
+    keywords: ["domain", "dns", "verify", "email"],
+  },
+  {
+    id: "config-mailboxes",
+    title: "Configuration > Mailboxes",
+    subtitle: "Manage email addresses",
+    url: "/configuration/mailboxes",
+    adminOnly: true,
+    keywords: ["mailbox", "address", "catchall", "email"],
+  },
+  {
+    id: "config-spam-filter",
+    title: "Configuration > Spam Filter",
+    subtitle: "Allow and block sender lists",
+    url: "/configuration/spam-filter",
+    adminOnly: true,
+    keywords: ["spam", "filter", "allow", "block", "sender", "domain"],
+  },
+  {
+    id: "user-email-rules",
+    title: "Email Rules",
+    subtitle: "Automatic email processing rules",
+    url: "/user/rules",
+    adminOnly: false,
+    keywords: ["email", "rules", "filters", "auto", "label", "archive", "forward"],
   },
 ];
 

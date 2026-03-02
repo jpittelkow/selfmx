@@ -43,6 +43,6 @@ Added fallback directory creation and removed the non-functional `chown` call th
 ## Testing Notes
 After applying the fix:
 1. Stop the container: `docker-compose down`
-2. Remove the old volume: `docker volume rm sourdough_frontend_next_cache` (if it exists)
+2. Remove the old volume: `docker volume rm selfmx_frontend_next_cache` (if it exists)
 3. Rebuild and start: `docker-compose up --build -d`
 4. Verify frontend loads at configured port

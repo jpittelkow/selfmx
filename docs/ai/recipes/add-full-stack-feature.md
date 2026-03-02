@@ -37,7 +37,7 @@ Composite recipe for adding a complete new feature spanning backend API, fronten
 1. **Migration + Model** - Create table with `user_id` FK and index. See [add-api-endpoint recipe](add-api-endpoint.md) for skeleton.
 2. **Service** - Put business logic in `backend/app/Services/{Name}Service.php`. Controllers validate and route only.
 3. **Controller + Routes** - Follow [add-api-endpoint recipe](add-api-endpoint.md). Use `ApiResponseTrait`, user scoping, `config('app.pagination.default')`.
-4. **Run migration** - `docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan migrate"`
+4. **Run migration** - `docker exec selfmx-dev bash -c "cd /var/www/html/backend && php artisan migrate"`
 
 ### 3. Frontend
 

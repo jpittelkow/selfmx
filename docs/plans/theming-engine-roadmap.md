@@ -4,7 +4,7 @@ Build a full theming engine with pre-set themes, custom theme support, and instr
 
 ## Overview
 
-Sourdough currently supports light/dark/system mode via CSS custom properties in `globals.css` and a custom `ThemeProvider`. This roadmap extends that foundation into a full theming engine with multiple pre-set color themes, per-user theme persistence, and clear patterns for creating new themes.
+selfmx currently supports light/dark/system mode via CSS custom properties in `globals.css` and a custom `ThemeProvider`. This roadmap extends that foundation into a full theming engine with multiple pre-set color themes, per-user theme persistence, and clear patterns for creating new themes.
 
 ## Current State
 
@@ -95,7 +95,7 @@ Add a theme selector to User Preferences and the onboarding wizard.
 - [ ] Update User Preferences page (`frontend/app/(dashboard)/user/preferences/page.tsx`) to include the theme picker in the Appearance section
 - [ ] Update onboarding `ThemeStep` to show color themes alongside light/dark/system choice
 - [ ] Update `ThemeToggle` component to optionally show current theme name
-- [ ] Persist selected theme to localStorage (`sourdough-color-theme`) and sync to user settings API
+- [ ] Persist selected theme to localStorage (`selfmx-color-theme`) and sync to user settings API
 
 ### Files
 

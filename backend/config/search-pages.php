@@ -10,11 +10,11 @@
 return [
     // User pages (all users)
     [
-        'id' => 'dashboard',
-        'title' => 'Dashboard',
-        'url' => '/dashboard',
+        'id' => 'mail',
+        'title' => 'Inbox',
+        'url' => '/mail',
         'admin_only' => false,
-        'content' => 'home overview widgets statistics',
+        'content' => 'inbox email mail messages',
     ],
     [
         'id' => 'notifications',
@@ -191,14 +191,6 @@ return [
         'content' => 'console log viewer',
     ],
     [
-        'id' => 'config-access-logs',
-        'title' => 'Configuration > Access Logs (HIPAA)',
-        'subtitle' => 'PHI access audit trail',
-        'url' => '/configuration/access-logs',
-        'admin_only' => true,
-        'content' => 'hipaa phi access logs',
-    ],
-    [
         'id' => 'config-log-retention',
         'title' => 'Configuration > Log retention',
         'subtitle' => 'Retention and cleanup config',
@@ -268,12 +260,84 @@ return [
         'content' => 'graphql api keys settings rate limit introspection query depth complexity cors usage stats',
     ],
 
+    // Email Hosting
+    [
+        'id' => 'mail',
+        'title' => 'Mail',
+        'subtitle' => 'Email inbox and client',
+        'url' => '/mail',
+        'admin_only' => false,
+        'content' => 'email inbox compose send receive mail messages threads',
+    ],
+    [
+        'id' => 'contacts',
+        'title' => 'Contacts',
+        'subtitle' => 'Manage email contacts',
+        'url' => '/contacts',
+        'admin_only' => false,
+        'content' => 'contacts address book people email autocomplete merge',
+    ],
+    [
+        'id' => 'user-email-rules',
+        'title' => 'Email Rules',
+        'subtitle' => 'Automatic email processing rules',
+        'url' => '/user/rules',
+        'admin_only' => false,
+        'content' => 'email rules filters auto label archive forward mark read spam',
+    ],
+    [
+        'id' => 'config-email-provider',
+        'title' => 'Configuration > Email Provider',
+        'subtitle' => 'Provider API keys and settings',
+        'url' => '/configuration/email-provider',
+        'admin_only' => true,
+        'permission' => 'settings.view',
+        'content' => 'mailgun email provider api webhook spam threshold attachment',
+    ],
+    [
+        'id' => 'config-email-domains',
+        'title' => 'Configuration > Email Domains',
+        'subtitle' => 'Manage email domains',
+        'url' => '/configuration/email-domains',
+        'admin_only' => true,
+        'permission' => 'settings.view',
+        'content' => 'domain dns verify email hosting mailgun',
+    ],
+    [
+        'id' => 'config-mailboxes',
+        'title' => 'Configuration > Mailboxes',
+        'subtitle' => 'Manage email addresses',
+        'url' => '/configuration/mailboxes',
+        'admin_only' => true,
+        'permission' => 'settings.view',
+        'content' => 'mailbox address catchall email inbox',
+    ],
+    [
+        'id' => 'config-spam-filter',
+        'title' => 'Configuration > Spam Filter',
+        'subtitle' => 'Allow and block sender lists',
+        'url' => '/configuration/spam-filter',
+        'admin_only' => true,
+        'permission' => 'settings.view',
+        'content' => 'spam filter allow block list sender domain email',
+    ],
+
+    // Help articles — Email AI
+    [
+        'id' => 'help-email-ai-features',
+        'title' => 'Help: AI Email Features',
+        'subtitle' => 'Help article',
+        'url' => 'help:email-ai-features',
+        'admin_only' => false,
+        'content' => 'ai llm email summary summarize labels categorize priority inbox smart replies thread',
+    ],
+
     // -----------------------------------------------------------------------
     // Help articles (user-visible, no permission required)
     // -----------------------------------------------------------------------
     [
         'id' => 'help-welcome',
-        'title' => 'Help: Welcome to Sourdough',
+        'title' => 'Help: Welcome to selfmx',
         'subtitle' => 'Help article',
         'url' => 'help:welcome',
         'admin_only' => false,
@@ -285,7 +349,7 @@ return [
         'subtitle' => 'Help article',
         'url' => 'help:navigation',
         'admin_only' => false,
-        'content' => 'menu sidebar navigate dashboard profile keyboard shortcuts',
+        'content' => 'menu sidebar navigate inbox mail profile keyboard shortcuts',
     ],
     [
         'id' => 'help-search',
@@ -537,22 +601,13 @@ return [
         'content' => 'application logs console viewer errors debug export correlation',
     ],
     [
-        'id' => 'help-access-logs',
-        'title' => 'Help: Access Logs (HIPAA)',
-        'subtitle' => 'Help article',
-        'url' => 'help:access-logs',
-        'admin_only' => true,
-        'permission' => 'logs.view',
-        'content' => 'hipaa phi access compliance audit trail fields accessed',
-    ],
-    [
         'id' => 'help-log-retention',
         'title' => 'Help: Log Retention',
         'subtitle' => 'Help article',
         'url' => 'help:log-retention',
         'admin_only' => true,
         'permission' => 'settings.view',
-        'content' => 'retention cleanup logs hipaa storage days automatic',
+        'content' => 'retention cleanup logs storage days automatic',
     ],
     [
         'id' => 'help-scheduled-jobs',

@@ -14,3 +14,7 @@ Broadcast::channel('audit-logs', function (User $user) {
 Broadcast::channel('app-logs', function (User $user) {
     return $user->inGroup('admin');
 });
+
+Broadcast::channel('mail.{id}', function (User $user, $id) {
+    return (int) $user->id === (int) $id;
+});

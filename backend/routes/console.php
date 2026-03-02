@@ -66,3 +66,13 @@ Schedule::command('usage:check-budgets')
 Schedule::command('api-keys:prune-expired')
     ->daily()
     ->withoutOverlapping(60);
+
+// Process scheduled email sends
+Schedule::command('email:process-scheduled')
+    ->everyMinute()
+    ->withoutOverlapping(30);
+
+// Resurface snoozed emails
+Schedule::command('email:process-snoozed')
+    ->everyMinute()
+    ->withoutOverlapping(30);

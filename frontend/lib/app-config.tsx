@@ -149,16 +149,16 @@ export function AppConfigProvider({ children }: { children: React.ReactNode }) {
       applyThemeColors(primaryColor || undefined, secondaryColor || undefined);
 
       // Apply color theme: user override (localStorage) > global branding > "default"
-      const userOverride = localStorage.getItem("sourdough-color-theme");
+      const userOverride = localStorage.getItem("selfmx-color-theme");
       const effective = userOverride || colorTheme || "default";
       document.documentElement.setAttribute("data-theme", effective);
 
       // Cache global theme in localStorage so the inline script can use it
       // on subsequent page loads to prevent a flash from "default" to the real theme
       if (colorTheme) {
-        localStorage.setItem("sourdough-global-color-theme", colorTheme);
+        localStorage.setItem("selfmx-global-color-theme", colorTheme);
       } else {
-        localStorage.removeItem("sourdough-global-color-theme");
+        localStorage.removeItem("selfmx-global-color-theme");
       }
 
       // Update theme-color meta tag (styles mobile address bar / status bar)

@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Sourdough targets self-hosted deployments where simplicity is paramount. Users should be able to:
+selfmx targets self-hosted deployments where simplicity is paramount. Users should be able to:
 - Deploy with a single `docker run` command
 - Avoid complex multi-container orchestration
 - Have all services running with minimal configuration
@@ -27,7 +27,7 @@ We will package all services in a **single Docker container** using Supervisor f
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Single Docker Container                   │
-│                     (sourdough:latest)                      │
+│                     (selfmx:latest)                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐ │
@@ -254,7 +254,7 @@ Production:
 version: '3.8'
 services:
   app:
-    image: ghcr.io/sourdough-start/sourdough:latest
+    image: ghcr.io/selfmx/selfmx:latest
     ports:
       - "80:80"
     volumes:

@@ -1,7 +1,7 @@
 {
-  "name": "Sourdough",
-  "short_name": "Sourdough",
-  "description": "Starter Application Framework for AI Development",
+  "name": "selfmx",
+  "short_name": "selfmx",
+  "description": "Self-hosted Email the easy way",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -22,7 +22,7 @@
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Dashboard", "short_name": "Dashboard", "url": "/dashboard", "icons": [{ "src": "/icons/shortcut-dashboard.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Inbox", "short_name": "Inbox", "url": "/mail", "icons": [{ "src": "/icons/shortcut-dashboard.png", "sizes": "96x96", "type": "image/png" }] },
     { "name": "Settings", "short_name": "Settings", "url": "/user/preferences", "icons": [{ "src": "/icons/shortcut-settings.png", "sizes": "96x96", "type": "image/png" }] }
   ],
   "share_target": {

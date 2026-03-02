@@ -163,7 +163,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="container py-6 md:py-8">
+    <div>
       <div className="mb-6 flex items-center gap-2 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>

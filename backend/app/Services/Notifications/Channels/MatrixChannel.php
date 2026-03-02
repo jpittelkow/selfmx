@@ -31,7 +31,7 @@ class MatrixChannel implements ChannelInterface
         $homeserver = rtrim($homeserver, '/');
 
         // Generate a transaction ID for idempotency
-        $txnId = uniqid('sourdough_', true);
+        $txnId = uniqid('selfmx_', true);
 
         // Build the message content
         $formattedBody = "<strong>{$title}</strong><br><br>{$message}";
@@ -87,7 +87,7 @@ class MatrixChannel implements ChannelInterface
         }
         $variables = array_merge([
             'user' => ['name' => $user->name, 'email' => $user->email],
-            'app_name' => config('app.name', 'Sourdough'),
+            'app_name' => config('app.name', 'selfmx'),
         ], $data);
         return $service->renderTemplate($template, $variables);
     }

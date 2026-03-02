@@ -1,6 +1,6 @@
 # Recipe: Setup Identity & Branding (Tier 1)
 
-Apply the user's app name, short name, description, fonts, and brand color across the entire codebase. This is the most comprehensive tier — it renames every "Sourdough" reference to the new app name.
+Apply the user's app name, short name, description, fonts, and brand color across the entire codebase. This is the most comprehensive tier — it renames every "selfmx" reference to the new app name.
 
 **When to use:** After collecting Tier 1 answers from the "Get cooking" wizard. Can also be run standalone if someone just wants to rebrand.
 
@@ -75,21 +75,21 @@ description: "<APP_DESCRIPTION>",
 themeColor: "<APP_COLOR>",
 ```
 
-3. **Rename localStorage theme key** — Replace `sourdough-theme` with `<APP_SLUG>-theme`:
+3. **Rename localStorage theme key** — Replace `selfmx-theme` with `<APP_SLUG>-theme`:
 ```typescript
 var key = '<APP_SLUG>-theme';
 ```
 
 ### `frontend/components/theme-provider.tsx`
 
-Update the default `storageKey` parameter:
+Update the default `storageKey` parameter (currently `selfmx-theme`):
 ```typescript
 storageKey = "<APP_SLUG>-theme"
 ```
 
 ### `frontend/components/providers.tsx`
 
-Update the storageKey prop:
+Update the storageKey prop (currently `selfmx-theme`):
 ```typescript
 storageKey="<APP_SLUG>-theme"
 ```
@@ -155,7 +155,7 @@ Update PWA manifest:
 
 ### `frontend/app/api/manifest/route.ts`
 
-Update manifest fallbacks (search for "Sourdough" and replace with `<APP_NAME>`).
+Update manifest fallbacks (search for "selfmx" and replace with `<APP_NAME>`).
 
 ### `frontend/lib/request-queue.ts`
 
@@ -187,7 +187,7 @@ Update the file header comment:
 
 ### `frontend/lib/help/help-content.ts`
 
-Update welcome text — replace "Sourdough" with `<APP_NAME>` in all occurrences.
+Update welcome text — replace "selfmx" with `<APP_NAME>` in all occurrences.
 
 ### `frontend/package.json`
 
@@ -242,7 +242,7 @@ env('MAIL_FROM_NAME', '<APP_NAME>')
 
 ### `backend/config/settings-schema.php`
 
-Update all default values that reference "Sourdough":
+Update all default values that reference "selfmx":
 - `app_name` default → `<APP_NAME>`
 - Mail from-name default → `<APP_NAME>`
 - Discord bot name default → `<APP_NAME>`
@@ -366,7 +366,7 @@ Update the file header comment:
 
 ### Notification Channel Fallbacks (~15 files)
 
-Search for `config('app.name', 'Sourdough')` across all files in `backend/app/Services/Notifications/Channels/` and replace with:
+Search for `config('app.name', 'selfmx')` across all files in `backend/app/Services/Notifications/Channels/` and replace with:
 ```php
 config('app.name', '<APP_NAME>')
 ```
@@ -407,14 +407,14 @@ Update fallbacks in:
 
 1. Update header comment: `# <APP_NAME> Development Docker Compose`
 2. Update container name default: `${CONTAINER_NAME:-<APP_SLUG>-dev}`
-3. **Rename all volume references** — Replace `sourdough_data`, `sourdough_storage` with `<APP_SLUG>_data`, `<APP_SLUG>_storage` (both in service mounts and volume definitions)
+3. **Rename all volume references** — Replace `selfmx_data`, `selfmx_storage` with `<APP_SLUG>_data`, `<APP_SLUG>_storage` (both in service mounts and volume definitions)
 
 ### `docker-compose.prod.yml`
 
 1. Update header comment: `# <APP_NAME> Production Docker Compose`
 2. Update image reference: `ghcr.io/<username>/<APP_SLUG>:latest` (or comment out if no registry yet)
 3. Update container name default: `${CONTAINER_NAME:-<APP_SLUG>}`
-4. **Rename all volume references** — Replace `sourdough_data`, `sourdough_storage`, `sourdough_backups` with `<APP_SLUG>_data`, `<APP_SLUG>_storage`, `<APP_SLUG>_backups`
+4. **Rename all volume references** — Replace `selfmx_data`, `selfmx_storage`, `selfmx_backups` with `<APP_SLUG>_data`, `<APP_SLUG>_storage`, `<APP_SLUG>_backups`
 
 ### `docker/Dockerfile`
 
@@ -426,7 +426,7 @@ LABEL description="<APP_NAME> - <APP_DESCRIPTION>"
 
 ### `docker/entrypoint.sh`
 
-Update startup banner text — replace "Sourdough" references with `<APP_NAME>` (the `${APP_NAME:-Sourdough}` fallbacks and any hardcoded mentions).
+Update startup banner text — replace "selfmx" references with `<APP_NAME>` (the `${APP_NAME:-selfmx}` fallbacks and any hardcoded mentions).
 
 ### `.github/workflows/ci.yml`
 
@@ -479,7 +479,7 @@ Note: Runtime brand color customization is handled via Configuration > Branding 
 ## Step 8: Documentation Reset
 
 1. **`VERSION`** — Reset to `0.1.0`
-2. **`CHANGELOG.md`** — Clear history or start with: `# Changelog\n\n## 0.1.0\n\n- Initial project setup based on Sourdough`
+2. **`CHANGELOG.md`** — Clear history or start with: `# Changelog\n\n## 0.1.0\n\n- Initial project setup based on selfmx`
 3. **`README.md`** — Rewrite header with new app name and description
 4. **`CLAUDE.md`** — Update project name (first line: `# <APP_NAME>`)
 5. **`docs/overview.md`** — Update project description and feature list

@@ -1,6 +1,6 @@
-# Sourdough Developer Guide
+# selfmx Developer Guide
 
-This guide is for developers who want to contribute to Sourdough or extend its functionality.
+This guide is for developers who want to contribute to selfmx or extend its functionality.
 
 ## Table of Contents
 
@@ -96,7 +96,7 @@ docker-compose down
 ## Project Structure
 
 ```
-sourdough/
+selfmx/
 ├── backend/                    # Laravel 11 API
 │   ├── app/
 │   │   ├── Http/
@@ -143,7 +143,7 @@ sourdough/
 
 ### Architecture Overview
 
-Sourdough follows a service-oriented architecture:
+selfmx follows a service-oriented architecture:
 
 ```
 Request → Controller → Service → Model → Database

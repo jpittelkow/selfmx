@@ -1,4 +1,4 @@
-# CLAUDE.md
+# selfmx
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-**PHP is not available locally** — run all backend commands via Docker (`sourdough-dev` container).
+**PHP is not available locally** — run all backend commands via Docker (`selfmx-dev` container).
 
 ```bash
 # Start/rebuild dev environment
@@ -22,32 +22,32 @@ docker-compose up -d
 docker-compose up -d --build
 
 # Backend tests (Pest) — all tests
-docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan test"
+docker exec selfmx-dev bash -c "cd /var/www/html/backend && php artisan test"
 
 # Backend — single test file
-docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan test --filter=AuthTest"
+docker exec selfmx-dev bash -c "cd /var/www/html/backend && php artisan test --filter=AuthTest"
 
 # Backend — single test method
-docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan test --filter='it can login with valid credentials'"
+docker exec selfmx-dev bash -c "cd /var/www/html/backend && php artisan test --filter='it can login with valid credentials'"
 
 # Backend — Laravel commands
-docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan migrate"
-docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan route:list"
+docker exec selfmx-dev bash -c "cd /var/www/html/backend && php artisan migrate"
+docker exec selfmx-dev bash -c "cd /var/www/html/backend && php artisan route:list"
 
 # Frontend tests (Vitest)
-docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npm test"
+docker exec selfmx-dev bash -c "cd /var/www/html/frontend && npm test"
 
 # Frontend lint
-docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npm run lint"
+docker exec selfmx-dev bash -c "cd /var/www/html/frontend && npm run lint"
 
 # Frontend build
-docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npm run build"
+docker exec selfmx-dev bash -c "cd /var/www/html/frontend && npm run build"
 
 # E2E tests (Playwright)
-docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npm run test:e2e"
+docker exec selfmx-dev bash -c "cd /var/www/html/frontend && npm run test:e2e"
 
 # Add shadcn component (from frontend/)
-docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npx shadcn@latest add <component>"
+docker exec selfmx-dev bash -c "cd /var/www/html/frontend && npx shadcn@latest add <component>"
 
 # Release (bumps version, runs tests, tags, pushes)
 ./scripts/push.ps1 patch "feat: description of changes"
@@ -111,4 +111,4 @@ docker exec sourdough-dev bash -c "cd /var/www/html/frontend && npx shadcn@lates
 | [Architecture ADRs](docs/architecture.md) | Design decisions |
 | [Roadmaps](docs/roadmaps.md) | What's planned |
 
-**Using as a Template**: See [FORK-ME.md](FORK-ME.md) for instructions on using Sourdough as a base for your own project.
+**Using as a Template**: See [FORK-ME.md](FORK-ME.md) for instructions on using selfmx as a base for your own project.

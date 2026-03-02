@@ -66,7 +66,7 @@ Implement a versioning system that displays the application version in the setti
 Create a central VERSION file and supporting configuration:
 
 ```
-sourdough/
+selfmx/
 ├── VERSION                    # Single source of truth: "1.0.0"
 ├── version.json              # Extended version info
 ├── frontend/
@@ -88,7 +88,7 @@ sourdough/
 ### 2. Version Display Locations
 
 **Settings/Configuration Area**:
-- Footer of configuration page: "Sourdough v1.0.0"
+- Footer of configuration page: "selfmx v1.0.0"
 - System info section with detailed version
 
 **API Endpoint**:
@@ -245,7 +245,7 @@ Follow [Semantic Versioning 2.0.0](https://semver.org/):
 │  └──────────────┘  └──────────────────────────────────────┘│
 │                                                             │
 │  ─────────────────────────────────────────────────────────  │
-│  Sourdough v1.0.0 • Build 2026-01-27                       │
+│  selfmx v1.0.0 • Build 2026-01-27                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 

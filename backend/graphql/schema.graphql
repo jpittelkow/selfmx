@@ -37,14 +37,6 @@ type Query {
         orderBy: [AuditLogOrderBy!]
     ): AuditLogPaginator! @guard(with: ["api-key"]) @can(ability: "audit.view", model: "App\\Models\\User")
 
-    "List access logs. Requires audit.view permission."
-    accessLogs(
-        first: Int = 25
-        page: Int = 1
-        filters: AccessLogFilter
-        orderBy: [AccessLogOrderBy!]
-    ): AccessLogPaginator! @guard(with: ["api-key"]) @can(ability: "audit.view", model: "App\\Models\\User")
-
     "List notification deliveries. Requires notification_deliveries.view permission."
     notificationDeliveries(
         first: Int = 25
@@ -179,20 +171,6 @@ type AuditLog {
     createdAt: DateTime! @rename(attribute: "created_at")
 }
 
-type AccessLog {
-    id: ID!
-    userId: ID @rename(attribute: "user_id")
-    user: UserAdmin
-    action: String!
-    resourceType: String @rename(attribute: "resource_type")
-    resourceId: String @rename(attribute: "resource_id")
-    fieldsAccessed: JSON @rename(attribute: "fields_accessed")
-    ipAddress: String @rename(attribute: "ip_address")
-    userAgent: String @rename(attribute: "user_agent")
-    correlationId: String @rename(attribute: "correlation_id")
-    createdAt: DateTime! @rename(attribute: "created_at")
-}
-
 type NotificationDelivery {
     id: ID!
     userId: ID @rename(attribute: "user_id")
@@ -299,14 +277,6 @@ input AuditLogFilter {
     dateTo: Date
 }
 
-input AccessLogFilter {
-    action: String
-    userId: ID
-    resourceType: String
-    dateFrom: Date
-    dateTo: Date
-}
-
 input NotificationDeliveryFilter {
     notificationType: String
     channel: String
@@ -328,11 +298,6 @@ input AuditLogOrderBy {
     direction: SortDirection!
 }
 
-input AccessLogOrderBy {
-    column: AccessLogOrderColumn!
-    direction: SortDirection!
-}
-
 input NotificationDeliveryOrderBy {
     column: NotificationDeliveryOrderColumn!
     direction: SortDirection!
@@ -347,12 +312,6 @@ enum AuditLogOrderColumn {
     CREATED_AT
     ACTION
     SEVERITY
-}
-
-enum AccessLogOrderColumn {
-    CREATED_AT
-    ACTION
-    RESOURCE_TYPE
 }
 
 enum NotificationDeliveryOrderColumn {
@@ -392,11 +351,6 @@ type NotificationPaginator {
 
 type AuditLogPaginator {
     data: [AuditLog!]!
-    paginatorInfo: PaginatorInfo!
-}
-
-type AccessLogPaginator {
-    data: [AccessLog!]!
     paginatorInfo: PaginatorInfo!
 }
 

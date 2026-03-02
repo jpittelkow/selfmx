@@ -11,7 +11,7 @@ class CheckSuspiciousActivityCommand extends Command
 {
     protected $signature = 'log:check-suspicious';
 
-    protected $description = 'Check audit and access logs for suspicious patterns and notify admins.';
+    protected $description = 'Check audit logs for suspicious patterns and notify admins.';
 
     public function handle(SuspiciousActivityService $service, NotificationOrchestrator $orchestrator): int
     {

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Sourdough LLM Configuration
+ * selfmx LLM Configuration
  *
  * Configure AI/LLM providers and orchestration modes.
  */

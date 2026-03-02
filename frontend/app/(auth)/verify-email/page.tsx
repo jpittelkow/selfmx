@@ -80,9 +80,9 @@ function VerifyEmailContent() {
         title="Email Verified"
         description="Your email address has been verified successfully."
         footer={
-          <Link href="/dashboard" className="w-full">
+          <Link href="/mail" className="w-full">
             <Button className="w-full">
-              Go to Dashboard
+              Go to Inbox
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
@@ -117,9 +117,9 @@ function VerifyEmailContent() {
             >
               Resend Verification Email
             </LoadingButton>
-            <Link href="/dashboard" className="w-full">
+            <Link href="/mail" className="w-full">
               <Button variant="ghost" className="w-full">
-                Continue to Dashboard
+                Continue to Inbox
               </Button>
             </Link>
           </div>
@@ -160,9 +160,9 @@ function VerifyEmailContent() {
               >
                 Request New Verification Email
               </LoadingButton>
-              <Link href="/dashboard" className="w-full">
+              <Link href="/mail" className="w-full">
                 <Button variant="ghost" className="w-full">
-                  Continue to Dashboard
+                  Continue to Inbox
                 </Button>
               </Link>
             </>

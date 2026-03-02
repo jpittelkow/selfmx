@@ -25,7 +25,7 @@ SearchAdminController → GET /admin/search/stats, POST /admin/search/reindex
 | `backend/app/Http/Controllers/Api/SearchController.php` | Modify | Add new type to `type` validation rule |
 | `backend/app/Http/Controllers/Api/Admin/SearchAdminController.php` | Modify | Add new type to `model` validation rule |
 | `backend/config/scout.php` | Modify | Meilisearch index settings (filterable/sortable) — **required** for user-scoped models |
-| `backend/routes/api.php` | Modify | If the new type returns user/PHI data: add `log.access:User` (or appropriate) to search/suggestions routes (see [Logging Guide](../../logging.md)) |
+| `backend/routes/api.php` | Modify | If the new type needs admin-only access, update route middleware |
 | `frontend/components/search/search-result-icon.tsx` | Modify | Add icon for new result type |
 | `frontend/app/(dashboard)/configuration/search/page.tsx` | Modify | No change if stats are driven by SearchService (auto) |
 
@@ -362,7 +362,6 @@ For admin-only models, wrap in an `if ($isAdmin)` check (similar to the user gro
 - [ ] SearchController: new type added to `type` validation rule
 - [ ] SearchAdminController: new type added to `model` validation rule for reindex
 - [ ] scout.php: index-settings added — **required** for user-scoped models (`user_id` in `filterableAttributes`)
-- [ ] Routes: if results include user/PHI data, ensure `log.access:User` (or appropriate) middleware on search/suggestions routes
 - [ ] Run `search:reindex` (or reindex from admin UI)
 
 ### Frontend
@@ -383,7 +382,6 @@ For admin-only models, wrap in an `if ($isAdmin)` check (similar to the user gro
 ## Compliance
 
 - **XSS:** All `title` and `subtitle` (and any user-provided text in results) must be escaped with `htmlspecialchars(..., ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')` before returning from the API. Use `highlightMatch()` for highlight text (it escapes before wrapping the query in `<mark>`). The frontend renders highlights with `dangerouslySetInnerHTML`.
-- **Access logging (HIPAA):** If the new searchable type is user/PHI data, ensure `GET /api/search` and `GET /api/search/suggestions` use `log.access:User` (or the appropriate resource type) middleware. See [Logging Guide](../../logging.md) and [Recipe: Add access logging](add-access-logging.md).
 
 ## Example: UserGroup (Admin-Only)
 

@@ -41,6 +41,7 @@ import {
   ChevronDown,
   ChevronRight,
   ShieldCheck,
+  ShieldBan,
   Search,
   UsersRound,
   MessageSquareText,
@@ -91,6 +92,16 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
+    name: "Email Hosting",
+    icon: Mail,
+    items: [
+      { name: "Email Provider", href: "/configuration/email-provider", icon: Settings, description: "Provider API keys and settings", permission: "settings.view" },
+      { name: "Domains", href: "/configuration/email-domains", icon: Globe, description: "Manage email domains", permission: "settings.view" },
+      { name: "Mailboxes", href: "/configuration/mailboxes", icon: Mail, description: "Manage email addresses", permission: "settings.view" },
+      { name: "Spam Filter", href: "/configuration/spam-filter", icon: ShieldBan, description: "Allow and block sender lists", permission: "settings.view" },
+    ],
+  },
+  {
     name: "Developer & API",
     icon: Terminal,
     items: [
@@ -125,7 +136,6 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Audit Log", href: "/configuration/audit", icon: FileText, description: "View system activity logs", permission: "audit.view" },
       { name: "Application Logs", href: "/configuration/logs", icon: Terminal, description: "Real-time console log viewer", permission: "logs.view" },
-      { name: "Access Logs (HIPAA)", href: "/configuration/access-logs", icon: FileText, description: "PHI access audit trail", permission: "logs.view" },
       { name: "Log Retention", href: "/configuration/log-retention", icon: FileText, description: "Retention and cleanup config", permission: "settings.view" },
       { name: "Jobs", href: "/configuration/jobs", icon: Clock, description: "Monitor scheduled jobs", permission: "settings.view" },
       { name: "Usage & Costs", href: "/configuration/usage", icon: BarChart3, description: "Integration usage analytics", permission: "usage.view" },
@@ -316,7 +326,7 @@ function VersionFooter() {
     return null;
   }
 
-  const displayName = appName || "Sourdough";
+  const displayName = appName || "selfmx";
   const shortSha = buildSha && buildSha !== "development" 
     ? buildSha.substring(0, 7) 
     : null;
@@ -349,7 +359,7 @@ export default function ConfigurationLayout({
 
   useEffect(() => {
     if (!isLoading && (!user || !hasConfigAccess)) {
-      router.push("/dashboard");
+      router.push("/mail");
     }
   }, [user, isLoading, hasConfigAccess, router]);
 
@@ -373,7 +383,7 @@ export default function ConfigurationLayout({
   // Mobile layout: header with menu button + Sheet drawer
   if (isMobile) {
     return (
-      <div>
+      <div className="px-4 py-4">
         {/* Mobile header */}
         <div className="mb-6 flex items-center gap-3">
           <Button
@@ -421,27 +431,27 @@ export default function ConfigurationLayout({
     );
   }
 
-  // Desktop layout: sidebar + content (unchanged)
+  // Desktop layout: sidebar on left + content on right — full width
   return (
-    <div>
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar */}
-        <aside className="lg:w-64 shrink-0 flex flex-col">
-          <div className="mb-4">
-            <div className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-muted-foreground" />
-              <span className="font-semibold">Configuration</span>
-            </div>
+    <div className="flex flex-row h-[calc(100vh-3.5rem)]">
+      {/* Sidebar — fixed width, scrollable, subtle right border */}
+      <aside className="w-64 min-w-64 shrink-0 flex flex-col border-r overflow-y-auto p-4">
+        <div className="mb-4">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+            <span className="font-semibold">Configuration</span>
           </div>
-          <div className="flex-1 flex flex-col">
+        </div>
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto">
             <GroupedNavigation pathname={pathname} />
-            <VersionFooter />
           </div>
-        </aside>
+          <VersionFooter />
+        </div>
+      </aside>
 
-        {/* Main content */}
-        <main className="flex-1 min-w-0">{children}</main>
-      </div>
+      {/* Main content — fills remaining space */}
+      <main className="flex-1 min-w-0 overflow-y-auto p-6 lg:p-8">{children}</main>
     </div>
   );
 }

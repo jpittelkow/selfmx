@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Sourdough Notifications Configuration
+ * selfmx Notifications Configuration
  *
  * Configure notification channels and providers.
  */
@@ -73,7 +73,7 @@ return [
             'enabled' => !empty(env('DISCORD_WEBHOOK_URL')),
             'driver' => 'discord',
             'webhook_url' => env('DISCORD_WEBHOOK_URL'),
-            'username' => env('DISCORD_BOT_NAME', 'Sourdough'),
+            'username' => env('DISCORD_BOT_NAME', 'selfmx'),
             'avatar_url' => env('DISCORD_AVATAR_URL'),
         ],
 
@@ -87,7 +87,7 @@ return [
             'enabled' => !empty(env('SLACK_WEBHOOK_URL')),
             'driver' => 'slack',
             'webhook_url' => env('SLACK_WEBHOOK_URL'),
-            'username' => env('SLACK_BOT_NAME', 'Sourdough'),
+            'username' => env('SLACK_BOT_NAME', 'selfmx'),
             'icon' => env('SLACK_ICON', ':robot_face:'),
         ],
 

@@ -11,7 +11,6 @@ import {
 } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { getEcho, disconnectEcho } from "@/lib/echo";
 
 export interface Notification {
   id: string;
@@ -179,7 +178,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     let cleanup: (() => void) | undefined;
 
-    getEcho().then((echo) => {
+    import("@/lib/echo").then(({ getEcho }) => getEcho()).then((echo) => {
       if (cancelled || !echo) return;
 
       const channel = echo.private(`user.${user.id}`);
@@ -250,12 +249,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [user?.id, prependNotification]);
 
   useEffect(() => {
-    if (!user) disconnectEcho();
+    if (!user) {
+      import("@/lib/echo").then(({ disconnectEcho }) => disconnectEcho());
+    }
   }, [user]);
 
   useEffect(() => {
     return () => {
-      disconnectEcho();
+      import("@/lib/echo").then(({ disconnectEcho }) => disconnectEcho());
     };
   }, []);
 

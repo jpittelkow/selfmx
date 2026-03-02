@@ -261,7 +261,7 @@ export default function AuditLogPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight">
             Audit Log
           </h1>
           <p className="text-muted-foreground mt-1">

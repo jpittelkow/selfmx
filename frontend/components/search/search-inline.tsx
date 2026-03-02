@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { SearchResultIcon } from "@/components/search/search-result-icon";
 import { getSuggestions, type SearchResult } from "@/lib/search";
 import { useSearch } from "@/components/search/search-provider";
+import { sanitizeHighlightHtml } from "@/lib/sanitize";
 
 const RECENT_KEY = "search-recent-queries";
 const MAX_RECENT = 5;
@@ -188,15 +189,16 @@ export function SearchInline() {
                       <span
                         className="truncate font-medium"
                         dangerouslySetInnerHTML={{
-                          __html: result.highlight?.title ?? result.title,
+                          __html: sanitizeHighlightHtml(result.highlight?.title ?? result.title),
                         }}
                       />
                       {result.subtitle && (
                         <span
                           className="truncate text-xs text-muted-foreground"
                           dangerouslySetInnerHTML={{
-                            __html:
-                              result.highlight?.subtitle ?? result.subtitle,
+                            __html: sanitizeHighlightHtml(
+                              result.highlight?.subtitle ?? result.subtitle
+                            ),
                           }}
                         />
                       )}

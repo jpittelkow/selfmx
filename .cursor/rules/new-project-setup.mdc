@@ -17,7 +17,7 @@ The setup is broken into **three tiers**, each with its own recipe:
    - Renames all "Sourdough" references across ~50+ files
 
 2. **Tier 2: Features & Auth** → `docs/ai/recipes/setup-features-auth.md`
-   - Which features to keep/remove (AI, notifications, backup, PWA, search, HIPAA)
+   - Which features to keep/remove (AI, notifications, backup, PWA, search)
    - Auth model (email/pass, +SSO, +2FA, +Passkeys)
 
 3. **Tier 3: Infrastructure & Repo** → `docs/ai/recipes/setup-infrastructure-repo.md`

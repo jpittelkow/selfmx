@@ -36,7 +36,7 @@ trait HasEmailNotifications
     {
         $templateService = app(EmailTemplateService::class);
         $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
-        $verificationUrl = $frontendUrl . '/verify-email?id=' . $this->getKey() . '&hash=' . sha1($this->getEmailForVerification());
+        $verificationUrl = $frontendUrl . '/verify-email?id=' . $this->getKey() . '&hash=' . hash_hmac('sha256', $this->getEmailForVerification(), config('app.key'));
 
         $rendered = $templateService->render('email_verification', [
             'user' => ['name' => $this->name, 'email' => $this->email],

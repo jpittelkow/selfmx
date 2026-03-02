@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Sourdough needs to support multiple databases to serve different deployment scenarios:
+selfmx needs to support multiple databases to serve different deployment scenarios:
 - **Self-hosted individuals**: Want zero-config simplicity (SQLite)
 - **Small teams**: May use existing MySQL/PostgreSQL
 - **Enterprise**: Often require PostgreSQL or managed databases
@@ -75,7 +75,7 @@ return [
             'driver' => 'mysql',
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'sourdough'),
+            'database' => env('DB_DATABASE', 'selfmx'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8mb4',
@@ -87,7 +87,7 @@ return [
             'driver' => 'pgsql',
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'sourdough'),
+            'database' => env('DB_DATABASE', 'selfmx'),
             'username' => env('DB_USERNAME', 'postgres'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8',

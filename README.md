@@ -1,58 +1,94 @@
-# Sourdough
+# selfmx
 
-A complete application framework designed to help you build modern web applications quickly. Sourdough provides all the essential building blocks you need—user authentication, notifications, AI integration, and more—so you can focus on building your unique features instead of reinventing the wheel.
+Self-hosted email made simple. Manage your own domains, send and receive email through provider APIs (Mailgun, with more coming), and keep full control of your data — all in a single Docker container.
 
-## What is Sourdough?
+## Why selfmx?
 
-Sourdough is a starter framework that comes pre-configured with enterprise-grade features. Think of it as a solid foundation for building web applications, with user management, notification systems, and AI capabilities already built in. Everything runs in a single Docker container, making it easy to deploy and manage.
+- **No SMTP/IMAP servers to manage** — Uses email provider APIs instead of running Postfix/Dovecot
+- **Works behind NAT and firewalls** — Inbound email arrives via webhooks, no port 25 needed
+- **Your data stays yours** — All emails stored in your database, fully searchable, fully backed up
+- **AI-powered** — Thread summaries, smart categorization, priority inbox, and reply suggestions
 
-## Key Features
+## Features
 
-### User Management
-Complete authentication system with email/password login, single sign-on (SSO) support for popular services like Google, GitHub, Microsoft, Apple, Discord, and GitLab. Includes two-factor authentication (2FA), password reset, and email verification for secure account management.
+**Email**
+- Inbound email via provider webhooks with HMAC signature verification
+- Outbound sending with rich text compose (TipTap editor)
+- Reply, reply-all, forward with quoted messages
+- Gmail-style conversation threading (In-Reply-To / References / subject matching)
+- Gmail-style labels — flexible tagging instead of rigid folders
+- Drafts with auto-save, per-mailbox signatures, scheduled send
+- Full-text search via Meilisearch with filters (date, attachment, from, to, label)
+- Delivery status tracking (delivered, bounced, failed)
+- Automatic contact extraction and management
 
-### Notifications
-Send messages through multiple channels including email, Telegram, Discord, Signal, SMS, push notifications, and in-app notifications. Users can choose their preferred notification methods.
+**AI Integration**
+- Email summarization and thread summaries
+- Smart categorization and auto-labeling
+- Priority inbox with AI-scored importance
+- Smart reply suggestions
+- Powered by Claude, OpenAI, Gemini, or Ollama
 
-### AI Integration
-Connect to multiple AI services (Claude, OpenAI, Gemini, Ollama) and use them individually or combine them in powerful ways. Includes advanced modes for aggregating responses or using multiple AI models together in "council mode" for better results.
+**Platform**
+- Single Docker container deployment (Nginx + PHP-FPM + Next.js)
+- Multi-user with full tenant isolation
+- User management with email/password, SSO, 2FA, and passkeys
+- Notifications via email, Telegram, Discord, Slack, SMS, push, and in-app
+- Full backup and restore to S3, SFTP, or Google Drive
+- Mobile-responsive Progressive Web App
 
-### Flexible Storage
-Works with SQLite by default (perfect for getting started), but can easily switch to MySQL, PostgreSQL, or Supabase for larger applications.
+## Tech Stack
 
-### Backup & Restore
-Built-in backup and restore to protect your data. Create full backups (database, files, settings) from the UI; download, restore, or delete them. Configure retention, scheduling, and remote destinations (S3, SFTP, Google Drive) and optional encryption. All backup settings are manageable in the admin UI (no restart required). See [Backup & Restore documentation](docs/backup.md) for user, admin, and developer guides.
-
-### Simple Deployment
-Everything runs in one Docker container, making it easy to deploy anywhere—from your local machine to production servers.
+| Layer | Technology |
+|-------|-----------|
+| Backend | Laravel 11 (PHP 8.3+) |
+| Frontend | Next.js 16, React 18, TypeScript |
+| Database | SQLite (default), MySQL, PostgreSQL |
+| Search | Meilisearch |
+| UI | shadcn/ui + Tailwind CSS |
+| Container | Docker (single container via Supervisor) |
 
 ## Getting Started
 
-The easiest way to get started is with Docker:
-
 ```bash
-# Clone the repository
-git clone https://github.com/Sourdough-start/sourdough.git
-cd sourdough
-
-# Start the application
+# Clone and start
+git clone https://github.com/jpittelkow/selfmx.git
+cd selfmx
 docker-compose up -d
 
-# Access the application
-open http://localhost:8080
+# Access at http://localhost:8080
+# The first user to register becomes admin
 ```
 
-That's it! The application will be running and ready to use.
+Configure your email provider (Mailgun) in **Configuration > Email Provider**, add your domains in **Configuration > Email Domains**, and create mailboxes in **Configuration > Mailboxes**.
 
 ## Documentation
 
-For more information, check out our documentation:
+- [Overview](docs/overview.md) — Documentation hub
+- [Architecture](docs/architecture.md) — Design decisions (ADRs)
+- [Email Architecture](docs/adr/027-email-hosting-architecture.md) — How email sending/receiving works
+- [API Reference](docs/api/) — REST API documentation
+- [Development Guide](docs/development.md) — Local setup and contribution
+- [Docker Guide](docs/docker.md) — Deployment and configuration
+- [Backup & Restore](docs/backup.md) — Backup configuration
 
-- [User Guide](docs/user/) - Learn how to use Sourdough
-- [Developer Guide](docs/dev/) - Technical documentation for developers
-- [API Reference](docs/api/) - API endpoints and integration details
-- [Backup & Restore](docs/backup.md) - Backup and restore: user guide, admin settings, developer docs, key files, and how to extend
+## Roadmap
+
+All 6 phases are complete. See the full [roadmap](docs/plans/email-app-roadmap.md).
+
+**Highlights:**
+- Spam filtering with per-user allow/block lists
+- Email rules and filters (auto-label, auto-forward, auto-archive)
+- Scheduled send and snooze
+- Real-time push notifications on new email via Laravel Reverb
+- Multiple providers (Mailgun, AWS SES, SendGrid, Postmark)
+- Email import (mbox/eml upload)
+- Keyboard shortcuts and command palette
+
+## Built With
+
+selfmx is built on [Sourdough v0.8.2](https://github.com/Sourdough-start/sourdough), a full-stack starter framework for Laravel + Next.js applications.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.

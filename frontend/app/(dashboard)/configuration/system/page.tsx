@@ -244,7 +244,7 @@ export default function SystemSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">System Settings</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground mt-1">
           Configure application-wide settings and defaults.{" "}
           <HelpLink articleId="admin-overview" />
         </p>
@@ -291,7 +291,7 @@ export default function SystemSettingsPage() {
                   <Input
                     id="app_name"
                     {...register("general.app_name")}
-                    placeholder="Sourdough"
+                    placeholder="selfmx"
                   />
                   {errors.general?.app_name && (
                     <p className="text-sm text-destructive">

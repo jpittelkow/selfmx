@@ -144,36 +144,6 @@ $this->audit('user.created', $user, [], ['name' => $user->name], null, 'info');
 
 **Key files**: `backend/app/Services/AuditService.php`, `backend/app/Http/Traits/AuditLogging.php`, `backend/app/Models/AuditLog.php`, `backend/app/Http/Controllers/Api/AuditLogController.php`. See [Recipe: Trigger audit logging](recipes/trigger-audit-logging.md) and [Recipe: Add auditable action](recipes/add-auditable-action.md).
 
-### AccessLogService Pattern (HIPAA Access Logging)
-
-Use `AccessLogService` to log access to protected health information (PHI) for HIPAA compliance. This is separate from AuditService (which tracks user actions); AccessLogService tracks data access.
-
-```php
-use App\Services\AccessLogService;
-
-public function __construct(private AccessLogService $accessLog) {}
-
-// View action
-$this->accessLog->log('view', 'User', $user->id, ['name', 'email', 'phone']);
-
-// Update action
-$this->accessLog->log('update', 'User', $user->id, ['email']);
-
-// Bulk view (list)
-$this->accessLog->log('view', 'User', null, null);
-
-// Export
-$this->accessLog->log('export', 'User', null, ['all']);
-```
-
-- **When to use**: Any endpoint that reads, creates, updates, deletes, or exports user data (PHI).
-- **Actions**: `view`, `create`, `update`, `delete`, `export`.
-- **Resource types**: `User`, `Setting`, or any model containing PHI.
-- **Middleware**: Prefer applying `log.access:User` (or `log.access:Setting`) to routes; the middleware resolves action and resource ID automatically and extracts **fields accessed** from request body (create/update) or JSON response (view), excluding sensitive keys.
-- **Toggle**: HIPAA access logging can be disabled in Configuration > Log retention. When disabled, no logs are created; "Delete all access logs" is available (with HIPAA violation warning).
-
-**Key files**: `backend/app/Services/AccessLogService.php`, `backend/app/Http/Middleware/LogResourceAccess.php`, `backend/app/Models/AccessLog.php`. See [Recipe: Add access logging](recipes/add-access-logging.md).
-
 ### Permission Checking Pattern (User Groups)
 
 Use `PermissionService` for cached permission checks, or `User::hasPermission()` / `User::inGroup()` on the User model (which uses the `HasGroups` trait).
@@ -427,15 +397,13 @@ Use `SearchService` for full-text search with Meilisearch/Scout. The service cen
 
 **XSS safety:** Transform methods must escape all user-provided text (title, subtitle) with `htmlspecialchars(..., ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')` before returning. Use `highlightMatch()` for highlight text (it escapes then wraps the query in `<mark>`); the frontend renders highlights with `dangerouslySetInnerHTML`.
 
-**Access logging:** Routes that return user/PHI search results use `log.access:User` middleware (`GET /api/search`, `GET /api/search/suggestions`). See [Logging Compliance](../../.cursor/rules/logging-compliance.mdc).
-
-**Adding a new searchable model:** Add the model to `SearchService::$searchableModels` and `SearchReindexCommand::$searchableModels`, implement a type branch and transform method (with escaping) in SearchService, add the result type icon in `frontend/components/search/search-result-icon.tsx`, and ensure routes have access logging if returning PHI. See [Recipe: Add searchable model](recipes/add-searchable-model.md).
+**Adding a new searchable model:** Add the model to `SearchService::$searchableModels` and `SearchReindexCommand::$searchableModels`, implement a type branch and transform method (with escaping) in SearchService, and add the result type icon in `frontend/components/search/search-result-icon.tsx`. See [Recipe: Add searchable model](recipes/add-searchable-model.md).
 
 **Page search:** Pages are indexed in Meilisearch with content keywords for discoverability. The `pages` index includes titles, subtitles, URLs, and rich content describing what each page contains. Use `searchPages(query, isAdmin, limit)` to search. Pages are defined in `backend/config/search-pages.php`. See [Recipe: Add searchable page](recipes/add-searchable-page.md).
 
 **UserGroup search:** User groups are searchable by name, slug, and description. Admin-only — non-admin users do not see group results. Use `searchUserGroups(query, limit)` or include in `globalSearch()` with `type=user_groups`.
 
-**Key files:** `backend/app/Services/Search/SearchService.php`, `backend/config/search-pages.php`, `backend/app/Http/Controllers/Api/SearchController.php`, `backend/app/Http/Controllers/Api/Admin/SearchAdminController.php`, `backend/app/Console/Commands/SearchReindexCommand.php`, `backend/routes/api.php` (search/suggestions + log.access), `frontend/lib/search.ts`, `frontend/components/search/search-modal.tsx`, `frontend/components/search/search-provider.tsx`.
+**Key files:** `backend/app/Services/Search/SearchService.php`, `backend/config/search-pages.php`, `backend/app/Http/Controllers/Api/SearchController.php`, `backend/app/Http/Controllers/Api/Admin/SearchAdminController.php`, `backend/app/Console/Commands/SearchReindexCommand.php`, `backend/routes/api.php`, `frontend/lib/search.ts`, `frontend/components/search/search-modal.tsx`, `frontend/components/search/search-provider.tsx`.
 
 ### EmailTemplateService Pattern
 
@@ -890,8 +858,8 @@ Validate filenames before file operations to prevent path traversal attacks.
 private function validateFilename(string $filename): bool
 {
     // Only allow alphanumeric, dash, underscore, and .zip extension
-    // Must match our backup naming pattern: sourdough-backup-YYYY-MM-DD_HH-ii-ss.zip
-    if (!preg_match('/^sourdough-backup-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.zip$/', $filename)) {
+    // Must match our backup naming pattern: selfmx-backup-YYYY-MM-DD_HH-ii-ss.zip
+    if (!preg_match('/^selfmx-backup-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.zip$/', $filename)) {
         return false;
     }
 
@@ -2566,12 +2534,12 @@ class MyController extends Controller
 
 ### Webhook Signature Verification (Consumer Side)
 
-When receiving webhooks from Sourdough, verify the signature:
+When receiving webhooks from selfmx, verify the signature:
 
 ```php
 public function handleWebhook(Request $request): JsonResponse
 {
-    $secret = config('services.sourdough.webhook_secret');
+    $secret = config('services.selfmx.webhook_secret');
     $timestamp = $request->header('X-Webhook-Timestamp');
     $signature = $request->header('X-Webhook-Signature');
     $payload = $request->getContent();

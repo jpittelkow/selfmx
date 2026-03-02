@@ -164,7 +164,7 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: false
-          tags: sourdough:test
+          tags: selfmx:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |

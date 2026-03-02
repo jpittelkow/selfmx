@@ -21,19 +21,12 @@ return new class extends Migration
             $table->index('stripe_customer_id');
         });
 
-        // Add index on correlation_id for point-lookup filtering in AuditService
-        // and AccessLogService. These tables grow with every request.
+        // Add index on correlation_id for point-lookup filtering in AuditService.
         Schema::table('audit_logs', function (Blueprint $table) {
             $table->index('correlation_id');
         });
 
-        Schema::table('access_logs', function (Blueprint $table) {
-            $table->index('correlation_id');
-        });
-
         // Drop the redundant standalone index on api_tokens.token.
-        // The ->unique() constraint already creates an index the query planner
-        // uses for WHERE token = ? lookups. The extra ->index('token') is dead weight.
         Schema::table('api_tokens', function (Blueprint $table) {
             $table->dropIndex('api_tokens_token_index');
         });
@@ -47,10 +40,6 @@ return new class extends Migration
         });
 
         Schema::table('audit_logs', function (Blueprint $table) {
-            $table->dropIndex(['correlation_id']);
-        });
-
-        Schema::table('access_logs', function (Blueprint $table) {
             $table->dropIndex(['correlation_id']);
         });
 

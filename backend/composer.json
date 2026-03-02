@@ -1,7 +1,7 @@
 {
-    "name": "sourdough/backend",
+    "name": "selfmx/backend",
     "type": "project",
-    "description": "Sourdough Backend - Laravel API",
+    "description": "selfmx Backend - Laravel API",
     "keywords": ["laravel", "framework", "api"],
     "license": "MIT",
     "require": {

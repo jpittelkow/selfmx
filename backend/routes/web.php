@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Broadcast;
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Sourdough uses a separate Next.js frontend, so web routes are minimal.
+| selfmx uses a separate Next.js frontend, so web routes are minimal.
 | API routes are defined in routes/api.php
 |
 */

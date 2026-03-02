@@ -2,7 +2,7 @@
 
 ## Overview
 
-Added comprehensive documentation for deploying Sourdough on NAS systems (Unraid, Synology, TrueNAS) that use Docker GUI templates instead of docker-compose.
+Added comprehensive documentation for deploying selfmx on NAS systems (Unraid, Synology, TrueNAS) that use Docker GUI templates instead of docker-compose.
 
 ## Problem Discovered
 
@@ -41,7 +41,7 @@ Document all required environment variables for NAS deployments, emphasizing tha
 
 Verified fix on Unraid 6.x with the following configuration:
 - PUID=99, PGID=100 (Unraid defaults)
-- Volume mappings to `/mnt/user/appdata/sourdough/`
+- Volume mappings to `/mnt/user/appdata/selfmx/`
 - `DB_DATABASE=/var/www/html/data/database.sqlite` environment variable
 
 ## Future Considerations

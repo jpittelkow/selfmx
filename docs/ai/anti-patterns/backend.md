@@ -43,16 +43,6 @@ $examples = Example::where('user_id', $request->user()->id)
 
 ### Don't: Skip access logging for PHI routes
 
-```php
-// BAD - endpoint returns user data but no access logging
-Route::get('/users/{user}', [UserController::class, 'show']);
-
-// GOOD - apply log.access middleware (or use AccessLogService::log in controller)
-Route::middleware(['auth:sanctum', 'log.access:User'])->get('/users/{user}', [UserController::class, 'show']);
-```
-
-See [Recipe: Add access logging](../recipes/add-access-logging.md) and [Logging Guide](../../logging.md).
-
 ### Don't: Skip Form Request Validation
 
 ```php

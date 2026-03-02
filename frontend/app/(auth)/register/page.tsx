@@ -79,7 +79,7 @@ export default function RegisterPage() {
     try {
       await registerUser(data.name, data.email, data.password, data.password_confirmation);
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+      router.push("/mail");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Registration failed";
       setFormError(message);

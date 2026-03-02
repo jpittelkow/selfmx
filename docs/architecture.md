@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-Sourdough uses a decoupled architecture:
+selfmx uses a decoupled architecture:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -76,6 +76,8 @@ Architecture Decision Records (ADRs) document all significant design decisions:
 - [ADR-024: Security Hardening](adr/024-security-hardening.md) - SSRF protection, SQL injection fixes, OAuth security, password policy, webhook signatures
   - Key files: `backend/app/Services/UrlValidationService.php`, `backend/app/Services/WebhookService.php`, `backend/app/Http/Middleware/RateLimitSensitive.php`
   - See also: [Security Patterns](ai/patterns/security.md)
+- [ADR-027: Email Hosting Architecture](adr/027-email-hosting-architecture.md) - Provider-based email hosting with webhook inbound, API outbound, conversation threading, Gmail-style labels
+  - Key files: `backend/app/Services/Email/EmailService.php`, `backend/app/Services/Email/MailgunProvider.php`, `backend/app/Services/Email/EmailProviderInterface.php`, `backend/app/Http/Controllers/Api/EmailWebhookController.php`, `backend/app/Models/Email.php`, `frontend/app/(dashboard)/mail/page.tsx`, `frontend/components/mail/`
 
 ### Logging and Observability
 

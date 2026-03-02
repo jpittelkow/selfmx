@@ -9,7 +9,7 @@ return [
     | Default Database Connection Name
     |--------------------------------------------------------------------------
     |
-    | Sourdough supports SQLite (default), MySQL, and PostgreSQL.
+    | selfmx supports SQLite (default), MySQL, and PostgreSQL.
     | SQLite is recommended for self-hosting as it requires zero configuration.
     |
     */
@@ -37,7 +37,7 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'sourdough'),
+            'database' => env('DB_DATABASE', 'selfmx'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
@@ -57,7 +57,7 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'sourdough'),
+            'database' => env('DB_DATABASE', 'selfmx'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
@@ -77,7 +77,7 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'sourdough'),
+            'database' => env('DB_DATABASE', 'selfmx'),
             'username' => env('DB_USERNAME', 'postgres'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
@@ -112,7 +112,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'sourdough'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'selfmx'), '_').'_database_'),
         ],
 
         'default' => [

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Sourdough Version Configuration
+ * selfmx Version Configuration
  *
  * This file manages version information for the application.
  * The VERSION file in the project root is the source of truth.
@@ -45,7 +45,8 @@ return [
 
     'check_enabled' => env('VERSION_CHECK_ENABLED', false),
 
-    'check_url' => env('VERSION_CHECK_URL', 'https://api.github.com/repos/Sourdough-start/sourdough/releases/latest'),
+    // 'check_url' => env('VERSION_CHECK_URL', 'https://api.github.com/repos/selfmx/selfmx/releases/latest'),
+    'check_url' => env('VERSION_CHECK_URL', ''),
 
     /*
     |--------------------------------------------------------------------------

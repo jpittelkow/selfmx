@@ -13,10 +13,10 @@ Accepted
 Sourdough needs comprehensive audit logging for:
 - Security and compliance (who did what, when)
 - Troubleshooting user-reported issues
-- HIPAA/SOC2 compliance requirements
+- SOC2 compliance requirements
 - Real-time monitoring of system activity
 
-Audit logging is distinct from application logging (errors, debugging) and access logging (HIPAA PHI access tracking).
+Audit logging is distinct from application logging (errors, debugging).
 
 ## Decision
 
@@ -215,10 +215,9 @@ Real-time streaming uses WebSocket via Laravel Echo/Reverb on a private `audit-l
 
 ## Notes
 
-### Audit vs Access Logging
+### Audit vs Application Logging
 
 - **Audit logs**: User actions and system events (this ADR)
-- **Access logs**: HIPAA PHI access tracking (separate AccessLogService)
 - **Application logs**: Errors, debugging, operational events (Laravel Log)
 
 ### Log Retention

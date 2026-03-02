@@ -153,7 +153,7 @@ export default function APISettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Webhooks</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground mt-1">
           Configure outgoing webhook endpoints for event-driven integrations.{" "}
           <HelpLink articleId="api-webhooks" />
         </p>

@@ -1,6 +1,6 @@
-# Sourdough User Guide
+# selfmx User Guide
 
-Welcome to Sourdough! This guide will help you get started with the application.
+Welcome to selfmx! This guide will help you get started with the application.
 
 ## Table of Contents
 
@@ -30,10 +30,10 @@ Welcome to Sourdough! This guide will help you get started with the application.
 ```bash
 # Pull and run
 docker run -d \
-  --name sourdough \
+  --name selfmx \
   -p 8080:80 \
-  -v sourdough_data:/data \
-  ghcr.io/sourdough-start/sourdough:latest
+  -v selfmx_data:/data \
+  ghcr.io/selfmx/selfmx:latest
 
 # Access at http://localhost:8080
 ```
@@ -42,8 +42,8 @@ docker run -d \
 
 ```bash
 # Clone repository
-git clone https://github.com/Sourdough-start/sourdough.git
-cd sourdough
+git clone https://github.com/selfmx/selfmx.git
+cd selfmx
 
 # Start services
 docker-compose up -d
@@ -239,13 +239,13 @@ Email notifications use your account email by default.
 1. Go to your Discord server settings
 2. Create a webhook in the desired channel
 3. Copy the webhook URL
-4. Paste it in Sourdough settings
+4. Paste it in selfmx settings
 
 #### Slack
 1. Go to your Slack workspace settings
 2. Create an incoming webhook
 3. Copy the webhook URL
-4. Paste it in Sourdough settings
+4. Paste it in selfmx settings
 
 ### Notification Types
 
@@ -264,7 +264,7 @@ Access via **Settings > AI**
 
 ### Configuring AI Providers
 
-Sourdough supports multiple AI providers. Configure the ones you want to use:
+selfmx supports multiple AI providers. Configure the ones you want to use:
 
 #### Adding a Provider
 
@@ -476,7 +476,7 @@ Variables available for each template are listed in the template description. In
 
 ## Payments (Fork Operators)
 
-If you're running a forked instance of Sourdough, you can accept payments by connecting your Stripe account to the platform.
+If you're running a forked instance of selfmx, you can accept payments by connecting your Stripe account to the platform.
 
 ### Connecting Your Stripe Account
 
@@ -541,5 +541,5 @@ Click **Disconnect** to remove your Stripe account. Existing payments are not af
 ## Getting Help
 
 - **Documentation**: [docs/](../)
-- **Issues**: [GitHub Issues](https://github.com/Sourdough-start/sourdough/issues)
+- **Issues**: [GitHub Issues](https://github.com/selfmx/selfmx/issues)
 - **Email**: support@example.com

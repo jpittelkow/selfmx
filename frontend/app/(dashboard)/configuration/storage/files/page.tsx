@@ -76,7 +76,7 @@ export default function FileManagerPage() {
   useEffect(() => {
     if (!user) return;
     if (!isAdminUser(user)) {
-      router.push("/dashboard");
+      router.push("/mail");
       return;
     }
     loadList();

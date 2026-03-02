@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-Sourdough needs a robust authentication system that supports:
+selfmx needs a robust authentication system that supports:
 - Traditional email/password authentication
 - Session-based security for SPA applications
 - Integration with SSO providers

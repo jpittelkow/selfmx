@@ -35,7 +35,6 @@ use App\Http\Controllers\Api\AuthSettingController;
 use App\Http\Controllers\Api\SSOSettingController;
 use App\Http\Controllers\Api\UserSettingController;
 use App\Http\Controllers\Api\UserNotificationSettingsController;
-use App\Http\Controllers\Api\AccessLogController;
 use App\Http\Controllers\Api\AppLogExportController;
 use App\Http\Controllers\Api\LogRetentionController;
 use App\Http\Controllers\Api\SuspiciousActivityController;
@@ -53,6 +52,19 @@ use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\StripeConnectController;
 use App\Http\Controllers\Api\StripeSettingController;
 use App\Http\Controllers\Api\StripePaymentController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\SpamFilterController;
+use App\Http\Controllers\Api\EmailRuleController;
+use App\Http\Controllers\Api\EmailAIController;
+use App\Http\Controllers\Api\EmailWebhookController;
+use App\Http\Controllers\Api\EmailDomainController;
+use App\Http\Controllers\Api\MailboxController;
+use App\Http\Controllers\Api\EmailController;
+use App\Http\Controllers\Api\EmailThreadController;
+use App\Http\Controllers\Api\EmailLabelController;
+use App\Http\Controllers\Api\EmailAttachmentController;
+use App\Http\Controllers\Api\EmailProviderSettingController;
+use App\Http\Controllers\Api\EmailImportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -79,6 +91,12 @@ Route::post('/client-errors', [ClientErrorController::class, 'store'])
 // Stripe webhook (public, no auth — signature verified in controller)
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
     ->middleware('throttle:60,1');
+
+// Email webhooks (public, no auth — signature verified in controller)
+Route::post('/email/webhook/{provider}', [EmailWebhookController::class, 'handle'])
+    ->middleware('throttle:120,1');
+Route::post('/email/webhook/{provider}/events', [EmailWebhookController::class, 'handleEvent'])
+    ->middleware('throttle:120,1');
 
 /*
 |--------------------------------------------------------------------------
@@ -161,8 +179,8 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () {
 
-    // Profile (access logging: User, self)
-    Route::prefix('profile')->middleware('log.access:User')->group(function () {
+    // Profile
+    Route::prefix('profile')->group(function () {
         Route::get('/', [ProfileController::class, 'show']);
         Route::put('/', [ProfileController::class, 'update']);
         Route::put('/password', [ProfileController::class, 'updatePassword']);
@@ -172,19 +190,19 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
     // Novu subscriber HMAC (for Inbox auth)
     Route::get('/novu/subscriber-hash', [NovuController::class, 'subscriberHash']);
 
-    // User Settings (access logging: Setting, self)
+    // User Settings
     Route::prefix('user')->group(function () {
-        Route::get('/settings', [UserSettingController::class, 'show'])->middleware('log.access:Setting');
-        Route::put('/settings', [UserSettingController::class, 'update'])->middleware('log.access:Setting');
+        Route::get('/settings', [UserSettingController::class, 'show']);
+        Route::put('/settings', [UserSettingController::class, 'update']);
         Route::post('/settings/detect-timezone', [UserSettingController::class, 'detectTimezone']);
-        Route::get('/notification-settings', [UserNotificationSettingsController::class, 'show'])->middleware('log.access:Setting');
-        Route::put('/notification-settings', [UserNotificationSettingsController::class, 'update'])->middleware('log.access:Setting');
-        Route::get('/notification-settings/type-preferences', [UserNotificationSettingsController::class, 'typePreferences'])->middleware('log.access:Setting');
-        Route::put('/notification-settings/type-preferences', [UserNotificationSettingsController::class, 'updateTypePreference'])->middleware('log.access:Setting');
-        Route::get('/webpush-subscriptions', [UserNotificationSettingsController::class, 'listWebPushSubscriptions'])->middleware('log.access:Setting');
-        Route::post('/webpush-subscription', [UserNotificationSettingsController::class, 'storeWebPushSubscription'])->middleware('log.access:Setting');
-        Route::delete('/webpush-subscription', [UserNotificationSettingsController::class, 'destroyWebPushSubscription'])->middleware('log.access:Setting');
-        Route::delete('/webpush-subscription/{id}', [UserNotificationSettingsController::class, 'destroyWebPushSubscriptionById'])->whereNumber('id')->middleware('log.access:Setting');
+        Route::get('/notification-settings', [UserNotificationSettingsController::class, 'show']);
+        Route::put('/notification-settings', [UserNotificationSettingsController::class, 'update']);
+        Route::get('/notification-settings/type-preferences', [UserNotificationSettingsController::class, 'typePreferences']);
+        Route::put('/notification-settings/type-preferences', [UserNotificationSettingsController::class, 'updateTypePreference']);
+        Route::get('/webpush-subscriptions', [UserNotificationSettingsController::class, 'listWebPushSubscriptions']);
+        Route::post('/webpush-subscription', [UserNotificationSettingsController::class, 'storeWebPushSubscription']);
+        Route::delete('/webpush-subscription', [UserNotificationSettingsController::class, 'destroyWebPushSubscription']);
+        Route::delete('/webpush-subscription/{id}', [UserNotificationSettingsController::class, 'destroyWebPushSubscriptionById'])->whereNumber('id');
     });
 
     // Dashboard (static widget data)
@@ -207,8 +225,8 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::get('/', [SettingController::class, 'index'])->middleware('can:settings.view');
         Route::put('/', [SettingController::class, 'update'])->middleware('can:settings.edit');
         // Legacy routes - deprecated, use /user/notification-settings instead
-        Route::get('/notifications', [UserNotificationSettingsController::class, 'show'])->middleware('log.access:Setting');
-        Route::put('/notifications', [UserNotificationSettingsController::class, 'update'])->middleware('log.access:Setting');
+        Route::get('/notifications', [UserNotificationSettingsController::class, 'show']);
+        Route::put('/notifications', [UserNotificationSettingsController::class, 'update']);
         Route::get('/{group}', [SettingController::class, 'show'])->middleware('can:settings.view');
         Route::put('/{group}', [SettingController::class, 'updateGroup'])->middleware('can:settings.edit');
     });
@@ -228,9 +246,9 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::get('notification-channels/verify', [NotificationChannelConfigController::class, 'verify'])->middleware('can:settings.view');
     });
     
-    // Search (authenticated; returns user data when searching users — access logged)
-    Route::get('/search', [SearchController::class, 'search'])->middleware('log.access:User');
-    Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->middleware('log.access:User');
+    // Search
+    Route::get('/search', [SearchController::class, 'search']);
+    Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
 
     // Notifications
     Route::prefix('notifications')->group(function () {
@@ -270,8 +288,8 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::delete('/{filename}', [BackupController::class, 'destroy'])->middleware('can:backups.delete');
     });
 
-    // User Management (permission: users.view / users.create / users.edit / users.delete, access logging: User)
-    Route::prefix('users')->middleware('log.access:User')->group(function () {
+    // User Management (permission: users.view / users.create / users.edit / users.delete)
+    Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index'])->middleware('can:users.view');
         Route::post('/', [UserController::class, 'store'])->middleware('can:users.create');
         Route::get('/{user}', [UserController::class, 'show'])->middleware('can:users.view');
@@ -306,14 +324,6 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::get('/', [AuditLogController::class, 'index'])->middleware('can:audit.view');
         Route::get('/export', [AuditLogController::class, 'export'])->middleware('can:logs.export');
         Route::get('/stats', [AuditLogController::class, 'stats'])->middleware('can:audit.view');
-    });
-
-    // Access Logs / HIPAA (permission: logs.view / logs.export)
-    Route::prefix('access-logs')->group(function () {
-        Route::get('/', [AccessLogController::class, 'index'])->middleware('can:logs.view');
-        Route::get('/export', [AccessLogController::class, 'export'])->middleware('can:logs.export');
-        Route::get('/stats', [AccessLogController::class, 'stats'])->middleware('can:logs.view');
-        Route::delete('/', [AccessLogController::class, 'deleteAll'])->middleware('can:logs.view');
     });
 
     // Application logs export (permission: logs.export)
@@ -539,5 +549,125 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::delete('/logo-dark', [BrandingController::class, 'deleteLogoDark'])->middleware('can:settings.edit');
         Route::delete('/favicon', [BrandingController::class, 'deleteFavicon'])->middleware('can:settings.edit');
     });
-    
+
+    // Email Provider Settings (admin: settings.view / settings.edit)
+    Route::prefix('email-provider-settings')->group(function () {
+        Route::get('/', [EmailProviderSettingController::class, 'show'])->middleware('can:settings.view');
+        Route::put('/', [EmailProviderSettingController::class, 'update'])->middleware('can:settings.edit');
+    });
+
+    // Email Domains (authenticated users manage their own domains)
+    Route::prefix('email/domains')->group(function () {
+        Route::get('/', [EmailDomainController::class, 'index']);
+        Route::post('/', [EmailDomainController::class, 'store']);
+        Route::get('/{emailDomain}', [EmailDomainController::class, 'show']);
+        Route::put('/{emailDomain}', [EmailDomainController::class, 'update']);
+        Route::delete('/{emailDomain}', [EmailDomainController::class, 'destroy']);
+        Route::post('/{emailDomain}/verify', [EmailDomainController::class, 'verify']);
+    });
+
+    // Mailboxes (access-based: users see mailboxes they have access to)
+    Route::prefix('email/mailboxes')->group(function () {
+        Route::get('/', [MailboxController::class, 'index']);
+        Route::post('/', [MailboxController::class, 'store']);
+        Route::get('/{mailbox}', [MailboxController::class, 'show']);
+        Route::put('/{mailbox}', [MailboxController::class, 'update']);
+        Route::delete('/{mailbox}', [MailboxController::class, 'destroy']);
+
+        // Member management (requires owner role on the mailbox)
+        Route::get('/{mailbox}/members', [MailboxController::class, 'members']);
+        Route::post('/{mailbox}/members', [MailboxController::class, 'addMember']);
+        Route::put('/{mailbox}/members/{memberId}', [MailboxController::class, 'updateMember']);
+        Route::delete('/{mailbox}/members/{memberId}', [MailboxController::class, 'removeMember']);
+    });
+
+    // Email unread counts (per-mailbox)
+    Route::get('/email/unread-counts', [EmailController::class, 'unreadCounts']);
+
+    // Email Messages (authenticated users manage their own emails)
+    Route::prefix('email/messages')->group(function () {
+        Route::get('/', [EmailController::class, 'index']);
+        Route::get('/search', [EmailController::class, 'search']);
+        Route::post('/send', [EmailController::class, 'send']);
+        Route::post('/draft', [EmailController::class, 'saveDraft']);
+        Route::post('/bulk', [EmailController::class, 'bulk']);
+        Route::get('/{email}', [EmailController::class, 'show']);
+        Route::delete('/{email}', [EmailController::class, 'destroy']);
+        Route::patch('/{email}/read', [EmailController::class, 'markRead']);
+        Route::patch('/{email}/star', [EmailController::class, 'toggleStar']);
+        Route::patch('/{email}/spam', [EmailController::class, 'toggleSpam']);
+        Route::put('/{email}/draft', [EmailController::class, 'updateDraft']);
+        Route::post('/{email}/send', [EmailController::class, 'sendDraft']);
+        Route::get('/{email}/reply-data', [EmailController::class, 'replyData']);
+        Route::post('/{email}/snooze', [EmailController::class, 'snooze']);
+        Route::delete('/{email}/snooze', [EmailController::class, 'unsnooze']);
+    });
+
+    // Email Threads (authenticated users)
+    Route::prefix('email/threads')->group(function () {
+        Route::get('/', [EmailThreadController::class, 'index']);
+        Route::get('/{emailThread}', [EmailThreadController::class, 'show']);
+    });
+
+    // Email Labels (authenticated users manage their own labels)
+    Route::prefix('email/labels')->group(function () {
+        Route::get('/', [EmailLabelController::class, 'index']);
+        Route::post('/', [EmailLabelController::class, 'store']);
+        Route::put('/{emailLabel}', [EmailLabelController::class, 'update']);
+        Route::delete('/{emailLabel}', [EmailLabelController::class, 'destroy']);
+        Route::post('/{emailLabel}/assign', [EmailLabelController::class, 'assign']);
+        Route::delete('/{emailLabel}/assign', [EmailLabelController::class, 'unassign']);
+    });
+
+    // Email AI Features (authenticated users)
+    Route::prefix('email/ai')->group(function () {
+        Route::get('/status', [EmailAIController::class, 'status']);
+        Route::get('/settings', [EmailAIController::class, 'settings']);
+        Route::put('/settings', [EmailAIController::class, 'updateSettings']);
+        Route::get('/thread/{emailThread}/summary', [EmailAIController::class, 'threadSummary']);
+        Route::post('/thread/{emailThread}/summarize', [EmailAIController::class, 'requestSummary']);
+        Route::get('/email/{email}/labels', [EmailAIController::class, 'suggestedLabels']);
+        Route::post('/email/{email}/labels/apply', [EmailAIController::class, 'applyLabels']);
+        Route::get('/email/{email}/priority', [EmailAIController::class, 'emailPriority']);
+        Route::get('/email/{email}/replies', [EmailAIController::class, 'smartReplies']);
+        Route::post('/email/{email}/replies/generate', [EmailAIController::class, 'generateReplies']);
+    });
+
+    // Email Attachments (authenticated users)
+    Route::get('/email/attachments/{emailAttachment}/download', [EmailAttachmentController::class, 'download']);
+
+    // Spam Filter Lists (authenticated users manage their own allow/block lists)
+    Route::prefix('email/spam-filter')->group(function () {
+        Route::get('/', [SpamFilterController::class, 'index']);
+        Route::post('/', [SpamFilterController::class, 'store']);
+        Route::post('/bulk', [SpamFilterController::class, 'bulkStore']);
+        Route::delete('/{entry}', [SpamFilterController::class, 'destroy']);
+    });
+
+    // Email Rules/Filters (authenticated users manage their own rules)
+    Route::prefix('email/rules')->group(function () {
+        Route::get('/', [EmailRuleController::class, 'index']);
+        Route::post('/', [EmailRuleController::class, 'store']);
+        Route::put('/reorder', [EmailRuleController::class, 'reorder']);
+        Route::get('/{rule}', [EmailRuleController::class, 'show']);
+        Route::put('/{rule}', [EmailRuleController::class, 'update']);
+        Route::delete('/{rule}', [EmailRuleController::class, 'destroy']);
+        Route::post('/{rule}/test', [EmailRuleController::class, 'test']);
+    });
+
+    // Email Import (authenticated users import into their mailboxes)
+    Route::post('/email/import', [EmailImportController::class, 'import']);
+    Route::get('/email/import/{jobId}/status', [EmailImportController::class, 'status']);
+
+    // Contacts (authenticated users manage their own contacts)
+    Route::prefix('contacts')->group(function () {
+        Route::get('/', [ContactController::class, 'index']);
+        Route::get('/autocomplete', [ContactController::class, 'autocomplete']);
+        Route::post('/backfill', [ContactController::class, 'backfill']);
+        Route::post('/merge', [ContactController::class, 'merge']);
+        Route::get('/{contact}', [ContactController::class, 'show']);
+        Route::put('/{contact}', [ContactController::class, 'update']);
+        Route::delete('/{contact}', [ContactController::class, 'destroy']);
+    });
+
 });

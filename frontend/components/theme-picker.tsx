@@ -20,7 +20,7 @@ import { toast } from "sonner";
 
 type Mode = "light" | "dark" | "system";
 
-const COLOR_THEME_KEY = "sourdough-color-theme";
+const COLOR_THEME_KEY = "selfmx-color-theme";
 
 const modes: { value: Mode; icon: typeof Sun; label: string }[] = [
   { value: "light", icon: Sun, label: "Light" },

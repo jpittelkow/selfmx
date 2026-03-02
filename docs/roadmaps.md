@@ -6,6 +6,7 @@ Development roadmaps and implementation history.
 
 Currently in progress. Complete these before starting new work.
 
+- **[Email App](plans/email-app-roadmap.md)** - Self-hosted email client using provider APIs (Mailgun, AWS SES, SendGrid, Postmark). All 6 phases complete.
 - **[Theming Engine](plans/theming-engine-roadmap.md)** - Phase 1 (infrastructure) complete. Phase 2 (theme picker UI) next.
 
 ## Next Up
@@ -36,7 +37,7 @@ See **[roadmap-archive.md](roadmap-archive.md)** for all completed roadmaps and 
 
 ## Integration Costs
 
-Reference for paid third-party integrations used by Sourdough. All integrations are optional — the app runs fully self-hosted with no paid services required. Costs only apply when an admin configures and enables a paid provider.
+Reference for paid third-party integrations used by selfmx. All integrations are optional — the app runs fully self-hosted with no paid services required. Costs only apply when an admin configures and enables a paid provider.
 
 ### LLM Providers (per-token/per-request)
 
@@ -97,7 +98,7 @@ Reference for paid third-party integrations used by Sourdough. All integrations 
 
 | Provider | Pricing Model | Notes |
 |----------|--------------|-------|
-| Stripe | 2.9% + 30c per transaction | Plus 1% Sourdough platform fee via Connect. Optional — only when Stripe is configured. See [Stripe Connect Roadmap](plans/stripe-connect-roadmap.md). |
+| Stripe | 2.9% + 30c per transaction | Plus 1% platform fee via Connect. Optional — only when Stripe is configured. See [Stripe Connect Roadmap](plans/stripe-connect-roadmap.md). |
 
 ### Free Integrations (no cost)
 

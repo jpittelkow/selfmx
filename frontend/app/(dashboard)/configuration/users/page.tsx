@@ -25,7 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGroups } from "@/lib/use-groups";
-import { Plus, Search, Loader2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus, Search, Users, Loader2 } from "lucide-react";
 import { HelpLink } from "@/components/help/help-link";
 
 interface User {
@@ -106,7 +107,7 @@ export default function UsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground mt-1">
             Manage application users and permissions.{" "}
             <HelpLink articleId="user-management" />
           </p>
@@ -163,9 +164,18 @@ export default function UsersPage() {
               ))}
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {search ? "No users found matching your search" : "No users found"}
-            </div>
+            search ? (
+              <EmptyState
+                icon={Search}
+                title="No users found"
+                description="Try adjusting your search query"
+              />
+            ) : (
+              <EmptyState
+                icon={Users}
+                title="No users found"
+              />
+            )
           ) : (
             <>
               <UserTable

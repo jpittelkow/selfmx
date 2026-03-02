@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Palette, Bell, Brain, Send, Smartphone, Download, Globe, ChevronDown, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Loader2, Palette, Bell, Brain, Send, Smartphone, Download, Globe, ChevronDown, SlidersHorizontal, Trash2, Sparkles } from "lucide-react";
 import { SaveButton } from "@/components/ui/save-button";
 
 import Link from "next/link";
@@ -117,7 +117,7 @@ function WebPushHelperText({ webpushEnabled, isSubscribed }: { webpushEnabled: b
   if (isAndroid && isSubscribed) {
     return (
       <p className="text-sm text-muted-foreground">
-        <strong>Android tip:</strong> If you&apos;re not receiving notifications, check that notifications are enabled for this app in your device&apos;s Settings &gt; Apps &gt; Sourdough &gt; Notifications.
+        <strong>Android tip:</strong> If you&apos;re not receiving notifications, check that notifications are enabled for this app in your device&apos;s Settings &gt; Apps &gt; selfmx &gt; Notifications.
       </p>
     );
   }
@@ -193,9 +193,42 @@ export default function PreferencesPage() {
   const [removingDeviceId, setRemovingDeviceId] = useState<number | null>(null);
   const [typePreferences, setTypePreferences] = useState<Record<string, Record<string, boolean>>>({});
   const [typePrefsOpen, setTypePrefsOpen] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState(false);
+  const [aiSettings, setAiSettings] = useState({
+    summarization_enabled: true,
+    auto_labeling_enabled: false,
+    auto_labeling_auto_apply: false,
+    priority_inbox_enabled: false,
+    smart_replies_enabled: false,
+    process_inbound_automatically: true,
+  });
   const { features, novu } = useAppConfig();
   const { isOffline } = useOnline();
   const { canPrompt, isInstalled, promptInstall } = useInstallPrompt();
+
+  const fetchAISettings = useCallback(async () => {
+    try {
+      const [statusRes, settingsRes] = await Promise.all([
+        api.get("/email/ai/status"),
+        api.get("/email/ai/settings"),
+      ]);
+      setAiAvailable(statusRes.data.available);
+      setAiSettings(settingsRes.data);
+    } catch {
+      // AI features may not be available
+    }
+  }, []);
+
+  const updateAISetting = async (key: string, value: boolean) => {
+    const prev = { ...aiSettings };
+    setAiSettings((s) => ({ ...s, [key]: value }));
+    try {
+      await api.put("/email/ai/settings", { [key]: value });
+    } catch {
+      setAiSettings(prev);
+      toast.error("Failed to update AI settings");
+    }
+  };
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -350,6 +383,10 @@ export default function PreferencesPage() {
   useEffect(() => {
     fetchTypePreferences();
   }, [fetchTypePreferences]);
+
+  useEffect(() => {
+    fetchAISettings();
+  }, [fetchAISettings]);
 
   // currentDeviceSubscribed is derived in fetchPushDevices() by matching
   // the browser's push subscription endpoint against server-registered devices.
@@ -610,6 +647,129 @@ export default function PreferencesPage() {
               <strong>Council:</strong> Providers vote for consensus (best for accuracy).
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Email AI Features */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Email AI Features
+          </CardTitle>
+          <CardDescription>
+            {aiAvailable
+              ? "Control AI-powered email features. These use your configured LLM provider."
+              : "AI features require an LLM provider to be configured. "}
+            {!aiAvailable && (
+              <Link href="/configuration/system" className="text-primary hover:underline">
+                Configure a provider
+              </Link>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!aiAvailable ? (
+            <p className="text-sm text-muted-foreground">
+              No AI provider is configured. Enable and configure at least one LLM provider to use these features.
+            </p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <Label className="text-base font-medium">Thread Summarization</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Generate AI summaries of email threads with key points and action items.
+                  </p>
+                </div>
+                <Switch
+                  checked={aiSettings.summarization_enabled}
+                  onCheckedChange={(v) => updateAISetting("summarization_enabled", v)}
+                  disabled={isOffline}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <Label className="text-base font-medium">Smart Labeling</Label>
+                  <p className="text-sm text-muted-foreground">
+                    AI suggests labels for incoming emails based on content analysis.
+                  </p>
+                </div>
+                <Switch
+                  checked={aiSettings.auto_labeling_enabled}
+                  onCheckedChange={(v) => updateAISetting("auto_labeling_enabled", v)}
+                  disabled={isOffline}
+                />
+              </div>
+
+              {aiSettings.auto_labeling_enabled && (
+                <div className="flex items-center justify-between gap-4 pl-6">
+                  <div className="min-w-0 flex-1">
+                    <Label className="text-sm">Auto-apply high-confidence labels</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Automatically apply labels with 80%+ confidence that match existing labels.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={aiSettings.auto_labeling_auto_apply}
+                    onCheckedChange={(v) => updateAISetting("auto_labeling_auto_apply", v)}
+                    disabled={isOffline}
+                  />
+                </div>
+              )}
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <Label className="text-base font-medium">Priority Inbox</Label>
+                  <p className="text-sm text-muted-foreground">
+                    AI scores email importance using content analysis and sender patterns.
+                  </p>
+                </div>
+                <Switch
+                  checked={aiSettings.priority_inbox_enabled}
+                  onCheckedChange={(v) => updateAISetting("priority_inbox_enabled", v)}
+                  disabled={isOffline}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <Label className="text-base font-medium">Smart Replies</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Generate reply suggestions with different tones when viewing emails.
+                  </p>
+                </div>
+                <Switch
+                  checked={aiSettings.smart_replies_enabled}
+                  onCheckedChange={(v) => updateAISetting("smart_replies_enabled", v)}
+                  disabled={isOffline}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <Label className="text-base font-medium">Process Inbound Automatically</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Run enabled AI features automatically on new incoming emails.
+                  </p>
+                </div>
+                <Switch
+                  checked={aiSettings.process_inbound_automatically}
+                  onCheckedChange={(v) => updateAISetting("process_inbound_automatically", v)}
+                  disabled={isOffline}
+                />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

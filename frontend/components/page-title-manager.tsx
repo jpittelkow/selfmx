@@ -16,8 +16,8 @@ const routeTitles: Record<string, string> = {
   "/reset-password": "Reset Password",
   "/verify-email": "Verify Email",
 
-  // Dashboard
-  "/dashboard": "Dashboard",
+  // Mail
+  "/mail": "Inbox",
 
   // Notifications
   "/notifications": "Notifications",
@@ -41,19 +41,24 @@ const routeTitles: Record<string, string> = {
   "/configuration/audit": "Audit Log",
   "/configuration/logs": "Application Logs",
   "/configuration/log-retention": "Log Retention",
-  "/configuration/access-logs": "Access Logs (HIPAA)",
   "/configuration/users": "User Management",
   "/configuration/groups": "User Groups",
   "/configuration/security": "Security",
   "/configuration/sso": "Single Sign-On",
   "/configuration/search": "Search Settings",
   "/configuration/notification-templates": "Notification Templates",
-  "/configuration/profile": "Profile",
+  "/configuration/email-provider": "Email Provider",
+  "/configuration/email-domains": "Email Domains",
+  "/configuration/mailboxes": "Mailboxes",
+
+  // Email client
+  "/contacts": "Contacts",
 
   // User pages
   "/user/profile": "Profile",
   "/user/security": "Security",
   "/user/preferences": "Preferences",
+  "/user/rules": "Email Rules",
 
   // Admin pages
   "/admin": "Admin",

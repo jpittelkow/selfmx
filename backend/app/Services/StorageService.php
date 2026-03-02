@@ -151,7 +151,7 @@ class StorageService
 
             $disk = Storage::disk($diskName);
 
-            $testPath = '.sourdough-storage-test-'.Str::random(8);
+            $testPath = '.selfmx-storage-test-'.Str::random(8);
             $disk->put($testPath, 'test');
             $disk->delete($testPath);
 

@@ -24,7 +24,7 @@ $content = $this->urlValidator->fetchContent($url, timeout: 10);
 ## Webhook Signature Verification
 
 ```php
-$secret = config('services.sourdough.webhook_secret');
+$secret = config('services.selfmx.webhook_secret');
 $timestamp = $request->header('X-Webhook-Timestamp');
 $signature = $request->header('X-Webhook-Signature');
 $payload = $request->getContent();
@@ -74,7 +74,7 @@ if (!$expectedState || !hash_equals($expectedState, $receivedState)) {
 ```php
 private function validateFilename(string $filename): bool
 {
-    if (!preg_match('/^sourdough-backup-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.zip$/', $filename)) {
+    if (!preg_match('/^selfmx-backup-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.zip$/', $filename)) {
         return false;
     }
     if (str_contains($filename, '..') || str_contains($filename, '/') || str_contains($filename, '\\')) {

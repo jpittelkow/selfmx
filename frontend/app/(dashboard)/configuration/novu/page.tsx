@@ -235,7 +235,7 @@ export default function NovuConfigurationPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Novu</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground mt-1">
           Optional notification infrastructure. When enabled, notifications are sent via Novu (Cloud or self-hosted) and the in-app notification center uses Novu&apos;s inbox.{" "}
           <HelpLink articleId="novu-configuration" />
         </p>

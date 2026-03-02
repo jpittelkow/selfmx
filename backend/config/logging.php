@@ -15,12 +15,9 @@ return [
     'retention' => [
         'app_days' => (int) env('LOG_APP_RETENTION_DAYS', 90),
         'audit_days' => (int) env('AUDIT_LOG_RETENTION_DAYS', 365),
-        'access_days' => (int) env('ACCESS_LOG_RETENTION_DAYS', 2190),
     ],
 
     'broadcast_enabled' => (bool) env('LOG_BROADCAST_ENABLED', false),
-
-    'hipaa_access_logging_enabled' => (bool) env('HIPAA_ACCESS_LOGGING_ENABLED', true),
 
     'deprecations' => [
         'channel' => env('LOG_DEPRECATIONS_CHANNEL', 'null'),

@@ -14,7 +14,7 @@ export const viewport: Viewport = {
 // Using empty string to avoid flash of default name before client-side update
 export const metadata: Metadata = {
   title: "",
-  description: "Starter Application Framework for AI Development",
+  description: "Self-hosted Email the easy way",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -33,12 +33,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // IMPORTANT: localStorage keys here MUST match:
-  //   - ThemeProvider's default storageKey ("sourdough-theme")
-  //   - ThemePicker's COLOR_THEME_KEY ("sourdough-color-theme") for per-user override
+  //   - ThemeProvider's default storageKey ("selfmx-theme")
+  //   - ThemePicker's COLOR_THEME_KEY ("selfmx-color-theme") for per-user override
   // Global color theme is applied by AppConfigProvider; user override takes priority.
   const themeScript = `
 (function() {
-  var key = 'sourdough-theme';
+  var key = 'selfmx-theme';
   var stored = localStorage.getItem(key);
   var resolved;
   if (stored === 'light' || stored === 'dark') {
@@ -47,8 +47,8 @@ export default function RootLayout({
     resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.classList.add(resolved);
-  var colorTheme = localStorage.getItem('sourdough-color-theme')
-    || localStorage.getItem('sourdough-global-color-theme')
+  var colorTheme = localStorage.getItem('selfmx-color-theme')
+    || localStorage.getItem('selfmx-global-color-theme')
     || 'default';
   document.documentElement.setAttribute('data-theme', colorTheme);
 })();

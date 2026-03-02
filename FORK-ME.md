@@ -1,6 +1,6 @@
-# Using Sourdough as Your Starting Point
+# Using selfmx as Your Starting Point
 
-Sourdough is designed to be forked and customized. This guide helps you get started with your own project based on Sourdough.
+selfmx is designed to be forked and customized. This guide helps you get started with your own project based on selfmx.
 
 > **Starting a new project with AI?** Say **"Get cooking"** to your AI assistant and it will walk you through a guided setup wizard — app name, colors, fonts, which features to keep, auth model, database, and more. The setup is broken into 3 tiers so you can pause and resume at any time. Full guide: [docs/ai/recipes/setup-new-project.md](docs/ai/recipes/setup-new-project.md).
 
@@ -34,7 +34,6 @@ A complete full-stack application framework with enterprise-grade features ready
 
 **Observability**
 - Audit logging with real-time streaming
-- HIPAA-compliant access logging
 - Application logging with correlation IDs
 - Suspicious activity detection
 
@@ -48,7 +47,7 @@ A complete full-stack application framework with enterprise-grade features ready
 
 ## Philosophy
 
-Sourdough is **opinionated but modular**:
+selfmx is **opinionated but modular**:
 
 - Architecture decisions are documented in `docs/adr/` (25 ADRs)
 - Features can be removed if you don't need them
@@ -71,7 +70,7 @@ This codebase is **optimized for AI coding assistants**. The documentation struc
 
 ### IDE-Specific Configuration
 
-Sourdough includes AI configuration for multiple IDEs:
+selfmx includes AI configuration for multiple IDEs:
 
 | IDE | Configuration File | Auto-loads |
 |-----|-------------------|------------|
@@ -97,7 +96,7 @@ All configurations contain the same core rules - choose the IDE that works best 
 ### 1. Clone and Run
 
 ```bash
-git clone https://github.com/Sourdough-start/sourdough.git my-project
+git clone https://github.com/selfmx/selfmx.git my-project
 cd my-project
 docker-compose up -d
 ```
@@ -185,6 +184,6 @@ docs/
 
 ## License
 
-Sourdough is MIT licensed. You can use it for any purpose, including commercial projects.
+selfmx is MIT licensed. You can use it for any purpose, including commercial projects.
 
-**Stripe module exception:** The Stripe/payments files are dual-licensed under the Sourdough Commercial License. Using them via Stripe Connect is free; direct Stripe usage requires a commercial license. See `backend/app/Services/Stripe/LICENSE.md` for details.
+**Stripe module exception:** The Stripe/payments files are dual-licensed under the selfmx Commercial License. Using them via Stripe Connect is free; direct Stripe usage requires a commercial license. See `backend/app/Services/Stripe/LICENSE.md` for details.

@@ -97,7 +97,7 @@ class ConfigServiceProvider extends ServiceProvider
             config(['graphql.key_rotation_grace_days' => max(0, min(90, $v))]);
         }
         if (array_key_exists('cors_allowed_origins', $settings)) {
-            config(['graphql.cors_allowed_origins' => $settings['cors_allowed_origins'] ?? '*']);
+            config(['graphql.cors_allowed_origins' => $settings['cors_allowed_origins'] ?? config('app.frontend_url', 'http://localhost:3000')]);
         }
     }
 
@@ -215,12 +215,6 @@ class ConfigServiceProvider extends ServiceProvider
             $v = (int) ($settings['audit_retention_days'] ?? config('logging.retention.audit_days', 365));
             config(['logging.retention.audit_days' => max(30, min(730, $v))]);
         }
-        if (array_key_exists('access_retention_days', $settings)) {
-            $v = (int) ($settings['access_retention_days'] ?? config('logging.retention.access_days', 2190));
-            config(['logging.retention.access_days' => max(2190, $v)]);
-        }
-        $hipaa = $settings['hipaa_access_logging_enabled'] ?? config('logging.hipaa_access_logging_enabled', true);
-        config(['logging.hipaa_access_logging_enabled' => filter_var($hipaa, FILTER_VALIDATE_BOOLEAN)]);
     }
 
     /**

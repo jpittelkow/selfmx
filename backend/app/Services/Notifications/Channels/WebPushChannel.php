@@ -161,7 +161,7 @@ class WebPushChannel implements ChannelInterface
         }
         $variables = array_merge([
             'user' => ['name' => $user->name, 'email' => $user->email],
-            'app_name' => config('app.name', 'Sourdough'),
+            'app_name' => config('app.name', 'selfmx'),
         ], $data);
         return $service->renderTemplate($template, $variables);
     }

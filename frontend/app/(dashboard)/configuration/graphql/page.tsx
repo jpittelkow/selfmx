@@ -918,7 +918,7 @@ export default function GraphQLSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight">
           GraphQL API
         </h1>
         <p className="text-muted-foreground mt-1">

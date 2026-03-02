@@ -11,7 +11,7 @@ class NotificationTemplateSampleService
      */
     public function getSampleVariables(string $type): array
     {
-        $appName = config('app.name', 'Sourdough');
+        $appName = config('app.name', 'selfmx');
         $user = [
             'name' => 'Sample User',
             'email' => 'sample@example.com',

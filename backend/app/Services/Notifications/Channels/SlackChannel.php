@@ -22,7 +22,7 @@ class SlackChannel implements ChannelInterface
         }
 
         $payload = [
-            'username' => config('notifications.channels.slack.username', 'Sourdough'),
+            'username' => config('notifications.channels.slack.username', 'selfmx'),
             'icon_emoji' => config('notifications.channels.slack.icon', ':robot_face:'),
             'attachments' => [
                 [
@@ -59,7 +59,7 @@ class SlackChannel implements ChannelInterface
         }
         $variables = array_merge([
             'user' => ['name' => $user->name, 'email' => $user->email],
-            'app_name' => config('app.name', 'Sourdough'),
+            'app_name' => config('app.name', 'selfmx'),
         ], $data);
         return $service->renderTemplate($template, $variables);
     }

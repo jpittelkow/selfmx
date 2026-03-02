@@ -33,7 +33,7 @@ Edit `backend/config/search-pages.php`:
 ### 2. Sync the Index
 
 ```bash
-docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan search:reindex pages"
+docker exec selfmx-dev bash -c "cd /var/www/html/backend && php artisan search:reindex pages"
 ```
 
 ### 3. Test the Search

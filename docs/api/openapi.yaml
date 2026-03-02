@@ -1,13 +1,12 @@
 openapi: 3.0.3
 info:
-  title: Sourdough API
+  title: selfmx API
   description: |
-    Sourdough is a starter application framework for AI to develop other apps, providing 
-    enterprise-grade user management, multi-provider notification system, and 
-    multi-LLM orchestration with council mode.
+    Self-hosted Email the easy way. Enterprise-grade user management,
+    multi-provider notification system, and multi-LLM orchestration.
   version: 0.1.0
   contact:
-    name: Sourdough Support
+    name: selfmx Support
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -1762,78 +1761,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuditStats'
-
-  # ==================== Access Logs ====================
-  /access-logs:
-    get:
-      tags: [Access Logs]
-      summary: List access logs
-      description: Requires can:logs.view permission. HIPAA compliance feature.
-      security:
-        - sanctum: []
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-        - name: per_page
-          in: query
-          schema:
-            type: integer
-        - name: user_id
-          in: query
-          schema:
-            type: integer
-        - name: resource_type
-          in: query
-          schema:
-            type: string
-        - name: date_from
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: date_to
-          in: query
-          schema:
-            type: string
-            format: date
-      responses:
-        '200':
-          description: Paginated access logs
-    delete:
-      tags: [Access Logs]
-      summary: Delete all access logs
-      description: Only available when HIPAA logging is disabled
-      security:
-        - sanctum: []
-      responses:
-        '200':
-          description: Logs deleted
-
-  /access-logs/export:
-    get:
-      tags: [Access Logs]
-      summary: Export access logs as CSV
-      security:
-        - sanctum: []
-      responses:
-        '200':
-          description: CSV file
-          content:
-            text/csv:
-              schema:
-                type: string
-
-  /access-logs/stats:
-    get:
-      tags: [Access Logs]
-      summary: Get access log statistics
-      security:
-        - sanctum: []
-      responses:
-        '200':
-          description: Access log statistics
 
   # ==================== App Logs ====================
   /app-logs/export:

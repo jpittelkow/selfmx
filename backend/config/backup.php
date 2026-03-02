@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Sourdough Backup Configuration
+ * selfmx Backup Configuration
  *
  * Configure backup and restore functionality.
  */

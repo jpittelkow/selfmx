@@ -16,7 +16,7 @@ class GraphQLCors
             $response = $next($request);
         }
 
-        $allowedOrigins = config('graphql.cors_allowed_origins', '*');
+        $allowedOrigins = config('graphql.cors_allowed_origins', config('app.frontend_url', 'http://localhost:3000'));
         $origin = $request->header('Origin', '');
 
         if ($allowedOrigins === '*') {

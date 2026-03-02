@@ -75,7 +75,7 @@ POST   /api/auth/passkeys/login        Authenticate with passkey (rate limited: 
 
 All require auth + email verification + 2FA setup (if enforced).
 
-### Profile (access logged: User)
+### Profile
 
 ```
 GET    /api/profile                    Get profile
@@ -84,7 +84,7 @@ PUT    /api/profile/password           Change password (body: current_password, 
 DELETE /api/profile                    Delete account
 ```
 
-### User Settings (access logged: Setting)
+### User Settings
 
 ```
 GET    /api/user/settings              Get user preferences
@@ -124,7 +124,7 @@ GET    /api/dashboard/stats            Dashboard widget data (permission-filtere
 
 ---
 
-## Search (access logged: User)
+## Search
 
 ```
 GET    /api/search                     Global search (query: q, type?, page?, per_page?)
@@ -202,7 +202,7 @@ PUT    /api/admin/notification-channels  Update admin channel config
 ### Log Retention
 
 ```
-GET    /api/log-retention              Get log retention settings (HIPAA toggle, days)
+GET    /api/log-retention              Get log retention settings (retention days)
 PUT    /api/log-retention              Update log retention settings
 ```
 
@@ -238,7 +238,7 @@ POST   /api/llm-settings/discover-models Fetch available models (body: provider,
 
 ## Admin: Users & Groups
 
-### User Management (access logged: User, can:users.*)
+### User Management (can:users.*)
 
 ```
 GET    /api/users                      List users (query: page, per_page, search, group?)
@@ -285,15 +285,6 @@ GET    /api/audit-logs                 List audit logs (query: page, per_page, u
 GET    /api/audit-logs/export          Export as CSV (same filters)
 GET    /api/audit-logs/stats           Stats for dashboard (query: date_from?, date_to?)
                                        Returns: total_actions, by_severity, daily_trends, recent_warnings, actions_by_type, actions_by_user
-```
-
-### Access Logs / HIPAA (can:logs.view, can:logs.export)
-
-```
-GET    /api/access-logs                List access logs (query: page, per_page, user_id?, resource_type?, date_from?, date_to?)
-GET    /api/access-logs/export         Export as CSV (same filters)
-GET    /api/access-logs/stats          Access log statistics
-DELETE /api/access-logs                Delete all access logs (when HIPAA disabled)
 ```
 
 ### Application Logs (can:logs.export)

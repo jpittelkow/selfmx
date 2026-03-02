@@ -356,7 +356,7 @@ export default function SSOSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">SSO settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">SSO settings</h1>
         <p className="text-muted-foreground mt-1">
           Configure single sign-on providers. Credentials are stored securely and take effect immediately.{" "}
           <HelpLink articleId="sso-configuration" />

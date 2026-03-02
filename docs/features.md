@@ -83,7 +83,7 @@ Core functionality and feature documentation:
 
 **PWA install experience:** Custom install prompt appears after 2+ visits (Chrome/Edge). Banner is dismissible with "Don't show again" (30-day cooldown). User Preferences includes an "Install App" card when install is available. Manifest includes full icon set, shortcuts (Dashboard, Settings), and Share Target. See [PWA roadmap](plans/pwa-roadmap.md) Phase 4 and [Recipe: Add PWA Install Prompt](ai/recipes/add-pwa-install-prompt.md).
 
-**Share Target:** When the PWA is installed, users can share links or text from other apps to Sourdough; shared content is shown at `/share` with links to dashboard or sign-in. Manifest `share_target` uses GET with title, text, and url params.
+**Share Target:** When the PWA is installed, users can share links or text from other apps to selfmx; shared content is shown at `/share` with links to dashboard or sign-in. Manifest `share_target` uses GET with title, text, and url params.
 
 **Offline experience:** When offline, an indicator banner appears; dashboard, user preferences, and notifications show cached data with an offline badge. Save/actions are disabled on preferences and notifications. Failed mutations (POST/PUT/PATCH/DELETE) are queued in IndexedDB and retried when back online (Background Sync in Chrome/Edge; online event elsewhere). Stale queue items (>24h) and non-retryable (4xx) responses are automatically pruned. Offline fallback page offers "Go to Dashboard" and auto-reloads when online. Workbox 7.3.0 is bundled locally (no CDN dependency). iOS safe-area CSS and standalone overscroll-behavior are supported. The `theme-color` meta tag is set statically and updated dynamically from branding settings.
 
@@ -228,15 +228,13 @@ Core functionality and feature documentation:
 - [Recipe: Trigger audit logging](ai/recipes/trigger-audit-logging.md) – Log from controllers/services
 - [Recipe: Add auditable action](ai/recipes/add-auditable-action.md) – Add new audited actions
 - [Recipe: Extend logging](ai/recipes/extend-logging.md) – Add logging to backend/frontend, new log channels
-- [Recipe: Add access logging](ai/recipes/add-access-logging.md) – HIPAA access logging for PHI
 - [Logging](logging.md) – Logging standards, configuration, frontend errorLogger
 - [Logging Roadmap](plans/logging-roadmap.md) – Retention, cleanup, app log export (done); optional external storage
 
 **Capabilities:**
 - **Configuration > Audit** (`/configuration/audit`): Paginated audit log with filters (user, action, severity, correlation ID, date range), search, severity badges, detail modal (old/new values, IP, user agent), CSV export. Admin only.
 - **Configuration > Application Logs** (`/configuration/logs`): Real-time console log viewer and export. Enable "Live" to stream `Log::` output via private `app-logs` channel (requires `LOG_BROADCAST_ENABLED=true`, `broadcast` in `LOG_STACK`, Reverb). Export card: export log files by date range, level, correlation ID as CSV or JSON Lines (`GET /api/app-logs/export`). Admin only.
-- **Configuration > Access Logs (HIPAA)** (`/configuration/access-logs`): PHI access audit trail. Table shows date, user, action, resource type, resource ID, IP, and **fields accessed** (extracted automatically by middleware). Filters (user, action, resource type, correlation ID, dates), CSV export. AccessLogService + LogResourceAccess middleware on profile, user, user-settings, and search/suggestions (when returning user data) routes. Admin only.
-- **Configuration > Log retention** (`/configuration/log-retention`): Configure retention days for application logs (1–365), audit logs (30–730), access logs (6 years minimum for HIPAA). Toggle **HIPAA access logging** (enable/disable). When disabled, “Delete all access logs” is available (with HIPAA violation warning). Cleanup via `php artisan log:cleanup` (optional `--dry-run`, `--archive`). Admin only.
+- **Configuration > Log retention** (`/configuration/log-retention`): Configure retention days for application logs (1–365) and audit logs (30–730). Cleanup via `php artisan log:cleanup` (optional `--dry-run`, `--archive`). Admin only.
 - **Live streaming (audit)**: "Live" toggle on audit page streams new logs in real time via private `audit-logs` channel (Reverb); connection status and highlight animation for new entries. Requires BROADCAST_CONNECTION=reverb and admin user.
 - **Dashboard analytics** (admin dashboard): “System Activity” widget with stats cards (total actions, warnings/errors), severity donut chart, activity trends area chart (last 30 days), recent warnings list, and “View all logs” link.
 - **Stats API** (`GET /audit-logs/stats`): `total_actions`, `by_severity`, `daily_trends`, `recent_warnings`, `actions_by_type`, `actions_by_user`. Query params: `date_from`, `date_to`.

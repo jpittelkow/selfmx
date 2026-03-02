@@ -55,7 +55,7 @@ e2e/                            # Playwright E2E tests
 docker-compose up -d                    # Start dev environment
 docker-compose up -d --build            # Rebuild and start
 docker-compose logs -f                  # View logs
-docker exec sourdough-dev bash           # Shell into container
+docker exec selfmx-dev bash              # Shell into container
 
 # Laravel (inside container)
 php artisan migrate                     # Run migrations
@@ -88,8 +88,7 @@ npx shadcn@latest add <component> --overwrite   # Replace existing component
 | Add backup destination | [Recipe: add-backup-destination](ai/recipes/add-backup-destination.md) | ADR-007 |
 | Extend backup/restore | [Recipe: extend-backup-restore](ai/recipes/extend-backup-restore.md), [Patterns: Backup & Restore](ai/patterns/backup-restore.md) | [Backup hub](backup.md) |
 | Logging / frontend errors | [Logging](logging.md), `backend/config/logging.php`, `frontend/lib/error-logger.ts`, [Recipe: extend-logging](ai/recipes/extend-logging.md) | - |
-| Access logging (HIPAA) | `AccessLogService.php`, `LogResourceAccess` middleware, [Recipe: add-access-logging](ai/recipes/add-access-logging.md) | [Logging](logging.md#hipaa-access-logging) |
-| Log retention / app log export | Configuration > Log retention (retention days, HIPAA toggle, delete-all when disabled); `log:cleanup` (--dry-run, --archive); `GET /api/app-logs/export`; [Logging](logging.md#log-retention-and-cleanup) | - |
+| Log retention / app log export | Configuration > Log retention (retention days); `log:cleanup` (--dry-run, --archive); `GET /api/app-logs/export`; [Logging](logging.md#log-retention-and-cleanup) | - |
 | Suspicious activity | `log:check-suspicious` (scheduled); `GET /api/suspicious-activity`; dashboard banner | [Logging](logging.md#suspicious-activity-alerting) |
 | Docker config | `docker/`, `docker-compose.yml` | ADR-009 |
 | Add settings page | `frontend/app/(dashboard)/configuration/` | ADR-012 |
@@ -108,7 +107,7 @@ npx shadcn@latest add <component> --overwrite   # Replace existing component
 
 ## Versioning
 
-Sourdough follows [Semantic Versioning](https://semver.org/):
+selfmx follows [Semantic Versioning](https://semver.org/):
 
 - **MAJOR** - Breaking changes
 - **MINOR** - New features (backwards compatible)

@@ -6,7 +6,7 @@ Step-by-step guide to commit changes, push to remote, and create a versioned rel
 
 ## How Releases Work
 
-Sourdough uses a **tag-triggered release workflow** (`.github/workflows/release.yml`). There are two paths:
+selfmx uses a **tag-triggered release workflow** (`.github/workflows/release.yml`). There are two paths:
 
 | Trigger | What happens |
 |---------|-------------|
@@ -21,7 +21,7 @@ Sourdough uses a **tag-triggered release workflow** (`.github/workflows/release.
 |------|---------|
 | `VERSION` | Single source of truth for app version (e.g. `0.1.15`) |
 | `frontend/package.json` | `"version"` field — must match `VERSION` |
-| `frontend/public/sw.js` | `CACHE_VERSION` constant — auto-bumped to `sourdough-vX.Y.Z` on release |
+| `frontend/public/sw.js` | `CACHE_VERSION` constant — auto-bumped to `selfmx-vX.Y.Z` on release |
 | `scripts/bump-version.sh` | Script to bump all version files (`patch`, `minor`, `major`, or exact version) |
 | `scripts/push.ps1` | Quick release script — automates commit, version bump, tag, and push |
 | `.github/workflows/release.yml` | Release workflow (tag push or workflow_dispatch) |

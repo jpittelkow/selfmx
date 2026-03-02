@@ -250,8 +250,8 @@ Set-Content -Path $PackageJson -Value $PackageContent -NoNewline
 # Update CACHE_VERSION in service worker so caches bust on release
 if (Test-Path $SwJs) {
     $SwContent = Get-Content $SwJs -Raw
-    $SwOldPattern = "const CACHE_VERSION = 'sourdough-v[^']*'"
-    $SwNewPattern = "const CACHE_VERSION = 'sourdough-v$NewVersion'"
+    $SwOldPattern = "const CACHE_VERSION = 'selfmx-v[^']*'"
+    $SwNewPattern = "const CACHE_VERSION = 'selfmx-v$NewVersion'"
     $SwContent = $SwContent -replace $SwOldPattern, $SwNewPattern
     Set-Content -Path $SwJs -Value $SwContent -NoNewline
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getEcho } from "@/lib/echo";
 
 export interface AuditLogStreamPayload {
   id: number;
@@ -49,7 +48,7 @@ export function useAuditStream(
 
     setStatus("connecting");
 
-    getEcho().then((echo) => {
+    import("@/lib/echo").then(({ getEcho }) => getEcho()).then((echo) => {
       if (cancelled) {
         setStatus("disconnected");
         return;

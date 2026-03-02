@@ -151,7 +151,7 @@ export default function EmailSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Email Configuration</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground mt-1">
           Configure email delivery settings.{" "}
           <HelpLink articleId="email-configuration" />
         </p>

@@ -26,7 +26,7 @@ Operational procedures and responsibilities shall be defined and documented.
 | Responsibilities | Roles and responsibilities for operations | [RACI, job descriptions] |
 | Change to procedures | Procedures updated and approved when operations change | [Version control, approval] |
 
-**Sourdough mapping:** Deployment and startup are managed by Docker and supervisord (see [docker/](https://github.com/Sourdough-start/sourdough/tree/master/docker)). Document your own runbooks for backup, restore, scaling, and incident response. See [Business Continuity Plan](../business-continuity-plan.md) and [Incident Response Plan](../incident-response-plan.md).
+**selfmx mapping:** Deployment and startup are managed by Docker and supervisord (see [docker/](https://github.com/selfmx/selfmx/tree/master/docker)). Document your own runbooks for backup, restore, scaling, and incident response. See [Business Continuity Plan](../business-continuity-plan.md) and [Incident Response Plan](../incident-response-plan.md).
 
 ---
 
@@ -58,7 +58,7 @@ Backup copies of information, software, and systems shall be maintained and test
 | Backup execution | Backups performed per schedule | [Backup logs, success rate] |
 | Restore testing | Restore tested periodically | [Test records] |
 
-**Sourdough mapping:** Backup feature (Configuration > Backup). See [Business Continuity Plan](../business-continuity-plan.md) for RTO/RPO and backup procedures.
+**selfmx mapping:** Backup feature (Configuration > Backup). See [Business Continuity Plan](../business-continuity-plan.md) for RTO/RPO and backup procedures.
 
 ---
 
@@ -74,7 +74,7 @@ Event logs shall be produced, stored, and reviewed to support incident detection
 | Log protection | Logs protected from tampering and unauthorized access | [Access control, integrity] |
 | Log review | Periodic review and alerting | [Review schedule, alert rules] |
 
-**Sourdough mapping:** Audit logs and optional HIPAA-style access logs (Configuration > Logs). Application logging via Laravel Log. Retain and review per [Data Handling Policy](../data-handling-policy.md).
+**selfmx mapping:** Audit logs and optional HIPAA-style access logs (Configuration > Logs). Application logging via Laravel Log. Retain and review per [Data Handling Policy](../data-handling-policy.md).
 
 ---
 
@@ -90,7 +90,7 @@ Installation of software on operational systems shall be controlled.
 | Inventory | Approved software inventory | [Inventory list] |
 | Updates | Updates applied in controlled manner | [Patch policy, change records] |
 
-**Sourdough mapping:** Application and dependencies defined in Dockerfile, composer.json, package.json. Deployment via controlled CI/CD or image updates.
+**selfmx mapping:** Application and dependencies defined in Dockerfile, composer.json, package.json. Deployment via controlled CI/CD or image updates.
 
 ---
 
@@ -106,7 +106,7 @@ Information about technical vulnerabilities shall be obtained, and the organizat
 | Assessment | Regular scanning (SAST/DAST, dependency check) | [Scan results, schedule] |
 | Remediation | Patch or mitigate within defined SLA | [Remediation records] |
 
-**Sourdough mapping:** SAST in CI (PHPStan, ESLint security, Semgrep). Run `./scripts/security-scan.sh` locally. Dependency updates via Composer and npm; review security advisories. See [SDLC Policy](../sdlc-policy.md) and [Security Compliance Roadmap](../../plans/security-compliance-roadmap.md).
+**selfmx mapping:** SAST in CI (PHPStan, ESLint security, Semgrep). Run `./scripts/security-scan.sh` locally. Dependency updates via Composer and npm; review security advisories. See [SDLC Policy](../sdlc-policy.md) and [Security Compliance Roadmap](../../plans/security-compliance-roadmap.md).
 
 ---
 

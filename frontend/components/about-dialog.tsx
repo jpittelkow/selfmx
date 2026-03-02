@@ -38,7 +38,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
   const { version, buildSha, buildTime, phpVersion, laravelVersion } = useVersion();
   const { appName } = useAppConfig();
   
-  const displayName = appName || "Sourdough";
+  const displayName = appName || "selfmx";
   const shortSha = buildSha && buildSha !== "development" 
     ? buildSha.substring(0, 7) 
     : buildSha;
@@ -77,6 +77,22 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
                 </span>
               </div>
             )}
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Framework</span>
+              <a
+                href="https://github.com/Sourdough-start/sourdough"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Built on Sourdough v0.8.2
+              </a>
+            </div>
           </div>
 
           <Separator />

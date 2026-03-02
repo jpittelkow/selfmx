@@ -3,7 +3,7 @@
  * and retries them when the app is back online.
  */
 
-const DB_NAME = "sourdough-request-queue";
+const DB_NAME = "selfmx-request-queue";
 const DB_VERSION = 1;
 const STORE_NAME = "requests";
 

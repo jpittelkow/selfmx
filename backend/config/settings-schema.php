@@ -11,7 +11,7 @@
  */
 return [
     'general' => [
-        'app_name' => ['env' => 'APP_NAME', 'default' => 'Sourdough', 'public' => true],
+        'app_name' => ['env' => 'APP_NAME', 'default' => 'selfmx', 'public' => true],
         'default_timezone' => ['env' => 'APP_TIMEZONE', 'default' => 'UTC'],
         // app_url removed -- controlled exclusively by APP_URL env var (see config('app.url'))
     ],
@@ -24,7 +24,7 @@ return [
         'smtp_username' => ['env' => 'MAIL_USERNAME', 'default' => null],
         'smtp_password' => ['env' => 'MAIL_PASSWORD', 'default' => null, 'encrypted' => true],
         'from_address' => ['env' => 'MAIL_FROM_ADDRESS', 'default' => 'hello@example.com'],
-        'from_name' => ['env' => 'MAIL_FROM_NAME', 'default' => 'Sourdough'],
+        'from_name' => ['env' => 'MAIL_FROM_NAME', 'default' => 'selfmx'],
         'mailgun_domain' => ['env' => 'MAILGUN_DOMAIN', 'default' => null],
         'mailgun_secret' => ['env' => 'MAILGUN_SECRET', 'default' => null, 'encrypted' => true],
         'sendgrid_api_key' => ['env' => 'SENDGRID_API_KEY', 'default' => null, 'encrypted' => true],
@@ -39,11 +39,11 @@ return [
         'telegram_bot_token' => ['env' => 'TELEGRAM_BOT_TOKEN', 'default' => null, 'encrypted' => true],
         // Discord
         'discord_webhook_url' => ['env' => 'DISCORD_WEBHOOK_URL', 'default' => null, 'encrypted' => true],
-        'discord_bot_name' => ['env' => 'DISCORD_BOT_NAME', 'default' => 'Sourdough'],
+        'discord_bot_name' => ['env' => 'DISCORD_BOT_NAME', 'default' => 'selfmx'],
         'discord_avatar_url' => ['env' => 'DISCORD_AVATAR_URL', 'default' => null],
         // Slack
         'slack_webhook_url' => ['env' => 'SLACK_WEBHOOK_URL', 'default' => null, 'encrypted' => true],
-        'slack_bot_name' => ['env' => 'SLACK_BOT_NAME', 'default' => 'Sourdough'],
+        'slack_bot_name' => ['env' => 'SLACK_BOT_NAME', 'default' => 'selfmx'],
         'slack_icon' => ['env' => 'SLACK_ICON', 'default' => ':robot_face:'],
         // Signal
         'signal_cli_path' => ['env' => 'SIGNAL_CLI_PATH', 'default' => null],
@@ -177,8 +177,6 @@ return [
     'logging' => [
         'app_retention_days' => ['env' => 'LOG_APP_RETENTION_DAYS', 'default' => 90],
         'audit_retention_days' => ['env' => 'AUDIT_LOG_RETENTION_DAYS', 'default' => 365],
-        'access_retention_days' => ['env' => 'ACCESS_LOG_RETENTION_DAYS', 'default' => 2190],
-        'hipaa_access_logging_enabled' => ['env' => 'HIPAA_ACCESS_LOGGING_ENABLED', 'default' => true],
     ],
 
     'auth' => [
@@ -237,7 +235,45 @@ return [
         'max_query_complexity' => ['env' => 'GRAPHQL_MAX_QUERY_COMPLEXITY', 'default' => 200],
         'max_result_size' => ['env' => 'GRAPHQL_MAX_RESULT_SIZE', 'default' => 100],
         'key_rotation_grace_days' => ['env' => 'GRAPHQL_KEY_ROTATION_GRACE_DAYS', 'default' => 7],
-        'cors_allowed_origins' => ['env' => 'GRAPHQL_CORS_ALLOWED_ORIGINS', 'default' => '*'],
+        'cors_allowed_origins' => ['env' => 'GRAPHQL_CORS_ALLOWED_ORIGINS', 'default' => ''],
+    ],
+
+    'email_hosting' => [
+        'default_provider' => ['env' => 'EMAIL_HOSTING_PROVIDER', 'default' => 'mailgun'],
+        'spam_threshold' => ['env' => 'EMAIL_SPAM_THRESHOLD', 'default' => '5.0'],
+        'max_attachment_size' => ['env' => 'EMAIL_MAX_ATTACHMENT_SIZE', 'default' => '25'],
+    ],
+
+    'mailgun' => [
+        'api_key' => ['env' => 'MAILGUN_API_KEY', 'default' => '', 'encrypted' => true],
+        'region' => ['env' => 'MAILGUN_REGION', 'default' => 'us'],
+        'webhook_signing_key' => ['env' => 'MAILGUN_WEBHOOK_SIGNING_KEY', 'default' => '', 'encrypted' => true],
+    ],
+
+    'ses' => [
+        'access_key_id' => ['env' => 'SES_ACCESS_KEY_ID', 'default' => '', 'encrypted' => true],
+        'secret_access_key' => ['env' => 'SES_SECRET_ACCESS_KEY', 'default' => '', 'encrypted' => true],
+        'region' => ['env' => 'SES_REGION', 'default' => 'us-east-1'],
+        'configuration_set' => ['env' => 'SES_CONFIGURATION_SET', 'default' => ''],
+    ],
+
+    'sendgrid' => [
+        'api_key' => ['env' => 'SENDGRID_API_KEY', 'default' => '', 'encrypted' => true],
+        'webhook_verification_key' => ['env' => 'SENDGRID_WEBHOOK_VERIFICATION_KEY', 'default' => '', 'encrypted' => true],
+    ],
+
+    'postmark' => [
+        'server_token' => ['env' => 'POSTMARK_SERVER_TOKEN', 'default' => '', 'encrypted' => true],
+    ],
+
+    'email_ai' => [
+        'summarization_enabled' => ['env' => null, 'default' => true],
+        'auto_labeling_enabled' => ['env' => null, 'default' => false],
+        'auto_labeling_auto_apply' => ['env' => null, 'default' => false],
+        'priority_inbox_enabled' => ['env' => null, 'default' => false],
+        'smart_replies_enabled' => ['env' => null, 'default' => false],
+        'daily_token_limit' => ['env' => 'EMAIL_AI_DAILY_TOKEN_LIMIT', 'default' => 50000],
+        'process_inbound_automatically' => ['env' => null, 'default' => true],
     ],
 
     'usage' => [

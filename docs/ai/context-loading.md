@@ -18,7 +18,7 @@ See: [Global Components Pattern](patterns/components.md)
 
 ## New Project Setup
 
-When someone is starting a new project from Sourdough (forking, customizing, "build me an app"). **Trigger phrase: "Get cooking"** starts the guided wizard.
+When someone is starting a new project from selfmx (forking, customizing, "build me an app"). **Trigger phrase: "Get cooking"** starts the guided wizard.
 
 **Read first:**
 ```
@@ -26,7 +26,7 @@ docs/ai/recipes/setup-new-project.md              # Master index (START HERE)
 docs/ai/recipes/setup-identity-branding.md         # Tier 1: rename app, fonts, colors, docs reset
 docs/ai/recipes/setup-features-auth.md             # Tier 2: feature removal, auth model
 docs/ai/recipes/setup-infrastructure-repo.md       # Tier 3: database, port, timezone, git
-FORK-ME.md                                         # What Sourdough provides
+FORK-ME.md                                         # What selfmx provides
 docs/customization-checklist.md                    # Detailed feature removal file lists
 frontend/config/app.ts                             # App identity config (short name)
 frontend/config/fonts.ts                           # Font configuration (body + heading)
@@ -45,7 +45,7 @@ docs/plans/branding-ui-consistency-roadmap.md             # How branding works
 
 **Key points:**
 - The setup is broken into **3 tiers** — ask questions then execute per tier, pause at any boundary
-- Tier 1 (Identity & Branding) renames ~50+ files with "Sourdough" references
+- Tier 1 (Identity & Branding) renames ~50+ files with "selfmx" references
 - Tier 2 (Features & Auth) removes unwanted features and trims the auth stack
 - Tier 3 (Infrastructure & Repo) configures database, port, timezone, and git
 - Font changes only require editing `frontend/config/fonts.ts` — CSS variables and Tailwind config reference generic `--font-body` / `--font-heading` names
@@ -444,7 +444,7 @@ docs/plans/storage-settings-roadmap.md       # Phases 1–2 done; Phases 3–4 (
 backend/app/Services/Search/SearchService.php
 backend/app/Http/Controllers/Api/SearchController.php
 backend/config/scout.php
-backend/routes/api.php                    # search, search/suggestions (log.access:User)
+backend/routes/api.php                    # search, search/suggestions
 frontend/components/search/search-modal.tsx
 frontend/components/search/search-provider.tsx
 frontend/lib/search.ts
@@ -459,7 +459,7 @@ frontend/app/(dashboard)/configuration/search/page.tsx
 frontend/components/search/search-result-icon.tsx
 ```
 
-**Compliance:** Search and suggestions endpoints return user data; they use `log.access:User` middleware. Transform methods must escape title/subtitle (XSS). See [Patterns: SearchService](patterns/search-service.md) and [Recipe: Add searchable model](recipes/add-searchable-model.md).
+**Compliance:** Search and suggestions endpoints return user data. Transform methods must escape title/subtitle (XSS). See [Patterns: SearchService](patterns/search-service.md) and [Recipe: Add searchable model](recipes/add-searchable-model.md).
 
 **Recipes:**
 - [Add searchable model](recipes/add-searchable-model.md)
@@ -548,27 +548,6 @@ backend/database/migrations/           # audit_logs table, severity column
 - [Trigger audit logging](recipes/trigger-audit-logging.md)
 - [Add auditable action](recipes/add-auditable-action.md)
 - [Add dashboard widget](recipes/add-dashboard-widget.md) – for dashboard analytics widgets (see audit widget as example)
-
-## HIPAA / Access Logging Work
-
-**Read first:**
-```
-backend/app/Services/AccessLogService.php
-backend/app/Http/Middleware/LogResourceAccess.php
-backend/app/Models/AccessLog.php
-docs/ai/recipes/add-access-logging.md
-```
-
-**Also useful:**
-```
-backend/routes/api.php  # log.access middleware, access-logs routes, DELETE /access-logs when disabled
-frontend/app/(dashboard)/configuration/access-logs/page.tsx  # Access logs UI
-frontend/app/(dashboard)/configuration/log-retention/page.tsx  # HIPAA toggle, delete-all when disabled
-backend/app/Http/Controllers/Api/AccessLogController.php
-```
-
-**Recipes:**
-- [Add access logging](recipes/add-access-logging.md)
 
 ## Application Logging Work
 
@@ -795,7 +774,7 @@ VERSION                                 # Current version number
 .github/workflows/release.yml          # Release workflow (tag push + workflow_dispatch)
 scripts/bump-version.sh                # Version bump script (bash, used by CI)
 frontend/package.json                  # version field (must match VERSION)
-frontend/public/sw.js                  # CACHE_VERSION (auto-bumped to sourdough-vX.Y.Z)
+frontend/public/sw.js                  # CACHE_VERSION (auto-bumped to selfmx-vX.Y.Z)
 ```
 
 **Key points:**
@@ -804,7 +783,7 @@ frontend/public/sw.js                  # CACHE_VERSION (auto-bumped to sourdough
 - Releases are triggered by pushing a `v*` tag to remote
 - The workflow auto-syncs version files, creates a GitHub Release, and builds Docker
 - Both `push.ps1` and `bump-version.sh` update three files: `VERSION`, `frontend/package.json`, and `frontend/public/sw.js` (`CACHE_VERSION`)
-- The `CACHE_VERSION` in `sw.js` is set to `sourdough-vX.Y.Z` to bust service worker caches on each release
+- The `CACHE_VERSION` in `sw.js` is set to `selfmx-vX.Y.Z` to bust service worker caches on each release
 - Rebase conflicts in VERSION/package.json/sw.js are common after release workflow commits
 
 **Recipe:**

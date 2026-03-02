@@ -10,11 +10,27 @@ import { SearchProvider } from "@/components/search/search-provider";
 import { WizardProvider } from "@/components/onboarding/wizard-provider";
 import { HelpProvider } from "@/components/help/help-provider";
 import { PageTitleManager } from "@/components/page-title-manager";
+import { MailDataProvider, useMailData } from "@/lib/mail-data-provider";
+import { ComposeDialog } from "@/components/mail/compose-dialog";
 import { useOnline } from "@/lib/use-online";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
   children: React.ReactNode;
+}
+
+function GlobalComposeDialog() {
+  const { composeOpen, setComposeOpen, composeMode, replyData, onSent } = useMailData();
+
+  return (
+    <ComposeDialog
+      open={composeOpen}
+      onOpenChange={setComposeOpen}
+      onSent={onSent}
+      mode={composeMode}
+      replyData={replyData}
+    />
+  );
 }
 
 function AppShellContent({ children }: AppShellProps) {
@@ -30,16 +46,17 @@ function AppShellContent({ children }: AppShellProps) {
       <Sidebar />
       <div
         className={cn(
-          "transition-all duration-300",
+          "transition-all duration-300 flex flex-col",
           "pl-0",
           isExpanded ? "md:pl-56" : "md:pl-16"
         )}
       >
         <Header />
-        <main className="min-h-[calc(100vh-3.5rem)] bg-muted/30">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</div>
+        <main className="flex-1 min-h-[calc(100vh-3.5rem)]">
+          {children}
         </main>
       </div>
+      <GlobalComposeDialog />
     </div>
   );
 }
@@ -47,13 +64,15 @@ function AppShellContent({ children }: AppShellProps) {
 export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider>
-      <HelpProvider>
-        <SearchProvider>
-          <WizardProvider>
-            <AppShellContent>{children}</AppShellContent>
-          </WizardProvider>
-        </SearchProvider>
-      </HelpProvider>
+      <MailDataProvider>
+        <HelpProvider>
+          <SearchProvider>
+            <WizardProvider>
+              <AppShellContent>{children}</AppShellContent>
+            </WizardProvider>
+          </SearchProvider>
+        </HelpProvider>
+      </MailDataProvider>
     </SidebarProvider>
   );
 }

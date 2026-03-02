@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getEcho } from "@/lib/echo";
 
 export interface AppLogStreamPayload {
   level: string;
@@ -53,7 +52,7 @@ export function useAppLogStream(enabled: boolean): {
 
     setStatus("connecting");
 
-    getEcho().then((echo) => {
+    import("@/lib/echo").then(({ getEcho }) => getEcho()).then((echo) => {
       if (cancelled) {
         setStatus("disconnected");
         return;

@@ -209,7 +209,7 @@ class EmailTemplateController extends Controller
      */
     private function sampleVariables(string $key): array
     {
-        $appName = config('app.name', 'Sourdough');
+        $appName = config('app.name', 'selfmx');
         $user = [
             'name' => 'Sample User',
             'email' => 'sample@example.com',

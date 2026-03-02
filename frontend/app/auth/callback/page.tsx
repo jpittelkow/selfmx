@@ -31,7 +31,7 @@ import { errorLogger } from "@/lib/error-logger";
  *   4. Provider authenticates the user and redirects to /api/auth/callback/{provider} (backend)
  *   5. Backend processes the OAuth callback, creates/links user, creates a session
  *   6. Backend redirects to THIS page: /auth/callback?success=true (or ?error=...)
- *   7. This page fetches the user from the session and redirects to /dashboard
+ *   7. This page fetches the user from the session and redirects to /mail
  *
  * Query parameters (set by SSOController::redirectToFrontend):
  *   - success=true          — Authentication succeeded; session is active
@@ -114,7 +114,7 @@ function SSOCallbackContent() {
         } else {
           toast.success("Welcome back!");
         }
-        router.replace("/dashboard");
+        router.replace("/mail");
       });
       return;
     }

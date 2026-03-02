@@ -1,14 +1,11 @@
-# Sourdough Documentation Overview
+# selfmx Documentation Overview
 
 **Main documentation hub for AI assistants.**
 
-Sourdough is a starter application framework designed for AI as a starter to develop other applications. It provides enterprise-grade user management, multi-provider notification system, multi-LLM orchestration with council mode, and robust infrastructure - all in a single Docker container powered by Laravel 11 (PHP 8.3+) + Next.js 16 (React 18, TypeScript) with SQLite as the default database.
+selfmx is a self-hosted email application. Instead of traditional IMAP/SMTP, it uses email providers (Mailgun, with more planned) to handle domain DNS, inbound routing via webhooks, and outbound sending via API. Emails are stored in the database, indexed with Meilisearch, and served through a modern Gmail-style email client with labels, conversation threading, and full-text search. It supports multiple domains per user, multiple addresses per domain, catchall routing, and spam filtering. Built on Laravel 11 (PHP 8.3+) + Next.js 16 (React 18, TypeScript) with SQLite as the default database, running in a single Docker container.
 
-## Using Sourdough as a Template
+## Customization
 
-Sourdough is designed to be forked and customized for your own projects:
-
-- [FORK-ME.md](../FORK-ME.md) - Quick start guide for using Sourdough as a base
 - [Customization Checklist](customization-checklist.md) - Step-by-step guide to customize for your project
 
 ## Documentation Index

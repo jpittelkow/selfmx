@@ -45,18 +45,6 @@ $examples = Example::where('user_id', $request->user()->id)
     ->get();
 ```
 
-### Don't: Skip access logging for PHI routes
-
-```php
-// BAD - endpoint returns user data but no access logging
-Route::get('/users/{user}', [UserController::class, 'show']);
-
-// GOOD - apply log.access middleware (or use AccessLogService::log in controller)
-Route::middleware(['auth:sanctum', 'log.access:User'])->get('/users/{user}', [UserController::class, 'show']);
-```
-
-See [Recipe: Add access logging](recipes/add-access-logging.md) and [Logging Compliance](../../.cursor/rules/logging-compliance.mdc).
-
 ### Don't: Skip Form Request Validation
 
 ```php
@@ -1030,7 +1018,6 @@ Before submitting code, verify:
 - [ ] **Shared components used** - New reusable functionality placed in `frontend/components/` or `frontend/lib/`
 - [ ] Business logic is in Services, not Controllers
 - [ ] All queries are user-scoped where appropriate
-- [ ] PHI access routes have `log.access` middleware (see [Add access logging](recipes/add-access-logging.md))
 - [ ] FormRequest classes used for validation
 - [ ] Response format is consistent (`data`, `message`, `meta`)
 - [ ] Last-admin checks use `AdminAuthorizationTrait`; pagination uses `config('app.pagination.default')`

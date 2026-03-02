@@ -1,6 +1,6 @@
 # Theming Patterns
 
-Architecture and patterns for the Sourdough theming system.
+Architecture and patterns for the selfmx theming system.
 
 ## Architecture Overview
 
@@ -46,8 +46,8 @@ Theme: Default + Mode: dark  → [data-theme="default"].dark
 
 | Axis | localStorage Key | Default |
 |------|-----------------|---------|
-| Mode | `sourdough-theme` | `"system"` |
-| Theme | `sourdough-color-theme` | `"default"` |
+| Mode | `selfmx-theme` | `"system"` |
+| Theme | `selfmx-color-theme` | `"default"` |
 
 ## Variable Categories
 
@@ -115,7 +115,7 @@ The SSR script in `layout.tsx` runs before React hydration to prevent flash of u
 // Reads from localStorage, applies class and data-theme immediately
 var resolved = /* light or dark */;
 document.documentElement.classList.add(resolved);
-var colorTheme = localStorage.getItem('sourdough-color-theme') || 'default';
+var colorTheme = localStorage.getItem('selfmx-color-theme') || 'default';
 document.documentElement.setAttribute('data-theme', colorTheme);
 ```
 

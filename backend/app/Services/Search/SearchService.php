@@ -4,6 +4,9 @@ namespace App\Services\Search;
 
 use App\Models\AIProvider;
 use App\Models\ApiToken;
+use App\Models\Contact;
+use App\Models\Email;
+use App\Models\EmailLabel;
 use App\Models\EmailTemplate;
 use App\Models\Notification;
 use App\Models\NotificationTemplate;
@@ -31,6 +34,8 @@ class SearchService
         'api_tokens' => ApiToken::class,
         'ai_providers' => AIProvider::class,
         'webhooks' => Webhook::class,
+        'emails' => Email::class,
+        'contacts' => Contact::class,
     ];
 
     /**
@@ -323,6 +328,184 @@ class SearchService
                 ->orderBy('name')
                 ->paginate($perPage, ['*'], 'page', $page);
         }
+    }
+
+    /**
+     * Search emails with structured filter syntax (user-scoped).
+     *
+     * Supports filter syntax: from:, to:, has:attachment, after:YYYY-MM-DD,
+     * before:YYYY-MM-DD, label:name, is:read, is:unread, is:starred.
+     * Remaining text is used as free-text search.
+     */
+    public function searchEmails(string $query, \App\Models\User|int $user, ?int $perPage = null, int $page = 1): LengthAwarePaginator
+    {
+        // Support both User object and legacy int $userId
+        if (is_int($user)) {
+            $user = \App\Models\User::findOrFail($user);
+        }
+
+        $accessService = app(\App\Services\Email\MailboxAccessService::class);
+        $mailboxIds = $accessService->getAccessibleMailboxIds($user);
+
+        $perPage = (int) ($perPage ?? config('app.pagination.default', 25));
+        $page = (int) $page;
+
+        $parsed = $this->parseEmailQuery($query);
+        $textQuery = trim($parsed['text']);
+
+        try {
+            $builder = Email::search($textQuery);
+
+            // Scope to accessible mailboxes
+            $builder->whereIn('mailbox_id', $mailboxIds);
+
+            // Apply parsed filters
+            if ($parsed['from'] !== null) {
+                $builder->where('from_address', $parsed['from']);
+            }
+            if ($parsed['has_attachment'] === true) {
+                $builder->where('has_attachment', true);
+            }
+            if ($parsed['is_read'] !== null) {
+                $builder->where('is_read', $parsed['is_read']);
+            }
+            if ($parsed['is_starred'] === true) {
+                $builder->where('is_starred', true);
+            }
+            if ($parsed['after'] !== null) {
+                $builder->where('sent_at', '>=', strtotime($parsed['after']));
+            }
+            if ($parsed['before'] !== null) {
+                $builder->where('sent_at', '<=', strtotime($parsed['before'] . ' 23:59:59'));
+            }
+            if ($parsed['label'] !== null) {
+                $label = EmailLabel::where('user_id', $user->id)
+                    ->where('name', $parsed['label'])->first();
+                if ($label) {
+                    $builder->where('label_ids', $label->id);
+                }
+            }
+
+            // Exclude trashed and spam by default
+            $builder->where('is_trashed', false);
+            $builder->where('is_spam', false);
+
+            return $builder->paginate($perPage, 'page', $page);
+        } catch (\Exception $e) {
+            Log::warning('Email search failed, falling back to database', [
+                'query' => $query,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->searchEmailsViaDatabase($textQuery, $parsed, $mailboxIds, $user->id, $perPage, $page);
+        }
+    }
+
+    /**
+     * Database fallback for email search.
+     */
+    protected function searchEmailsViaDatabase(string $textQuery, array $parsed, array $mailboxIds, int $userId, int $perPage, int $page): LengthAwarePaginator
+    {
+        $q = Email::whereIn('mailbox_id', $mailboxIds)
+            ->where('is_trashed', false)
+            ->where('is_spam', false)
+            ->with(['recipients', 'labels', 'attachments']);
+
+        if ($textQuery !== '') {
+            $q->where(function ($qb) use ($textQuery) {
+                $qb->where('subject', 'like', "%{$textQuery}%")
+                    ->orWhere('from_address', 'like', "%{$textQuery}%")
+                    ->orWhere('from_name', 'like', "%{$textQuery}%")
+                    ->orWhere('body_text', 'like', "%{$textQuery}%");
+            });
+        }
+
+        if ($parsed['from'] !== null) {
+            $q->where('from_address', $parsed['from']);
+        }
+        if ($parsed['to'] !== null) {
+            $q->whereHas('recipients', function ($qb) use ($parsed) {
+                $qb->where('type', 'to')->where('address', $parsed['to']);
+            });
+        }
+        if ($parsed['has_attachment'] === true) {
+            $q->whereHas('attachments');
+        }
+        if ($parsed['is_read'] !== null) {
+            $q->where('is_read', $parsed['is_read']);
+        }
+        if ($parsed['is_starred'] === true) {
+            $q->where('is_starred', true);
+        }
+        if ($parsed['after'] !== null) {
+            $q->where('sent_at', '>=', $parsed['after']);
+        }
+        if ($parsed['before'] !== null) {
+            $q->where('sent_at', '<=', $parsed['before'] . ' 23:59:59');
+        }
+        if ($parsed['label'] !== null) {
+            $label = EmailLabel::where('user_id', $userId)
+                ->where('name', $parsed['label'])->first();
+            if ($label) {
+                $q->whereHas('labels', fn ($qb) => $qb->where('email_labels.id', $label->id));
+            }
+        }
+
+        return $q->orderByDesc('sent_at')->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    /**
+     * Parse an email search query with structured filter syntax.
+     *
+     * @return array{text: string, from: ?string, to: ?string, has_attachment: ?bool, after: ?string, before: ?string, label: ?string, is_read: ?bool, is_starred: ?bool}
+     */
+    public function parseEmailQuery(string $query): array
+    {
+        $result = [
+            'text' => '',
+            'from' => null,
+            'to' => null,
+            'has_attachment' => null,
+            'after' => null,
+            'before' => null,
+            'label' => null,
+            'is_read' => null,
+            'is_starred' => null,
+        ];
+
+        $remaining = [];
+        preg_match_all('/"[^"]*"|\'[^\']*\'|\S+/', $query, $tokens);
+
+        foreach ($tokens[0] as $token) {
+            if (preg_match('/^from:(.+)$/i', $token, $m)) {
+                $result['from'] = strtolower($m[1]);
+            } elseif (preg_match('/^to:(.+)$/i', $token, $m)) {
+                $result['to'] = strtolower($m[1]);
+            } elseif (preg_match('/^has:attachment$/i', $token)) {
+                $result['has_attachment'] = true;
+            } elseif (preg_match('/^after:(\d{4}-\d{2}-\d{2})$/i', $token, $m)) {
+                $result['after'] = $m[1];
+            } elseif (preg_match('/^before:(\d{4}-\d{2}-\d{2})$/i', $token, $m)) {
+                $result['before'] = $m[1];
+            } elseif (preg_match('/^label:(.+)$/i', $token, $m)) {
+                $result['label'] = $m[1];
+            } elseif (preg_match('/^is:(read|unread|starred)$/i', $token, $m)) {
+                $flag = strtolower($m[1]);
+                if ($flag === 'read') {
+                    $result['is_read'] = true;
+                } elseif ($flag === 'unread') {
+                    $result['is_read'] = false;
+                } elseif ($flag === 'starred') {
+                    $result['is_starred'] = true;
+                }
+            } else {
+                $remaining[] = $token;
+            }
+        }
+
+        $result['text'] = implode(' ', $remaining);
+
+        return $result;
     }
 
     /**

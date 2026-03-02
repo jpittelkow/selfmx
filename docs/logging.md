@@ -1,6 +1,6 @@
 # Logging Standards
 
-Application and console logging for Sourdough: backend structured logging, frontend error reporting, and configuration.
+Application and console logging for selfmx: backend structured logging, frontend error reporting, and configuration.
 
 ## When to Log (and What Level)
 
@@ -100,39 +100,27 @@ Logs are broadcast via `AppLogCreated`; the **BroadcastLogHandler** sanitizes se
 
 Configuration > **Application Logs** includes an **Export** section. Admins can export application log files (from `storage/logs/laravel*.log`) as CSV or JSON Lines, filtered by date range, level, and correlation ID. Endpoint: `GET /api/app-logs/export?date_from=&date_to=&level=&correlation_id=&format=csv|json`.
 
-## HIPAA Access Logging
-
-**Access Logs** (`/configuration/access-logs`) track who accessed user data (PHI) for compliance:
-
-- **AccessLogService** and **LogResourceAccess** middleware log view/create/update/delete/export on profile, user, user-settings, and search routes (`GET /api/search`, `GET /api/search/suggestions`) when they return user data. The middleware automatically extracts **fields accessed** from request bodies (create/update) and JSON responses (view); sensitive keys (e.g. password, token) are excluded.
-- **HIPAA access logging** can be disabled via Configuration > Log retention (toggle “Enable HIPAA access logging”). When disabled, no new access logs are created. “Delete all access logs” is then available; it shows a HIPAA violation warning (6-year retention) before confirming.
-- **ACCESS_LOG_RETENTION_DAYS**: Retention in days (default 2190 = 6 years). Do not reduce below 6 years for HIPAA.
-- Access logs are included in backups and restored with merge-by-ID.
-
-See [Recipe: Add access logging](ai/recipes/add-access-logging.md) and [Patterns: AccessLogService](ai/patterns/access-log-service.md).
-
 ## Log Retention and Cleanup
 
 Retention is configurable per log type (Configuration > **Log retention**):
 
 - **Application logs**: 1–365 days (default 90). Applies to daily log files (`laravel-*.log`).
 - **Audit logs**: 30–730 days (default 365).
-- **Access logs**: Minimum 2190 days (6 years) for HIPAA; cannot be reduced.
 
 Run cleanup via CLI:
 
 - `php artisan log:cleanup` — delete entries and files older than retention.
 - `php artisan log:cleanup --dry-run` — report what would be deleted.
-- `php artisan log:cleanup --archive` — export audit and access logs to CSV in `storage/app/log-archive/` before deleting.
+- `php artisan log:cleanup --archive` — export audit logs to CSV in `storage/app/log-archive/` before deleting.
 
-Retention values and the HIPAA toggle are stored in system settings (group `logging`); env fallbacks: `LOG_APP_RETENTION_DAYS`, `AUDIT_LOG_RETENTION_DAYS`, `ACCESS_LOG_RETENTION_DAYS`, `HIPAA_ACCESS_LOGGING_ENABLED`.
+Retention values are stored in system settings (group `logging`); env fallbacks: `LOG_APP_RETENTION_DAYS`, `AUDIT_LOG_RETENTION_DAYS`.
 
 ## Suspicious Activity Alerting
 
-The system checks audit and access logs for suspicious patterns and notifies admins:
+The system checks audit logs for suspicious patterns and notifies admins:
 
 - **Failed logins**: 5+ failed login attempts in 15 minutes.
-- **Bulk export**: 10+ data export (PHI) actions in 1 hour.
+- **Bulk export**: 10+ data export actions in 1 hour.
 
 Scheduled command `php artisan log:check-suspicious` runs every 15 minutes and sends in-app and email notifications to all admin users. The dashboard shows an alert banner when current checks detect suspicious activity. API: `GET /api/suspicious-activity` (admin) returns current alerts for the dashboard.
 
@@ -145,8 +133,6 @@ Scheduled command `php artisan log:check-suspicious` runs every 15 minutes and s
 | Broadcast handler | `backend/app/Logging/BroadcastLogHandler.php` |
 | Correlation ID middleware | `backend/app/Http/Middleware/AddCorrelationId.php` |
 | Client error API | `backend/app/Http/Controllers/Api/ClientErrorController.php` |
-| Access log service | `backend/app/Services/AccessLogService.php` |
-| Access log middleware | `backend/app/Http/Middleware/LogResourceAccess.php` |
 | Frontend logger | `frontend/lib/error-logger.ts` |
 | App log stream hook | `frontend/lib/use-app-log-stream.ts` |
 | Error boundary | `frontend/components/error-boundary.tsx` |
@@ -158,4 +144,3 @@ Scheduled command `php artisan log:check-suspicious` runs every 15 minutes and s
 - [Audit Logging](plans/audit-logs-roadmap.md) – user actions (auth, settings, backup) are recorded in the audit log; application logging is for operational and diagnostic events.
 - [Logging Roadmap](plans/logging-roadmap.md) – future archiving, export, and cleanup.
 - [Recipe: Extend Logging](ai/recipes/extend-logging.md) – how to add logging to new features.
-- [Recipe: Add access logging](ai/recipes/add-access-logging.md) – how to add HIPAA access logging.

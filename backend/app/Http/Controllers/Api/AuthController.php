@@ -284,7 +284,7 @@ class AuthController extends Controller
 
         $user = User::find($request->id);
 
-        if (!$user || !hash_equals(sha1($user->getEmailForVerification()), $request->hash)) {
+        if (!$user || !hash_equals(hash_hmac('sha256', $user->getEmailForVerification(), config('app.key')), $request->hash)) {
             return $this->errorResponse('Invalid verification link', 400);
         }
 

@@ -102,7 +102,7 @@ Place it in the page description, typically next to the h1.
 After adding the search entry:
 
 ```bash
-docker exec sourdough-dev bash -c "cd /var/www/html/backend && php artisan search:reindex pages"
+docker exec selfmx-dev bash -c "cd /var/www/html/backend && php artisan search:reindex pages"
 ```
 
 ### 5. Test

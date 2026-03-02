@@ -9,6 +9,7 @@ use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Sanctum\HasApiTokens;
@@ -133,6 +134,16 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
     public function apiTokens(): HasMany
     {
         return $this->hasMany(ApiToken::class);
+    }
+
+    /**
+     * Mailboxes this user has access to (via mailbox_users pivot).
+     */
+    public function accessibleMailboxes(): BelongsToMany
+    {
+        return $this->belongsToMany(Mailbox::class, 'mailbox_users')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     /**

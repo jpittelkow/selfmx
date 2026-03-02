@@ -40,8 +40,8 @@ export async function GET() {
     });
 
     let faviconUrl: string | null = null;
-    let appName = 'Sourdough';
-    let shortName = 'SD';
+    let appName = 'selfmx';
+    let shortName = 'MX';
     let themeColor = '#3b82f6';
     const backgroundColor = '#ffffff'; // Always white for PWA splash screen
 
@@ -90,7 +90,7 @@ export async function GET() {
     const manifest = {
       name: appName,
       short_name: shortName,
-      description: 'Starter Application Framework for AI Development',
+      description: 'Self-hosted Email the easy way',
       icons,
       theme_color: themeColor,
       background_color: backgroundColor,
@@ -99,7 +99,7 @@ export async function GET() {
       orientation: 'portrait-primary',
       categories: ['productivity', 'utilities'],
       shortcuts: [
-        { name: 'Dashboard', short_name: 'Dashboard', url: '/dashboard', icons: [{ src: '/icons/shortcut-dashboard.png', sizes: '96x96', type: 'image/png' }] },
+        { name: 'Inbox', short_name: 'Inbox', url: '/mail', icons: [{ src: '/icons/shortcut-dashboard.png', sizes: '96x96', type: 'image/png' }] },
         { name: 'Settings', short_name: 'Settings', url: '/user/preferences', icons: [{ src: '/icons/shortcut-settings.png', sizes: '96x96', type: 'image/png' }] },
       ],
       share_target: {
@@ -118,9 +118,9 @@ export async function GET() {
   } catch (error) {
     // Fallback to static manifest if backend is unavailable
     const fallbackManifest = {
-      name: 'Sourdough',
-      short_name: 'SD',
-      description: 'Starter Application Framework for AI Development',
+      name: 'selfmx',
+      short_name: 'MX',
+      description: 'Self-hosted Email the easy way',
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
@@ -134,7 +134,7 @@ export async function GET() {
       orientation: 'portrait-primary',
       categories: ['productivity', 'utilities'],
       shortcuts: [
-        { name: 'Dashboard', short_name: 'Dashboard', url: '/dashboard', icons: [{ src: '/icons/shortcut-dashboard.png', sizes: '96x96', type: 'image/png' }] },
+        { name: 'Inbox', short_name: 'Inbox', url: '/mail', icons: [{ src: '/icons/shortcut-dashboard.png', sizes: '96x96', type: 'image/png' }] },
         { name: 'Settings', short_name: 'Settings', url: '/user/preferences', icons: [{ src: '/icons/shortcut-settings.png', sizes: '96x96', type: 'image/png' }] },
       ],
       share_target: {

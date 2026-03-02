@@ -502,7 +502,7 @@ function renderChannelFields(
             <Input id="discord_webhook_url" type="password" placeholder="Optional" {...register("discord_webhook_url")} className="min-h-[44px]" />
           </FormField>
           <FormField id="discord_bot_name" label="Bot name" error={errors.discord_bot_name?.message}>
-            <Input id="discord_bot_name" placeholder="Sourdough" {...register("discord_bot_name")} className="min-h-[44px]" />
+            <Input id="discord_bot_name" placeholder="selfmx" {...register("discord_bot_name")} className="min-h-[44px]" />
           </FormField>
           <FormField id="discord_avatar_url" label="Avatar URL" error={errors.discord_avatar_url?.message}>
             <Input id="discord_avatar_url" placeholder="Optional" {...register("discord_avatar_url")} className="min-h-[44px]" />
@@ -517,7 +517,7 @@ function renderChannelFields(
             <Input id="slack_webhook_url" type="password" placeholder="Optional" {...register("slack_webhook_url")} className="min-h-[44px]" />
           </FormField>
           <FormField id="slack_bot_name" label="Bot name" error={errors.slack_bot_name?.message}>
-            <Input id="slack_bot_name" placeholder="Sourdough" {...register("slack_bot_name")} className="min-h-[44px]" />
+            <Input id="slack_bot_name" placeholder="selfmx" {...register("slack_bot_name")} className="min-h-[44px]" />
           </FormField>
           <FormField id="slack_icon" label="Icon (e.g. :robot_face:)" error={errors.slack_icon?.message}>
             <Input id="slack_icon" placeholder=":robot_face:" {...register("slack_icon")} className="min-h-[44px]" />
@@ -781,7 +781,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Notifications</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
         <p className="text-muted-foreground mt-1">
           Enable which notification channels are available to users. Configure channel credentials below. Users set their own webhooks and phone numbers in Preferences.{" "}
           <HelpLink articleId="notification-channels" />
