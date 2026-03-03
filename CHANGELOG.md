@@ -5,25 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
+## [Unreleased]
 
 ## [0.2.1] - 2026-03-02
 
 ### Added
-- Implement Mailgun management API, email UI improvements, webhook tests, and DKIM rotation
-- Implement email app Phase 1 - domains, mailboxes, threads, compose, contacts, labels, rules, spam filters, AI, and provider settings
+- **Mailgun Management API (Phase 7 partial)** — Full domain management dashboard accessible from Configuration > Email Domains > domain detail page
+  - **DNS Records** — Display required records (SPF, DKIM, MX, tracking CNAME) with copy-to-clipboard and validity indicators; one-click "Verify Now"
+  - **DKIM** — View current DKIM selector and public key; rotate key on demand with audit logging and `dkim_rotated_at` tracking; `RotateDkimKeysCommand` artisan command
+  - **Webhooks** — List, create, update, delete per-event webhooks (delivered, opened, clicked, bounced, complained, unsubscribed, stored); auto-configure delivery webhooks with one click
+  - **Inbound Routes** — List, create, delete Mailgun routing rules with expression/actions/priority
+  - **Event Log** — Query Mailgun events with filters (event type, recipient); paginated results with severity-colored badges
+  - **Suppressions** — View and remove bounces, complaints, and unsubscribes; check suppression status for specific addresses
+  - **Tracking** — Toggle open, click, and unsubscribe tracking per domain via switches
+  - **Stats** — Domain-level sending stats (accepted, delivered, failed, complained) with delivery/bounce/complaint rate cards; 7d/30d/90d duration selector; daily breakdown table
+  - **Provider Health** — API connectivity check endpoint
+- **Email webhook tests** — Comprehensive Pest test suite for Mailgun webhook ingestion (signature validation, email creation, delivery status updates, duplicate handling, spam detection, threading)
+- **Unread count in browser tab title** — Mail page now shows `(N) Inbox | appName` in the document title, updating dynamically
+- **Email UI improvements** — Enhanced compose dialog, improved thread list, email detail view refinements, thread list skeleton improvements
 
 ### Changed
-- Release v0.2.0
-- Release v0.8.2
+- Added `dkim_rotated_at` column to `email_domains` table
+- Added unique constraint on `mailbox_id` + `message_id` in `emails` table to prevent duplicate ingestion
+- Added `PruneWebhookLogsCommand` for log cleanup
+- New planning docs: email design audit roadmap, email import move plan, Mailgun Phase 7 plan/roadmap, Cloudflare Phase 8 roadmap, email Phase 3 plan
+
 ## [0.2.0] - 2026-03-01
-
-### Added
-- Implement email app Phase 1 - domains, mailboxes, threads, compose, contacts, labels, rules, spam filters, AI, and provider settings
-
-### Changed
-- Release v0.8.2
-## [Unreleased]
 
 ### Added
 - **Email Hosting (Phases 1–6)** — Complete self-hosted email using provider APIs

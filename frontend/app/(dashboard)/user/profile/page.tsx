@@ -119,13 +119,14 @@ export default function ProfilePage() {
   // Poll async import job status
   useEffect(() => {
     if (!importAsyncJobId) return;
-    let cancelled = false;
+    const controller = new AbortController();
     const poll = async () => {
       try {
         const res = await api.get<{ status: string; result?: ImportResult }>(
-          `/email/import/${importAsyncJobId}/status`
+          `/email/import/${importAsyncJobId}/status`,
+          { signal: controller.signal }
         );
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         setImportAsyncStatus(res.data.status);
         if (res.data.status === "completed" || res.data.status === "failed") {
           if (importPollRef.current) {
@@ -136,14 +137,14 @@ export default function ProfilePage() {
           if (res.data.result) setImportResult(res.data.result);
         }
       } catch {
-        // ignore poll errors
+        // ignore poll errors (including aborted requests)
       }
     };
     // Run once immediately, then every 3s
     poll();
     importPollRef.current = setInterval(poll, 3000);
     return () => {
-      cancelled = true;
+      controller.abort();
       if (importPollRef.current) {
         clearInterval(importPollRef.current);
         importPollRef.current = null;

@@ -7,12 +7,12 @@ Development roadmaps and implementation history.
 Currently in progress. Complete these before starting new work.
 
 - **[Email Design Audit](plans/email-design-audit-roadmap.md)** - UX and visual design audit of the mail experience. Phases 1 & 2 complete. Phase 3 (compose experience) is next. See [Phase 3 plan](plans/email-phase3-plan.md).
+- **[Mailgun Deep Integration (Phase 7)](plans/mailgun-phase7-roadmap.md)** - Core API + management UI shipped in v0.2.1. Domain detail page with 8 tabs (DNS, DKIM, Webhooks, Routes, Events, Suppressions, Tracking, Stats). Remaining: domain filtering/search, DKIM auto-rotation schedule, webhook testing, drag-to-reorder routes, event timeline per email, CSV import/export, compose-time suppression warnings, tracking CNAME config, tag-based stats, provider health dashboard.
 
 ## Next Up
 
 Ready to start. These are unblocked and can begin immediately.
 
-- **[Mailgun Deep Integration (Phase 7)](plans/mailgun-phase7-roadmap.md)** - Expose full Mailgun management APIs: domain verification, DNS records, DKIM rotation, webhook management, inbound routes, event monitoring, suppression lists, tracking settings, and sending stats dashboard. See [Phase 7 plan](plans/mailgun-phase7-plan.md).
 - **[Cloudflare DNS Integration (Phase 8)](plans/cloudflare-phase8-roadmap.md)** - Automatically manage DNS records required by email providers using Cloudflare API. Sync status dashboard, one-click DNS fixes, intelligent SPF merging, automated drift detection, and extensible DNS provider pattern.
 - **[Move Import Email to User Settings](plans/email-import-move-plan.md)** - Remove the Import Email button from the mail UI and relocate it to the user settings page. Email import is an infrequent operation better suited as a settings action rather than a primary mail toolbar control.
 

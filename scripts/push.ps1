@@ -42,6 +42,29 @@ if ($CurrentBranch -ne "master") {
     }
 }
 
+# Pull remote changes to avoid diverging from GitHub Actions sync commits
+Write-Host "Pulling latest from origin/$CurrentBranch..." -ForegroundColor Cyan
+$ErrorActionPreference = "Continue"
+git fetch origin $CurrentBranch 2>&1 | Out-Null
+$ErrorActionPreference = "Stop"
+$LocalHead = git rev-parse HEAD
+$RemoteHead = git rev-parse "origin/$CurrentBranch" 2>$null
+if ($RemoteHead -and $LocalHead -ne $RemoteHead) {
+    # Check if we can fast-forward
+    $MergeBase = git merge-base $LocalHead $RemoteHead 2>$null
+    if ($MergeBase -eq $LocalHead) {
+        # Remote is ahead, fast-forward
+        git merge --ff-only "origin/$CurrentBranch"
+        Write-Host "Fast-forwarded to origin/$CurrentBranch" -ForegroundColor Green
+    } elseif ($MergeBase -eq $RemoteHead) {
+        # Local is ahead, nothing to do
+        Write-Host "Local is ahead of origin, proceeding." -ForegroundColor Cyan
+    } else {
+        Write-Error "Local and remote have diverged. Resolve manually before releasing.`nLocal:  $LocalHead`nRemote: $RemoteHead`nBase:   $MergeBase"
+        exit 1
+    }
+}
+
 # Check for uncommitted changes
 $status = git status --porcelain
 if ([string]::IsNullOrWhiteSpace($status)) {

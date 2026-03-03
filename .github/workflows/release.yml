@@ -77,7 +77,8 @@ jobs:
           generate_release_notes: true
 
   # === TAG PUSH PATH ===
-  # Syncs VERSION + package.json to match the pushed tag, then creates release
+  # When push.ps1 pushes a tag, we build from the tagged commit directly.
+  # Also ensures master includes the tagged commit (fast-forward merge).
   sync-and-release:
     name: Sync version files and create release
     if: github.event_name == 'push'
@@ -89,12 +90,14 @@ jobs:
     outputs:
       version: ${{ steps.extract.outputs.version }}
       tag: ${{ steps.extract.outputs.tag }}
-      sha: ${{ steps.sync.outputs.sha }}
+      sha: ${{ steps.resolve-sha.outputs.sha }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          # Fetch enough history to find the merge base between master and tag
+          fetch-depth: 50
+          ref: ${{ github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract version from tag
@@ -105,22 +108,33 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      - name: Update version files
-        run: bash scripts/bump-version.sh "${{ steps.extract.outputs.version }}"
+      - name: Resolve build SHA from tag
+        id: resolve-sha
+        run: |
+          # Always build from the exact commit the tag points to
+          TAG_SHA=$(git rev-parse HEAD)
+          echo "sha=$TAG_SHA" >> $GITHUB_OUTPUT
+          echo "Building from tag commit: $TAG_SHA"
 
-      - name: Commit and push version sync
-        id: sync
+      - name: Ensure master includes tagged commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add VERSION frontend/package.json frontend/public/sw.js
-          if git diff --cached --quiet; then
-            echo "Version files already up to date"
-            echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          git fetch origin master
+          TAG_SHA=$(git rev-parse HEAD)
+
+          # Check if master already contains this commit
+          if git merge-base --is-ancestor "$TAG_SHA" origin/master; then
+            echo "master already contains the tagged commit"
           else
-            git commit -m "Release v${{ steps.extract.outputs.version }}"
-            git push origin master
-            echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+            # Fast-forward master to include the tagged commit
+            git checkout master
+            if git merge --ff-only "$TAG_SHA" 2>/dev/null; then
+              git push origin master
+              echo "Fast-forwarded master to include tagged commit"
+            else
+              echo "::warning::Cannot fast-forward master to tagged commit. Master and tag have diverged. Manual merge may be needed."
+            fi
           fi
 
       - name: Create GitHub Release

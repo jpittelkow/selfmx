@@ -239,10 +239,11 @@ Nginx is configured with security headers in `docker/nginx.conf`:
 
 **Note:** `X-XSS-Protection` is not set; it was removed as deprecated and no longer supported in modern browsers.
 
-**CSP Policy:** `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'self';`
+**CSP Policy:** `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss: https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; frame-ancestors 'self';`
 
 Notes:
 - `unsafe-inline` and `unsafe-eval` are required for Next.js/React hydration
+- Stripe domains (`js.stripe.com`, `api.stripe.com`, `hooks.stripe.com`) are allowed for payment processing
 - `ws: wss:` allows Laravel Echo/Reverb websocket connections
 - `blob:` and `data:` are needed for image handling
 

@@ -92,7 +92,7 @@ Self-hosted email client using email providers (Mailgun, etc.) for domain manage
 - [x] Command palette (Ctrl+K, mail-specific commands: navigate, compose, search, import)
 - [x] Bulk selection in thread list (checkboxes, select all, bulk read/star/trash actions)
 
-## Phase 7: Provider Management — Mailgun Deep Integration
+## Phase 7: Provider Management — Mailgun Deep Integration *(Partial — v0.2.1)*
 
 **Goal**: Expose the full depth of Mailgun's management APIs so admins can manage domains, DNS, webhooks, deliverability, and suppressions without leaving selfmx.
 
@@ -103,70 +103,70 @@ Self-hosted email client using email providers (Mailgun, etc.) for domain manage
 - [ ] Retrieve full domain details from Mailgun v4 API (state, created_at, wildcard, force_dkim_authority, DKIM key length)
 - [ ] List domains with filtering (active / unverified / disabled) and search
 - [ ] Delete domain via Mailgun API (with confirmation + audit log)
-- [ ] Display required DNS records per domain (SPF, DKIM, MX, tracking CNAME) with copy-to-clipboard
-- [ ] One-click "Verify Now" trigger via `PUT /v4/domains/{name}/verify` with real-time status feedback
+- [x] Display required DNS records per domain (SPF, DKIM, MX, tracking CNAME) with copy-to-clipboard
+- [x] One-click "Verify Now" trigger via `PUT /v4/domains/{name}/verify` with real-time status feedback
 - [ ] Domain health dashboard — show verification state, last verified timestamp, missing/misconfigured records
 
 ### DNS Record Visibility
 
-- [ ] Fetch and display DNS records from Mailgun (sending records, receiving records, tracking records)
+- [x] Fetch and display DNS records from Mailgun (sending records, receiving records, tracking records)
 - [ ] Side-by-side comparison: "Required by Mailgun" vs "Found in DNS" (via DNS lookup)
-- [ ] Record status indicators (valid / missing / mismatch) per record type
+- [x] Record status indicators (valid / missing / mismatch) per record type
 - [ ] Auto-refresh DNS status on domain detail page
 
 ### DKIM Key Management
 
-- [ ] List DKIM signing keys per domain (selector, active status, key length)
-- [ ] Rotate DKIM key on demand via API
+- [x] List DKIM signing keys per domain (selector, active status, key length)
+- [x] Rotate DKIM key on demand via API (with audit log + dkim_rotated_at tracking)
 - [ ] Configure automatic DKIM key rotation schedule (interval setting)
-- [ ] Show current active DKIM selector in domain detail
+- [x] Show current active DKIM selector in domain detail
 
 ### Webhook Management
 
-- [ ] List all webhooks per domain (delivered, opened, clicked, bounced, complained, unsubscribed, stored)
-- [ ] Create / update / delete domain-level webhooks via UI
-- [ ] Webhook status indicators (configured / not configured per event type)
+- [x] List all webhooks per domain (delivered, opened, clicked, bounced, complained, unsubscribed, stored)
+- [x] Create / update / delete domain-level webhooks via UI
+- [x] Webhook status indicators (configured / not configured per event type)
 - [ ] Test webhook endpoint with sample payload
-- [ ] Auto-configure selfmx webhooks on domain creation (delivery events: delivered, bounced, failed, complained)
+- [x] Auto-configure selfmx webhooks on domain creation (delivery events: delivered, bounced, failed, complained)
 
 ### Inbound Route Management
 
-- [ ] List Mailgun routes with filter expression and actions
-- [ ] Create / update / delete routes via UI
+- [x] List Mailgun routes with filter expression and actions
+- [x] Create / update / delete routes via UI
 - [ ] Route priority ordering (drag to reorder)
 - [ ] Show which routes selfmx auto-created vs user-defined
 
 ### Email Event Monitoring
 
-- [ ] Events log page — query Mailgun Events/Logs API with filters (event type, recipient, date range, subject, message-id)
+- [x] Events log page — query Mailgun Events/Logs API with filters (event type, recipient, date range, subject, message-id)
 - [ ] Event timeline per email (sent → delivered → opened → clicked, or sent → bounced)
 - [ ] Link from email detail view to provider event history
-- [ ] Event search with severity indicators (delivered = success, bounced = warning, failed = error)
+- [x] Event search with severity indicators (delivered = success, bounced = warning, failed = error)
 
 ### Suppression Management
 
-- [ ] Bounces list — view, search, add, remove bounced addresses per domain
-- [ ] Complaints list — view, search, add, remove complained addresses per domain
-- [ ] Unsubscribes list — view, search, add, remove unsubscribed addresses per domain
+- [x] Bounces list — view, search, remove bounced addresses per domain
+- [x] Complaints list — view, search, remove complained addresses per domain
+- [x] Unsubscribes list — view, search, remove unsubscribed addresses per domain
 - [ ] Bulk import/export suppressions (CSV)
 - [ ] Surface suppression warnings when composing to a suppressed address
 
 ### Domain Tracking Settings
 
-- [ ] View and toggle open tracking, click tracking, unsubscribe tracking per domain
+- [x] View and toggle open tracking, click tracking, unsubscribe tracking per domain
 - [ ] Configure tracking CNAME (HTTPS tracking domain) settings
-- [ ] Show tracking stats summary on domain detail page
+- [x] Show tracking stats summary on domain detail page
 
 ### Sending Stats & Reputation
 
-- [ ] Domain-level sending stats (accepted, delivered, bounced, complained — hourly/daily/monthly)
-- [ ] Stats charts on domain detail page (deliverability rate, bounce rate, complaint rate over time)
+- [x] Domain-level sending stats (accepted, delivered, bounced, complained — hourly/daily/monthly)
+- [x] Stats charts on domain detail page (deliverability rate, bounce rate, complaint rate over time)
 - [ ] Tag-based stats for outbound email analytics
 - [ ] Sending queue status indicator per domain
 
 ### Provider Health
 
-- [ ] API connectivity check (test Mailgun credentials on settings save)
+- [x] API connectivity check (test Mailgun credentials on settings save)
 - [ ] Provider status indicator in admin dashboard (green/yellow/red based on API health)
 - [ ] Rate limit awareness — display current usage against Mailgun rate limits
 
