@@ -248,6 +248,8 @@ return [
         'api_key' => ['env' => 'MAILGUN_API_KEY', 'default' => '', 'encrypted' => true],
         'region' => ['env' => 'MAILGUN_REGION', 'default' => 'us'],
         'webhook_signing_key' => ['env' => 'MAILGUN_WEBHOOK_SIGNING_KEY', 'default' => '', 'encrypted' => true],
+        'auto_configure_webhooks' => ['env' => null, 'default' => true],
+        'dkim_rotation_interval_days' => ['env' => null, 'default' => 0],
     ],
 
     'ses' => [

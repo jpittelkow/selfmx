@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
 use App\Models\EmailThread;
+use App\Models\EmailUserState;
 use App\Services\Email\MailboxAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,7 +49,9 @@ class EmailThreadController extends Controller
                 ->where('is_spam', false);
         }])
             ->with(['latestEmail' => function ($q) {
-                $q->select('emails.id', 'emails.thread_id', 'emails.from_address', 'emails.from_name', 'emails.subject', 'emails.is_read', 'emails.sent_at', 'emails.direction', 'emails.mailbox_id')
+                $q->select('emails.id', 'emails.thread_id', 'emails.from_address', 'emails.from_name', 'emails.subject', 'emails.is_read', 'emails.is_starred', 'emails.sent_at', 'emails.direction', 'emails.mailbox_id')
+                    ->selectRaw('SUBSTR(emails.body_text, 1, 150) as preview_text')
+                    ->withCount('attachments')
                     ->with([
                         'recipients:id,email_id,type,address,name',
                         'mailbox:id,address,email_domain_id',
@@ -96,6 +99,21 @@ class EmailThreadController extends Controller
                 ->orderBy('sent_at')
                 ->with(['recipients', 'attachments', 'labels', 'mailbox.emailDomain']);
         }]);
+
+        // Auto-mark all unread emails in the thread as read for this user
+        foreach ($emailThread->emails as $email) {
+            $userState = EmailUserState::where('email_id', $email->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            $effectiveRead = $userState ? $userState->is_read : $email->is_read;
+            if (! $effectiveRead) {
+                EmailUserState::updateOrCreate(
+                    ['email_id' => $email->id, 'user_id' => $user->id],
+                    ['is_read' => true],
+                );
+            }
+        }
 
         return response()->json(['thread' => $emailThread]);
     }

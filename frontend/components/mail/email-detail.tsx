@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,12 @@ import {
   XCircle,
   Clock,
   MoreHorizontal,
+  ChevronRight,
+  Image,
+  FileText,
+  FileSpreadsheet,
+  File,
+  Sun,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -71,6 +77,29 @@ function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileIcon(mimeType: string) {
+  if (mimeType.startsWith("image/")) return Image;
+  if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || mimeType === "text/csv") return FileSpreadsheet;
+  if (mimeType.includes("pdf") || mimeType.includes("document") || mimeType.includes("text/")) return FileText;
+  return File;
+}
+
+function linkifyText(text: string): React.ReactNode[] {
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) => {
+    // Odd-indexed parts from split on a capturing group are the matched URLs
+    if (i % 2 === 1) {
+      return (
+        <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
+          {part}
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
 }
 
 function DeliveryStatusBadge({ status }: { status: string | null }) {
@@ -144,7 +173,8 @@ function EmailMessage({
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const isMobile = useIsMobile();
-  const isDark = resolvedTheme === "dark";
+  const [forceLightMode, setForceLightMode] = useState(false);
+  const isDark = resolvedTheme === "dark" && !forceLightMode;
 
   const getIframeStyles = (dark: boolean) => `
     body {
@@ -201,7 +231,7 @@ function EmailMessage({
     if (styleEl) {
       styleEl.textContent = getIframeStyles(isDark);
     }
-  }, [isDark]);
+  }, [isDark, forceLightMode]);
 
   const toRecipients = email.recipients.filter((r) => r.type === "to");
   const ccRecipients = email.recipients.filter((r) => r.type === "cc");
@@ -364,15 +394,32 @@ function EmailMessage({
       {/* Email body */}
       <div className="px-6 pb-4">
         {email.body_html ? (
-          <iframe
-            ref={iframeRef}
-            title="Email content"
-            className="w-full border-0 min-h-24"
-            sandbox="allow-same-origin"
-          />
+          <div>
+            {resolvedTheme === "dark" && (
+              <div className="flex justify-end mb-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-muted-foreground"
+                  onClick={() => setForceLightMode(!forceLightMode)}
+                  title={forceLightMode ? "Use dark theme" : "View in light mode"}
+                >
+                  <Sun className="h-3 w-3 mr-1" />
+                  {forceLightMode ? "Dark mode" : "Light mode"}
+                </Button>
+              </div>
+            )}
+            <iframe
+              ref={iframeRef}
+              title="Email content"
+              className="w-full border-0 min-h-24"
+              sandbox="allow-same-origin"
+            />
+          </div>
         ) : (
           <pre className="whitespace-pre-wrap text-sm font-sans text-foreground">
-            {email.body_text || "(no content)"}
+            {email.body_text ? linkifyText(email.body_text) : "(no content)"}
           </pre>
         )}
       </div>
@@ -386,18 +433,22 @@ function EmailMessage({
             <span>{email.attachments.length} attachment{email.attachments.length > 1 ? "s" : ""}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {email.attachments.map((att) => (
-              <button
-                key={att.id}
-                onClick={() => handleDownloadAttachment(att.id, att.filename)}
-                className="flex items-center gap-2 px-3 py-2 border rounded-md text-sm hover:bg-muted transition-colors"
-                title={`Download ${att.filename}`}
-              >
-                <Download className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="truncate max-w-48">{att.filename}</span>
-                <span className="text-xs text-muted-foreground">{formatSize(att.size)}</span>
-              </button>
-            ))}
+            {email.attachments.map((att) => {
+              const FileIcon = getFileIcon(att.mime_type);
+              return (
+                <button
+                  key={att.id}
+                  onClick={() => handleDownloadAttachment(att.id, att.filename)}
+                  className="flex items-center gap-2 px-3 py-2 border rounded-md text-sm hover:bg-muted transition-colors"
+                  title={`Download ${att.filename}`}
+                >
+                  <FileIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate max-w-48">{att.filename}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{formatSize(att.size)}</span>
+                  <Download className="h-3 w-3 text-muted-foreground shrink-0" />
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -457,6 +508,30 @@ function EmailMessage({
   );
 }
 
+function CollapsedEmailMessage({
+  email,
+  onExpand,
+}: {
+  email: Email;
+  onExpand: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-3 w-full text-left px-6 py-3 border-b hover:bg-muted/50 transition-colors"
+      onClick={onExpand}
+    >
+      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      <span className="text-sm font-medium truncate">
+        {email.from_name || email.from_address}
+      </span>
+      <span className="text-xs text-muted-foreground shrink-0 ml-auto">
+        {formatFullDate(email.sent_at)}
+      </span>
+    </button>
+  );
+}
+
 export function EmailDetail({
   emails,
   threadId,
@@ -473,6 +548,13 @@ export function EmailDetail({
   onLabelsChanged,
 }: EmailDetailProps) {
   const { resolvedTheme } = useTheme();
+  const shouldCollapse = emails.length >= 3;
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+
+  // Reset expanded state when emails change (new thread selected)
+  useEffect(() => {
+    setExpandedIds(new Set());
+  }, [emails.map(e => e.id).join(",")]);
 
   if (isLoading) {
     return <EmailDetailSkeleton />;
@@ -515,23 +597,39 @@ export function EmailDetail({
           <ThreadSummary threadId={threadId} />
         )}
 
-        {emails.map((email, idx) => (
-          <EmailMessage
-            key={email.id}
-            email={email}
-            isLast={idx === emails.length - 1}
-            resolvedTheme={resolvedTheme}
-            onToggleStar={onToggleStar}
-            onMarkRead={onMarkRead}
-            onTrash={onTrash}
-            onToggleSpam={onToggleSpam}
-            onReply={onReply}
-            onReplyAll={onReplyAll}
-            onForward={onForward}
-            onUseSmartReply={onUseSmartReply}
-            onLabelsChanged={onLabelsChanged}
-          />
-        ))}
+        {emails.map((email, idx) => {
+          const isLast = idx === emails.length - 1;
+          const isCollapsible = shouldCollapse && !isLast;
+          const isExpanded = expandedIds.has(email.id);
+
+          if (isCollapsible && !isExpanded) {
+            return (
+              <CollapsedEmailMessage
+                key={email.id}
+                email={email}
+                onExpand={() => setExpandedIds(prev => new Set([...prev, email.id]))}
+              />
+            );
+          }
+
+          return (
+            <EmailMessage
+              key={email.id}
+              email={email}
+              isLast={isLast}
+              resolvedTheme={resolvedTheme}
+              onToggleStar={onToggleStar}
+              onMarkRead={onMarkRead}
+              onTrash={onTrash}
+              onToggleSpam={onToggleSpam}
+              onReply={onReply}
+              onReplyAll={onReplyAll}
+              onForward={onForward}
+              onUseSmartReply={onUseSmartReply}
+              onLabelsChanged={onLabelsChanged}
+            />
+          );
+        })}
       </div>
     </div>
   );

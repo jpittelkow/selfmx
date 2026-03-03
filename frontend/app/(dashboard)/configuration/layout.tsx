@@ -435,7 +435,7 @@ export default function ConfigurationLayout({
   return (
     <div className="flex flex-row h-[calc(100vh-3.5rem)]">
       {/* Sidebar — fixed width, scrollable, subtle right border */}
-      <aside className="w-64 min-w-64 shrink-0 flex flex-col border-r overflow-y-auto p-4">
+      <aside className="w-64 min-w-64 shrink-0 flex flex-col border-r overflow-y-auto overflow-x-hidden p-4">
         <div className="mb-4">
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-muted-foreground" />

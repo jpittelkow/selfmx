@@ -20,6 +20,7 @@ class EmailDomain extends Model
         'catchall_mailbox_id',
         'is_verified',
         'verified_at',
+        'dkim_rotated_at',
         'is_active',
     ];
 
@@ -29,6 +30,7 @@ class EmailDomain extends Model
             'provider_config' => 'encrypted:array',
             'is_verified' => 'boolean',
             'verified_at' => 'datetime',
+            'dkim_rotated_at' => 'datetime',
             'is_active' => 'boolean',
         ];
     }

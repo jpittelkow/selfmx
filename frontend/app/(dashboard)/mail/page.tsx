@@ -6,21 +6,37 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { searchEmails } from "@/lib/email-search";
 import { useMailData } from "@/lib/mail-data-provider";
+import { useAppConfig } from "@/lib/app-config";
 import { ThreadList } from "@/components/mail/thread-list";
 import { EmailDetail } from "@/components/mail/email-detail";
 import { useIsMobile } from "@/lib/use-mobile";
 import { useMailKeyboard } from "@/lib/use-mail-keyboard";
 import { MailCommandPalette } from "@/components/mail/mail-command-palette";
-import { cn } from "@/lib/utils";
+import { MailOpen } from "lucide-react";
 import type { EmailThread, Email, MailView } from "@/lib/mail-types";
 import type { ReplyData } from "@/components/mail/compose-dialog";
+
+const viewLabels: Record<string, string> = {
+  inbox: "Inbox",
+  sent: "Sent",
+  drafts: "Drafts",
+  starred: "Starred",
+  spam: "Spam",
+  trash: "Trash",
+  snoozed: "Snoozed",
+  priority: "Priority",
+  label: "Label",
+  search: "Search",
+};
 
 export default function MailPage() {
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
+  const { appName } = useAppConfig();
   const {
     labels,
     activeMailboxId,
+    unreadCount,
     refreshUnreadCount,
     openReply: ctxOpenReply,
     openReplyAll: ctxOpenReplyAll,
@@ -173,6 +189,15 @@ export default function MailPage() {
     });
   }, [setOnSent, fetchThreads, refreshUnreadCount]);
 
+  // Update browser tab title with unread count
+  useEffect(() => {
+    const viewLabel = viewLabels[isSearchActive ? "search" : currentView] || "Mail";
+    const title = unreadCount > 0
+      ? `(${unreadCount}) ${viewLabel} | ${appName || "selfmx"}`
+      : `${viewLabel} | ${appName || "selfmx"}`;
+    document.title = title;
+  }, [unreadCount, currentView, isSearchActive, appName]);
+
   const handleSelectThread = async (thread: EmailThread) => {
     setSelectedThread(thread);
     setIsLoadingDetail(true);
@@ -184,6 +209,15 @@ export default function MailPage() {
         const emailId = thread.latest_email?.id || thread.id;
         const res = await api.get<{ email: Email }>(`/email/messages/${emailId}`);
         setSelectedEmails([res.data.email]);
+      }
+      // Optimistically mark the thread as read in the list (backend already marked it)
+      if (thread.latest_email && !thread.latest_email.is_read) {
+        setThreads(prev => prev.map(t =>
+          t.id === thread.id && t.latest_email
+            ? { ...t, latest_email: { ...t.latest_email, is_read: true } }
+            : t
+        ));
+        refreshUnreadCount();
       }
     } catch {
       toast.error("Failed to load email");
@@ -379,7 +413,7 @@ export default function MailPage() {
     <MailCommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
     <div className="flex h-full overflow-hidden bg-background">
       {/* Thread list */}
-      <div className={cn("border-r shrink-0 overflow-y-auto", selectedThread ? "w-80 xl:w-96" : "flex-1")}>
+      <div className="border-r shrink-0 overflow-y-auto w-80 xl:w-96">
         <ThreadList
           threads={threads}
           isLoading={isLoading}
@@ -398,9 +432,9 @@ export default function MailPage() {
         />
       </div>
 
-      {/* Email detail */}
-      {selectedThread && (
-        <div className="flex-1 overflow-y-auto">
+      {/* Email detail / reading pane */}
+      <div className="flex-1 overflow-y-auto">
+        {selectedThread ? (
           <EmailDetail
             emails={selectedEmails}
             threadId={selectedThread.id}
@@ -415,8 +449,14 @@ export default function MailPage() {
             onUseSmartReply={handleUseSmartReply}
             onLabelsChanged={fetchThreads}
           />
-        </div>
-      )}
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <MailOpen className="h-12 w-12 mb-3" />
+            <p className="text-lg font-medium">Select an email</p>
+            <p className="text-sm">Choose an email from the list to read it</p>
+          </div>
+        )}
+      </div>
     </div>
     </>
   );

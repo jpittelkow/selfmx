@@ -65,6 +65,7 @@ use App\Http\Controllers\Api\EmailLabelController;
 use App\Http\Controllers\Api\EmailAttachmentController;
 use App\Http\Controllers\Api\EmailProviderSettingController;
 use App\Http\Controllers\Api\EmailImportController;
+use App\Http\Controllers\Api\MailgunManagementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -564,6 +565,43 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::put('/{emailDomain}', [EmailDomainController::class, 'update']);
         Route::delete('/{emailDomain}', [EmailDomainController::class, 'destroy']);
         Route::post('/{emailDomain}/verify', [EmailDomainController::class, 'verify']);
+    });
+
+    // Mailgun Management (Phase 7) — per-domain Mailgun API access
+    Route::get('/email/provider/health', [MailgunManagementController::class, 'checkHealth']);
+    Route::prefix('email/domains/{domainId}/mailgun')->whereNumber('domainId')->group(function () {
+        // DKIM
+        Route::get('/dkim', [MailgunManagementController::class, 'getDkim']);
+        Route::post('/dkim/rotate', [MailgunManagementController::class, 'rotateDkim']);
+
+        // Webhooks
+        Route::get('/webhooks', [MailgunManagementController::class, 'listWebhooks']);
+        Route::post('/webhooks', [MailgunManagementController::class, 'createWebhook']);
+        Route::post('/webhooks/auto-configure', [MailgunManagementController::class, 'autoConfigureWebhooks']);
+        Route::put('/webhooks/{webhookId}', [MailgunManagementController::class, 'updateWebhook']);
+        Route::delete('/webhooks/{webhookId}', [MailgunManagementController::class, 'deleteWebhook']);
+
+        // Inbound Routes
+        Route::get('/routes', [MailgunManagementController::class, 'listRoutes']);
+        Route::post('/routes', [MailgunManagementController::class, 'createRoute']);
+        Route::put('/routes/{routeId}', [MailgunManagementController::class, 'updateRoute']);
+        Route::delete('/routes/{routeId}', [MailgunManagementController::class, 'deleteRoute']);
+
+        // Event Log
+        Route::get('/events', [MailgunManagementController::class, 'getEvents']);
+
+        // Suppressions
+        Route::get('/suppressions/check', [MailgunManagementController::class, 'checkSuppression']);
+        Route::get('/suppressions/{type}', [MailgunManagementController::class, 'listSuppressions']);
+        Route::delete('/suppressions/{type}/{address}', [MailgunManagementController::class, 'deleteSuppression'])
+            ->where('address', '.*');
+
+        // Tracking
+        Route::get('/tracking', [MailgunManagementController::class, 'getTracking']);
+        Route::put('/tracking/{type}', [MailgunManagementController::class, 'updateTracking']);
+
+        // Stats
+        Route::get('/stats', [MailgunManagementController::class, 'getStats']);
     });
 
     // Mailboxes (access-based: users see mailboxes they have access to)

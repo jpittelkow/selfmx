@@ -6,30 +6,15 @@ Development roadmaps and implementation history.
 
 Currently in progress. Complete these before starting new work.
 
-- **[Email App](plans/email-app-roadmap.md)** - Self-hosted email client using provider APIs (Mailgun, AWS SES, SendGrid, Postmark). All 6 phases complete.
-- **[Theming Engine](plans/theming-engine-roadmap.md)** - Phase 1 (infrastructure) complete. Phase 2 (theme picker UI) next.
+- **[Email Design Audit](plans/email-design-audit-roadmap.md)** - UX and visual design audit of the mail experience. Phases 1 & 2 complete. Phase 3 (compose experience) is next. See [Phase 3 plan](plans/email-phase3-plan.md).
 
 ## Next Up
 
 Ready to start. These are unblocked and can begin immediately.
 
-_(None — pick from Planned Features below or add new items)_
-
-## Planned Features
-
-Requires foundation work or longer-term planning.
-
-- **Stripe Revenue Log** - Add a revenue/transaction log page under the Logs & Monitoring section in Configuration. Display a filterable, sortable table of all Stripe payments and payouts: date, customer, amount, platform fee, net revenue, payment status (succeeded/refunded/failed), and Stripe payment ID. Include date range filtering, summary stats (total revenue, total fees, net earnings), and CSV export. Data sourced from the existing `payments` and `stripe_webhook_events` tables. Protected by admin permission consistent with other log pages.
-- **Get Cooking Wizard Audit** - Audit the onboarding startup wizard for accuracy and completeness. Verify all existing steps reflect current features and settings (e.g., theme step now has color themes, notification channels, Stripe config, GraphQL). Add new steps for features added since the wizard was built. Ensure step order makes sense, remove any stale references, and test the full flow end-to-end on both desktop and mobile.
-
-## Release Checklist
-
-Complete these tasks before each release:
-
-- [ ] **Documentation Architecture Review** - Fix cross-document inconsistencies, add architectural clarity, improve developer experience docs (see [Documentation Architecture Review](plans/documentation-architecture-review-roadmap.md))
-- [ ] **Final Code Review** - Review all modified files for bugs, debug code, hardcoded values, and adherence to patterns (see [Code Review recipe](ai/recipes/code-review.md))
-- [ ] **Roadmap Cleanup** - Archive completed roadmaps, verify all links work, update stale entries (see Roadmap Maintenance below)
-- [ ] **User Build Verification** - Manually verify the Docker build works end-to-end (see Build Verification below)
+- **[Mailgun Deep Integration (Phase 7)](plans/mailgun-phase7-roadmap.md)** - Expose full Mailgun management APIs: domain verification, DNS records, DKIM rotation, webhook management, inbound routes, event monitoring, suppression lists, tracking settings, and sending stats dashboard. See [Phase 7 plan](plans/mailgun-phase7-plan.md).
+- **[Cloudflare DNS Integration (Phase 8)](plans/cloudflare-phase8-roadmap.md)** - Automatically manage DNS records required by email providers using Cloudflare API. Sync status dashboard, one-click DNS fixes, intelligent SPF merging, automated drift detection, and extensible DNS provider pattern.
+- **[Move Import Email to User Settings](plans/email-import-move-plan.md)** - Remove the Import Email button from the mail UI and relocate it to the user settings page. Email import is an infrequent operation better suited as a settings action rather than a primary mail toolbar control.
 
 ## Completed
 

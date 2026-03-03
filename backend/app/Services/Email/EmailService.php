@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\StorageService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -452,6 +453,21 @@ class EmailService
             return null;
         }
 
+        // Deduplicate by message_id within the same mailbox
+        if (!empty($parsed->messageId)) {
+            $existingEmail = Email::where('mailbox_id', $mailbox->id)
+                ->where('message_id', $parsed->messageId)
+                ->first();
+            if ($existingEmail) {
+                Log::info('Duplicate email ignored', [
+                    'message_id' => $parsed->messageId,
+                    'mailbox_id' => $mailbox->id,
+                ]);
+                $this->logWebhook($provider, $parsed->providerEventId, 'inbound', $parsed, 'duplicate');
+                return null;
+            }
+        }
+
         try {
             $email = DB::transaction(function () use ($parsed, $mailbox, $provider) {
                 // Check spam (with user-specific allow/block lists)
@@ -517,6 +533,19 @@ class EmailService
             broadcast(new \App\Events\EmailReceived($mailbox->user_id, $email->fresh()))->toOthers();
 
             return $email;
+        } catch (QueryException $e) {
+            // Unique constraint violation — race condition where two webhooks for the same
+            // email arrived simultaneously and both passed the app-level dedup check
+            if (str_contains($e->getMessage(), 'UNIQUE constraint failed') || str_contains($e->getMessage(), 'Duplicate entry') || $e->getCode() === '23000') {
+                Log::info('Duplicate email caught by unique constraint', [
+                    'message_id' => $parsed->messageId,
+                    'mailbox_id' => $mailbox->id,
+                ]);
+                $this->logWebhook($provider, $parsed->providerEventId, 'inbound', $parsed, 'duplicate');
+                return null;
+            }
+
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Failed to process inbound email', [
                 'error' => $e->getMessage(),

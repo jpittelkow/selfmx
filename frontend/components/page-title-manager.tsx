@@ -16,8 +16,7 @@ const routeTitles: Record<string, string> = {
   "/reset-password": "Reset Password",
   "/verify-email": "Verify Email",
 
-  // Mail
-  "/mail": "Inbox",
+  // Mail — title managed by MailPage with unread count
 
   // Notifications
   "/notifications": "Notifications",

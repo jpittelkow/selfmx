@@ -76,3 +76,13 @@ Schedule::command('email:process-scheduled')
 Schedule::command('email:process-snoozed')
     ->everyMinute()
     ->withoutOverlapping(30);
+
+// Prune old webhook logs (keep 30 days)
+Schedule::command('email:prune-webhook-logs')
+    ->daily()
+    ->withoutOverlapping(60);
+
+// DKIM key rotation (only runs if mailgun.dkim_rotation_interval_days > 0)
+Schedule::command('email:rotate-dkim')
+    ->daily()
+    ->withoutOverlapping(60);

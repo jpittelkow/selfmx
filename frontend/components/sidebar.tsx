@@ -31,7 +31,6 @@ import {
   ChevronsUpDown,
   Sparkles,
   Clock,
-  Upload,
 } from "lucide-react";
 import {
   Popover,
@@ -45,7 +44,6 @@ import { useVersion } from "@/lib/version-provider";
 import { useAppConfig } from "@/lib/app-config";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { EmailImportDialog } from "@/components/mail/email-import-dialog";
 
 const mailFolders = [
   { view: "inbox" as const, label: "Inbox", icon: Inbox },
@@ -173,7 +171,6 @@ function MailNavSectionInner({
   const { labels, unreadCount, accessibleMailboxes, activeMailboxId, setActiveMailboxId, mailboxUnreadCounts, openCompose, refreshLabels } = useMailData();
   const [showNewLabel, setShowNewLabel] = useState(false);
   const [newLabelName, setNewLabelName] = useState("");
-  const [showImport, setShowImport] = useState(false);
 
   const currentView = pathname?.startsWith("/mail")
     ? searchParams.get("view") || "inbox"
@@ -280,10 +277,10 @@ function MailNavSectionInner({
   // Expanded: full mail nav
   return (
     <div className="flex flex-col">
-      {/* Compose + Import */}
-      <div className="px-2 mb-3 flex gap-1">
+      {/* Compose */}
+      <div className="px-2 mb-3">
         <Button
-          className="flex-1 justify-center gap-2"
+          className="w-full justify-center gap-2"
           onClick={() => {
             openCompose();
             onNavClick?.();
@@ -292,17 +289,6 @@ function MailNavSectionInner({
           <PenLine className="h-4 w-4" />
           Compose
         </Button>
-        {accessibleMailboxes.length > 0 && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="shrink-0"
-            title="Import emails"
-            onClick={() => setShowImport(true)}
-          >
-            <Upload className="h-4 w-4" />
-          </Button>
-        )}
       </div>
 
       {/* Mailbox switcher */}
@@ -399,19 +385,6 @@ function MailNavSectionInner({
         </nav>
       </div>
 
-      {accessibleMailboxes.length > 0 && (
-        <EmailImportDialog
-          open={showImport}
-          onOpenChange={setShowImport}
-          mailboxes={accessibleMailboxes.map(m => ({
-            id: m.id,
-            address: m.address,
-            display_name: m.display_name ?? null,
-            email_domain: { name: m.email_domain.name },
-          }))}
-          defaultMailboxId={activeMailboxId ?? accessibleMailboxes[0]?.id}
-        />
-      )}
     </div>
   );
 }
@@ -550,7 +523,7 @@ export function Sidebar() {
         )}
       </div>
 
-      <div className="flex-1 p-2 flex flex-col pt-4 overflow-y-auto">
+      <div className="flex-1 p-2 flex flex-col pt-4 overflow-y-auto overflow-x-hidden">
         {/* Mail navigation */}
         <MailNavSection isExpanded={isExpanded} />
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
+import { Copy, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SaveButton } from "@/components/ui/save-button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 interface ProviderSettings {
   email_hosting: {
@@ -37,6 +39,8 @@ interface ProviderSettings {
     api_key: string;
     region: string;
     webhook_signing_key: string;
+    auto_configure_webhooks: boolean;
+    dkim_rotation_interval_days: number;
   };
   ses: {
     access_key_id: string;
@@ -63,6 +67,8 @@ const defaultSettings: ProviderSettings = {
     api_key: "",
     region: "us",
     webhook_signing_key: "",
+    auto_configure_webhooks: true,
+    dkim_rotation_interval_days: 0,
   },
   ses: {
     access_key_id: "",
@@ -92,6 +98,7 @@ export default function EmailProviderPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [appUrl, setAppUrl] = useState("");
   const [activeTab, setActiveTab] = useState("mailgun");
+  const [health, setHealth] = useState<"checking" | "ok" | "error" | null>(null);
   const initialSettings = useRef<ProviderSettings>(defaultSettings);
 
   const isDirty = JSON.stringify(settings) !== JSON.stringify(initialSettings.current);
@@ -111,6 +118,16 @@ export default function EmailProviderPage() {
     void navigator.clipboard.writeText(url).then(() => toast.success("Webhook URL copied to clipboard"));
   };
 
+  const checkHealth = useCallback(async () => {
+    setHealth("checking");
+    try {
+      const res = await api.get<{ healthy: boolean }>("/email/provider/health");
+      setHealth(res.data.healthy ? "ok" : "error");
+    } catch {
+      setHealth("error");
+    }
+  }, []);
+
   useEffect(() => {
     fetchAppUrl();
     api
@@ -125,11 +142,15 @@ export default function EmailProviderPage() {
         };
         setSettings(loaded);
         initialSettings.current = loaded;
-        setActiveTab(loaded.email_hosting.default_provider || "mailgun");
+        const provider = loaded.email_hosting.default_provider || "mailgun";
+        setActiveTab(provider);
+        if (provider === "mailgun" && loaded.mailgun.api_key) {
+          void checkHealth();
+        }
       })
       .catch(() => toast.error("Failed to load email provider settings"))
       .finally(() => setIsLoading(false));
-  }, [fetchAppUrl]);
+  }, [fetchAppUrl, checkHealth]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -275,6 +296,30 @@ export default function EmailProviderPage() {
             </TabsList>
 
             <TabsContent value="mailgun" className="space-y-4">
+              {health !== null && (
+                <div className={cn(
+                  "flex items-center gap-2 rounded-md border px-3 py-2 text-sm",
+                  health === "ok" ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30" : "border-destructive/30 bg-destructive/5"
+                )}>
+                  {health === "checking" ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : health === "ok" ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  )}
+                  <span>
+                    {health === "checking" && "Checking API connection…"}
+                    {health === "ok" && "Mailgun API connected"}
+                    {health === "error" && "Mailgun API unreachable — check your API key"}
+                  </span>
+                  {health !== "checking" && (
+                    <button type="button" className="ml-auto text-xs text-muted-foreground hover:text-foreground" onClick={checkHealth}>
+                      Recheck
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>API Key</Label>
                 <PasswordInput
@@ -313,6 +358,35 @@ export default function EmailProviderPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   Found in Mailgun dashboard under Settings &gt; API Security &gt; Webhook signing key.
+                </p>
+              </div>
+              <div className="flex items-center justify-between rounded-md border px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium">Auto-configure webhooks</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Automatically configure delivery webhooks when a new Mailgun domain is added.
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.mailgun.auto_configure_webhooks}
+                  onCheckedChange={(v) =>
+                    setSettings((s) => ({ ...s, mailgun: { ...s.mailgun, auto_configure_webhooks: v } }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>DKIM Rotation Interval (days)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={settings.mailgun.dkim_rotation_interval_days}
+                  onChange={(e) =>
+                    setSettings((s) => ({ ...s, mailgun: { ...s.mailgun, dkim_rotation_interval_days: parseInt(e.target.value) || 0 } }))
+                  }
+                  className="w-32"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Auto-rotate DKIM keys every N days. Set to 0 to disable automatic rotation.
                 </p>
               </div>
               <WebhookUrls provider="mailgun" />

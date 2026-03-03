@@ -96,6 +96,8 @@ Self-hosted email client using email providers (Mailgun, etc.) for domain manage
 
 **Goal**: Expose the full depth of Mailgun's management APIs so admins can manage domains, DNS, webhooks, deliverability, and suppressions without leaving selfmx.
 
+**Full roadmap**: [→ Mailgun Phase 7 Detailed Roadmap](mailgun-phase7-roadmap.md)
+
 ### Domain Management (Enhanced)
 
 - [ ] Retrieve full domain details from Mailgun v4 API (state, created_at, wildcard, force_dkim_authority, DKIM key length)
@@ -171,6 +173,8 @@ Self-hosted email client using email providers (Mailgun, etc.) for domain manage
 ## Phase 8: DNS Management — Cloudflare Integration
 
 **Goal**: Integrate with Cloudflare DNS to automatically manage DNS records required by email providers, keeping mail DNS in sync without manual zone file editing.
+
+**Full roadmap**: [→ Cloudflare Phase 8 Detailed Roadmap](cloudflare-phase8-roadmap.md)
 
 ### Cloudflare Connection
 

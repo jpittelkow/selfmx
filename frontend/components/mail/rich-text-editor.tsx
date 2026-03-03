@@ -14,6 +14,7 @@ import {
   List,
   ListOrdered,
   Quote,
+  Code,
   Undo2,
   Redo2,
   Link as LinkIcon,
@@ -212,6 +213,13 @@ export function RichTextEditor({
           title="Blockquote"
         >
           <Quote className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          isActive={editor.isActive("codeBlock")}
+          title="Code block"
+        >
+          <Code className="h-4 w-4" />
         </ToolbarButton>
 
         <div className="w-px h-5 bg-border mx-1" />
