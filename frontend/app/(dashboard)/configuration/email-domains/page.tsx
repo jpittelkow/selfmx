@@ -39,7 +39,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Globe, Plus, Trash2, RefreshCw, Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import Link from "next/link";
+import { Globe, Plus, Trash2, RefreshCw, Loader2, Info, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 
 const providerLabels: Record<string, string> = {
   mailgun: "Mailgun",
@@ -67,6 +69,7 @@ export default function EmailDomainsPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [dnsRecords, setDnsRecords] = useState<{ domainId: number; records: Array<{ type: string; name: string; value: string; valid: string }> } | null>(null);
 
   const fetchDomains = useCallback(async () => {
     try {
@@ -107,9 +110,13 @@ export default function EmailDomainsPage() {
         `/email/domains/${id}/verify`
       );
       if (res.data.is_verified) {
-        toast.success("Domain verified!");
+        toast.success("Domain verified! DNS records are correctly configured.");
+        setDnsRecords(null);
       } else {
-        toast.info("Domain not yet verified. Check your DNS records.");
+        toast.info("Domain not yet verified. Check the DNS records below.");
+        if (res.data.dns_records?.length) {
+          setDnsRecords({ domainId: id, records: res.data.dns_records });
+        }
       }
       fetchDomains();
     } catch {
@@ -178,7 +185,18 @@ export default function EmailDomainsPage() {
                 <TableBody>
                   {domains.map((domain) => (
                     <TableRow key={domain.id}>
-                      <TableCell className="font-medium">{domain.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {domain.provider === "mailgun" ? (
+                          <Link
+                            href={`/configuration/email-domains/${domain.id}`}
+                            className="hover:underline underline-offset-4"
+                          >
+                            {domain.name}
+                          </Link>
+                        ) : (
+                          domain.name
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline">{providerLabels[domain.provider] ?? domain.provider}</Badge>
                       </TableCell>
@@ -206,6 +224,14 @@ export default function EmailDomainsPage() {
                               Verify
                             </Button>
                           )}
+                          {domain.provider === "mailgun" && (
+                            <Link href={`/configuration/email-domains/${domain.id}`}>
+                              <Button variant="outline" size="sm">
+                                Manage
+                                <ChevronRight className="ml-1 h-3 w-3" />
+                              </Button>
+                            </Link>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -224,6 +250,58 @@ export default function EmailDomainsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>How domain verification works</AlertTitle>
+        <AlertDescription>
+          When you add a domain, your email provider generates DNS records (SPF, DKIM, MX) that
+          you need to add at your domain registrar. Clicking <strong>Verify</strong> checks with the
+          provider to confirm these records are in place. Once verified, the domain can send and
+          receive email. DNS changes can take up to 48 hours to propagate.
+        </AlertDescription>
+      </Alert>
+
+      {dnsRecords && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Required DNS Records</CardTitle>
+            <CardDescription>
+              Add these records to your domain&apos;s DNS settings, then click Verify again.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Value</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dnsRecords.records.map((record, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-mono text-sm">{record.type}</TableCell>
+                      <TableCell className="font-mono text-sm max-w-[200px] truncate">{record.name}</TableCell>
+                      <TableCell className="font-mono text-sm max-w-[300px] truncate">{record.value}</TableCell>
+                      <TableCell>
+                        {record.valid === "valid" ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-destructive" />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>

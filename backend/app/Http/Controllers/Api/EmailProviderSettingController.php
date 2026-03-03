@@ -39,6 +39,8 @@ class EmailProviderSettingController extends Controller
             'mailgun.api_key' => ['sometimes', 'nullable', 'string'],
             'mailgun.region' => ['sometimes', 'string', 'in:us,eu'],
             'mailgun.webhook_signing_key' => ['sometimes', 'nullable', 'string'],
+            'mailgun.auto_configure_webhooks' => ['sometimes', 'boolean'],
+            'mailgun.dkim_rotation_interval_days' => ['sometimes', 'integer', 'min:0'],
             'ses.access_key_id' => ['sometimes', 'nullable', 'string'],
             'ses.secret_access_key' => ['sometimes', 'nullable', 'string'],
             'ses.region' => ['sometimes', 'string'],

@@ -23,6 +23,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Signature visual separator in compose editor */
+.ProseMirror [data-signature="true"] {
+  border-top: 1px solid hsl(var(--border));
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
 @layer base {
   /* Bare defaults for variables that themes can override.
      These act as fallbacks when no theme explicitly sets them,

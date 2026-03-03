@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
-import { Inbox, Search, ChevronLeft, ChevronRight, MailOpen, Star, Trash2, Archive } from "lucide-react";
+import { Inbox, Search, ChevronLeft, ChevronRight, MailOpen, Mail, Star, Trash2, Send, FileEdit, AlertOctagon, Clock, Paperclip, Tag } from "lucide-react";
 import { SearchBar } from "@/components/mail/search-bar";
 import { ThreadListSkeleton } from "@/components/mail/thread-list-skeleton";
 import type { EmailThread, EmailLabel, MailView } from "@/lib/mail-types";
@@ -65,9 +65,21 @@ function getDisplayName(thread: EmailThread): string {
   return email.from_name || email.from_address;
 }
 
-function getPreview(thread: EmailThread): string {
+function getSubject(thread: EmailThread): string {
   return thread.subject || "(no subject)";
 }
+
+const viewEmptyStates: Record<string, { icon: typeof Inbox; title: string; description: string }> = {
+  inbox: { icon: Inbox, title: "Your inbox is empty", description: "New messages will appear here" },
+  sent: { icon: Send, title: "No sent emails", description: "Emails you send will appear here" },
+  drafts: { icon: FileEdit, title: "No drafts", description: "Saved drafts will appear here" },
+  starred: { icon: Star, title: "No starred emails", description: "Star emails to find them here later" },
+  spam: { icon: AlertOctagon, title: "No spam", description: "Emails marked as spam will appear here" },
+  trash: { icon: Trash2, title: "Trash is empty", description: "Deleted emails will appear here" },
+  snoozed: { icon: Clock, title: "No snoozed emails", description: "Snoozed emails will reappear here" },
+  label: { icon: Tag, title: "No emails with this label", description: "Labeled emails will appear here" },
+  priority: { icon: Inbox, title: "No priority emails", description: "Priority emails will appear here" },
+};
 
 export function ThreadList({
   threads,
@@ -159,6 +171,9 @@ export function ThreadList({
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={isBulkLoading} onClick={() => handleBulkAction("read")}>
                 <MailOpen className="h-3.5 w-3.5 mr-1" /> Read
               </Button>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={isBulkLoading} onClick={() => handleBulkAction("unread")}>
+                <Mail className="h-3.5 w-3.5 mr-1" /> Unread
+              </Button>
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={isBulkLoading} onClick={() => handleBulkAction("star")}>
                 <Star className="h-3.5 w-3.5 mr-1" /> Star
               </Button>
@@ -191,9 +206,9 @@ export function ThreadList({
             />
           ) : (
             <EmptyState
-              icon={Inbox}
-              title="No emails"
-              description="Messages you receive will appear here"
+              icon={viewEmptyStates[currentView]?.icon || Inbox}
+              title={viewEmptyStates[currentView]?.title || "No emails"}
+              description={viewEmptyStates[currentView]?.description || "Messages you receive will appear here"}
             />
           )
         ) : (
@@ -209,6 +224,7 @@ export function ThreadList({
                     "flex items-start gap-2 w-full text-left px-4 py-3 border-b transition-colors hover:bg-muted/50 cursor-pointer",
                     isFocused && "bg-muted",
                     isUnread && !isFocused && "bg-muted/30",
+                    isUnread && "border-l-2 border-l-primary",
                     isChecked && "bg-primary/5"
                   )}
                   onClick={() => onSelectThread(thread)}
@@ -233,9 +249,17 @@ export function ThreadList({
                       >
                         {getDisplayName(thread)}
                       </span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
-                        {thread.latest_email && formatDate(thread.latest_email.sent_at)}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {thread.latest_email?.attachments_count && thread.latest_email.attachments_count > 0 && (
+                          <Paperclip className="h-3 w-3 text-muted-foreground" />
+                        )}
+                        {thread.latest_email?.is_starred && (
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        )}
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {thread.latest_email && formatDate(thread.latest_email.sent_at)}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span
@@ -244,7 +268,7 @@ export function ThreadList({
                           isUnread ? "font-medium text-foreground" : "text-muted-foreground"
                         )}
                       >
-                        {getPreview(thread)}
+                        {getSubject(thread)}
                       </span>
                       {thread.message_count > 1 && (
                         <span className="text-xs text-muted-foreground shrink-0">
@@ -252,6 +276,11 @@ export function ThreadList({
                         </span>
                       )}
                     </div>
+                    {thread.latest_email?.preview_text && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {thread.latest_email.preview_text}
+                      </p>
+                    )}
                     {showMailboxIndicator && thread.latest_email?.mailbox && (
                       <div className="mt-0.5">
                         <span className="text-xs text-muted-foreground">

@@ -103,7 +103,7 @@ export default function SystemSettingsPage() {
   const queryClient = useQueryClient();
   const emailConfigured = features?.emailConfigured ?? false;
 
-  const { register, handleSubmit, formState: { errors, isDirty }, setValue, watch } = useForm<SystemForm>({
+  const { register, handleSubmit, formState: { errors, isDirty }, setValue, watch, reset } = useForm<SystemForm>({
     resolver: zodResolver(systemSchema),
     defaultValues: {
       general: {
@@ -162,18 +162,13 @@ export default function SystemSettingsPage() {
       };
 
       setSettings(formData);
-      Object.keys(formData).forEach((group) => {
-        const groupData = formData[group as keyof SystemForm] as Record<string, unknown>;
-        Object.keys(groupData).forEach((key) => {
-          setValue(`${group}.${key}` as any, groupData[key]);
-        });
-      });
+      reset(formData);
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to load system settings"));
     } finally {
       setIsLoading(false);
     }
-  }, [setValue]);
+  }, [reset]);
 
   useEffect(() => {
     fetchSettings();
@@ -274,7 +269,7 @@ export default function SystemSettingsPage() {
             <TabsTrigger value="defaults">Defaults</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general">
+          <TabsContent value="general" forceMount className="data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>General Settings</CardTitle>
@@ -374,7 +369,7 @@ export default function SystemSettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="registration">
+          <TabsContent value="registration" forceMount className="data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Registration Settings</CardTitle>
@@ -438,7 +433,7 @@ export default function SystemSettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="security">
+          <TabsContent value="security" forceMount className="data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Security Settings</CardTitle>
@@ -525,7 +520,7 @@ export default function SystemSettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="defaults">
+          <TabsContent value="defaults" forceMount className="data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Default Settings</CardTitle>

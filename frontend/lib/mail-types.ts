@@ -9,7 +9,10 @@ export interface EmailThread {
     from_address: string;
     from_name: string | null;
     subject: string | null;
+    preview_text?: string | null;
     is_read: boolean;
+    is_starred?: boolean;
+    attachments_count?: number;
     sent_at: string;
     direction: string;
     mailbox_id: number;

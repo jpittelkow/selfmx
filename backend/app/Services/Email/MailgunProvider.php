@@ -131,6 +131,10 @@ class MailgunProvider implements EmailProviderInterface
     public function parseDeliveryEvent(Request $request): array
     {
         $eventData = $request->input('event-data', []);
+        if (!is_array($eventData)) {
+            $eventData = [];
+        }
+
         $event = $eventData['event'] ?? '';
         $messageHeaders = $eventData['message']['headers'] ?? [];
 
@@ -143,6 +147,8 @@ class MailgunProvider implements EmailProviderInterface
             'failed' => 'failed',
             'opened' => 'delivered',
             'clicked' => 'delivered',
+            'complained' => 'delivered',
+            'unsubscribed' => 'delivered',
         ];
 
         return [
@@ -150,7 +156,7 @@ class MailgunProvider implements EmailProviderInterface
             'provider_message_id' => $messageHeaders['message-id'] ?? null,
             'timestamp' => $eventData['timestamp'] ?? null,
             'recipient' => $eventData['recipient'] ?? null,
-            'error_message' => $eventData['delivery-status']['message'] ?? $eventData['reason'] ?? null,
+            'error_message' => $eventData['delivery-status']['message'] ?? ($eventData['reason'] ?? null),
         ];
     }
 
@@ -244,6 +250,278 @@ class MailgunProvider implements EmailProviderInterface
             return false;
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Management API methods (Phase 7)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Perform an authenticated request against the Mailgun management API.
+     *
+     * @param  string  $method   HTTP verb (get, post, put, delete)
+     * @param  string  $path     Path relative to the versioned base, e.g. "v4/domains"
+     * @param  array   $payload  Body data (for POST/PUT)
+     * @param  array   $config   Per-domain config overrides (api_key, region)
+     * @return array{status: int, body: array, ok: bool}
+     */
+    public function managementRequest(string $method, string $path, array $payload = [], array $config = []): array
+    {
+        $apiKey = $config['api_key'] ?? $this->getApiKey();
+        $region = $config['region'] ?? $this->getRegion();
+        $host   = $region === 'eu' ? 'https://api.eu.mailgun.net' : 'https://api.mailgun.net';
+
+        try {
+            $request = Http::withBasicAuth('api', $apiKey);
+            $url = "{$host}/{$path}";
+
+            $response = match (strtolower($method)) {
+                'post'   => $request->post($url, $payload),
+                'put'    => $request->put($url, $payload),
+                'delete' => $request->delete($url, $payload),
+                default  => $request->get($url, $payload),
+            };
+
+            return [
+                'status' => $response->status(),
+                'body'   => $response->json() ?? [],
+                'ok'     => $response->successful(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Mailgun management request failed', ['path' => $path, 'error' => $e->getMessage()]);
+            return ['status' => 0, 'body' => ['message' => $e->getMessage()], 'ok' => false];
+        }
+    }
+
+    // -- Health --
+
+    public function checkApiHealth(array $config = []): bool
+    {
+        $result = $this->managementRequest('get', 'v3/domains', ['limit' => 1], $config);
+        return $result['ok'];
+    }
+
+    // -- DKIM --
+
+    public function getDkimKey(string $domain, array $config = []): array
+    {
+        $result = $this->managementRequest('get', "v4/domains/{$domain}/dkim", [], $config);
+        return $result['body'];
+    }
+
+    public function rotateDkimKey(string $domain, array $config = []): array
+    {
+        $result = $this->managementRequest('post', "v4/domains/{$domain}/dkim", [], $config);
+        return $result['body'];
+    }
+
+    // -- Webhooks --
+
+    public function listWebhooks(string $domain, array $config = []): array
+    {
+        $result = $this->managementRequest('get', "v3/domains/{$domain}/webhooks", [], $config);
+        return $result['body']['webhooks'] ?? [];
+    }
+
+    public function createWebhook(string $domain, string $event, string $url, array $config = []): array
+    {
+        $result = $this->managementRequest('post', "v3/domains/{$domain}/webhooks", [
+            'id'  => $event,
+            'url' => [$url],
+        ], $config);
+        return $result['body'];
+    }
+
+    public function updateWebhook(string $domain, string $webhookId, string $url, array $config = []): array
+    {
+        $result = $this->managementRequest('put', "v3/domains/{$domain}/webhooks/{$webhookId}", [
+            'url' => [$url],
+        ], $config);
+        return $result['body'];
+    }
+
+    public function deleteWebhook(string $domain, string $webhookId, array $config = []): array
+    {
+        $result = $this->managementRequest('delete', "v3/domains/{$domain}/webhooks/{$webhookId}", [], $config);
+        return $result['body'];
+    }
+
+    // -- Inbound Routes --
+
+    /**
+     * List Mailgun routes that match the given domain in their expression.
+     * Mailgun's routes API returns all routes globally; we filter by domain.
+     */
+    public function listRoutes(string $domain, array $config = []): array
+    {
+        $result = $this->managementRequest('get', 'v3/routes', ['limit' => 100], $config);
+        $routes = $result['body']['items'] ?? [];
+
+        return array_values(array_filter($routes, function ($route) use ($domain) {
+            return str_contains($route['expression'] ?? '', $domain);
+        }));
+    }
+
+    public function createRoute(string $expression, array $actions, string $description, int $priority = 0, array $config = []): array
+    {
+        $result = $this->managementRequest('post', 'v3/routes', [
+            'priority'    => $priority,
+            'description' => $description,
+            'expression'  => $expression,
+            'action'      => $actions,
+        ], $config);
+        return $result['body'];
+    }
+
+    public function updateRoute(string $routeId, array $data, array $config = []): array
+    {
+        $result = $this->managementRequest('put', "v3/routes/{$routeId}", $data, $config);
+        return $result['body'];
+    }
+
+    public function deleteRoute(string $routeId, array $config = []): array
+    {
+        $result = $this->managementRequest('delete', "v3/routes/{$routeId}", [], $config);
+        return $result['body'];
+    }
+
+    // -- Event Log --
+
+    /**
+     * Query the Mailgun Events API for a domain.
+     *
+     * @param  array  $filters  Supported: event, recipient, begin, end, subject, message-id, limit (max 300), page
+     */
+    public function getEvents(string $domain, array $filters = [], array $config = []): array
+    {
+        $params = array_filter(array_merge(['limit' => 25], $filters));
+        $result = $this->managementRequest('get', "v3/{$domain}/events", $params, $config);
+        return [
+            'items'    => $result['body']['items'] ?? [],
+            'nextPage' => $result['body']['paging']['next'] ?? null,
+        ];
+    }
+
+    // -- Suppressions --
+
+    public function listBounces(string $domain, int $limit = 25, ?string $page = null, array $config = []): array
+    {
+        $params = array_filter(['limit' => $limit, 'p' => $page]);
+        $result = $this->managementRequest('get', "v3/{$domain}/bounces", $params, $config);
+        return [
+            'items'    => $result['body']['items'] ?? [],
+            'nextPage' => $result['body']['paging']['next'] ?? null,
+        ];
+    }
+
+    public function deleteBounce(string $domain, string $address, array $config = []): bool
+    {
+        $result = $this->managementRequest('delete', "v3/{$domain}/bounces/{$address}", [], $config);
+        return $result['ok'];
+    }
+
+    public function listComplaints(string $domain, int $limit = 25, ?string $page = null, array $config = []): array
+    {
+        $params = array_filter(['limit' => $limit, 'p' => $page]);
+        $result = $this->managementRequest('get', "v3/{$domain}/complaints", $params, $config);
+        return [
+            'items'    => $result['body']['items'] ?? [],
+            'nextPage' => $result['body']['paging']['next'] ?? null,
+        ];
+    }
+
+    public function deleteComplaint(string $domain, string $address, array $config = []): bool
+    {
+        $result = $this->managementRequest('delete', "v3/{$domain}/complaints/{$address}", [], $config);
+        return $result['ok'];
+    }
+
+    public function listUnsubscribes(string $domain, int $limit = 25, ?string $page = null, array $config = []): array
+    {
+        $params = array_filter(['limit' => $limit, 'p' => $page]);
+        $result = $this->managementRequest('get', "v3/{$domain}/unsubscribes", $params, $config);
+        return [
+            'items'    => $result['body']['items'] ?? [],
+            'nextPage' => $result['body']['paging']['next'] ?? null,
+        ];
+    }
+
+    public function deleteUnsubscribe(string $domain, string $address, ?string $tag = null, array $config = []): bool
+    {
+        $params = $tag ? ['tag' => $tag] : [];
+        $result = $this->managementRequest('delete', "v3/{$domain}/unsubscribes/{$address}", $params, $config);
+        return $result['ok'];
+    }
+
+    /**
+     * Check whether an address is in bounces or complaints for the domain.
+     * Returns ['suppressed' => bool, 'reason' => 'bounce'|'complaint'|null, 'detail' => string|null]
+     */
+    public function checkSuppression(string $domain, string $address, array $config = []): array
+    {
+        $bounce = $this->managementRequest('get', "v3/{$domain}/bounces/{$address}", [], $config);
+        if ($bounce['ok']) {
+            return [
+                'suppressed' => true,
+                'reason'     => 'bounce',
+                'detail'     => $bounce['body']['error'] ?? null,
+            ];
+        }
+
+        $complaint = $this->managementRequest('get', "v3/{$domain}/complaints/{$address}", [], $config);
+        if ($complaint['ok']) {
+            return [
+                'suppressed' => true,
+                'reason'     => 'complaint',
+                'detail'     => null,
+            ];
+        }
+
+        return ['suppressed' => false, 'reason' => null, 'detail' => null];
+    }
+
+    // -- Tracking --
+
+    public function getTrackingSettings(string $domain, array $config = []): array
+    {
+        $result = $this->managementRequest('get', "v3/domains/{$domain}/tracking", [], $config);
+        return $result['body']['tracking'] ?? [];
+    }
+
+    /**
+     * @param  string  $type  'click'|'open'|'unsubscribe'
+     */
+    public function updateTrackingSetting(string $domain, string $type, bool $active, array $config = []): array
+    {
+        $result = $this->managementRequest('put', "v3/domains/{$domain}/tracking/{$type}", [
+            'active' => $active ? 'yes' : 'no',
+        ], $config);
+        return $result['body'];
+    }
+
+    // -- Stats --
+
+    /**
+     * Get aggregate stats for a domain over a given duration.
+     *
+     * @param  array   $events    e.g. ['accepted', 'delivered', 'failed', 'bounced', 'complained']
+     * @param  string  $duration  e.g. '30d', '7d', '1d'
+     * @param  string  $resolution 'hour'|'day'|'month'
+     */
+    public function getDomainStats(string $domain, array $events, string $duration = '30d', string $resolution = 'day', array $config = []): array
+    {
+        $result = $this->managementRequest('get', "v3/{$domain}/stats/total", [
+            'event'      => $events,
+            'duration'   => $duration,
+            'resolution' => $resolution,
+        ], $config);
+        return [
+            'stats' => $result['body']['stats'] ?? [],
+            'start' => $result['body']['start'] ?? null,
+            'end'   => $result['body']['end'] ?? null,
+        ];
+    }
+
+    // -------------------------------------------------------------------------
 
     /**
      * Parse a single email address string like "John Doe <john@example.com>" or "john@example.com".

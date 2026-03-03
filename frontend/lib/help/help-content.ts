@@ -1072,11 +1072,19 @@ selfmx uses email providers (like Mailgun) to handle sending and receiving email
 
 ## DNS Verification
 
-After adding a domain, you need to verify DNS records:
+After adding a domain, your email provider generates DNS records (such as SPF, DKIM, and MX) that prove you own the domain and authorize the provider to send email on your behalf.
 
-1. Add the required DNS records to your domain's DNS settings
-2. Click **Verify** to check if records are configured correctly
-3. The domain status will change to **Verified** once DNS propagates
+### Steps
+
+1. Add the domain on this page — the provider will generate the required DNS records
+2. Log in to your **domain registrar** (e.g., Cloudflare, Namecheap, GoDaddy) and add the records shown
+3. Click **Verify** — this contacts the provider's API to check whether the records are in place
+4. If records aren't detected yet, the required records and their status (valid/invalid) are displayed so you can see exactly what's missing
+5. Once all records are valid, the domain status changes to **Verified** and you can send and receive email
+
+### What "Verify" does behind the scenes
+
+When you click **Verify**, the app calls your email provider's verification API. The provider performs live DNS lookups on your domain to confirm the required records exist and have the correct values. This is a read-only check — it does not modify your DNS. DNS changes can take up to **48 hours** to propagate, so if verification fails immediately after adding records, try again later.
 
 ## Catchall Address
 

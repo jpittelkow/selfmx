@@ -75,8 +75,19 @@ class EmailWebhookController extends Controller
         try {
             $eventData = $emailProvider->parseDeliveryEvent($request);
             $providerMessageId = $eventData['provider_message_id'] ?? null;
+            $eventId = $request->input('event-data.id', uniqid('evt_', true));
 
             if (!$providerMessageId) {
+                // No message ID to match — log and acknowledge so provider doesn't retry
+                EmailWebhookLog::create([
+                    'provider' => $provider,
+                    'provider_event_id' => $eventId,
+                    'event_type' => 'delivery_status',
+                    'payload' => ['event' => $eventData['event_type'] ?? 'unknown'],
+                    'status' => 'failed',
+                    'error_message' => 'No provider_message_id in payload',
+                    'created_at' => now(),
+                ]);
                 return response()->json(['message' => 'accepted'], 200);
             }
 
@@ -90,7 +101,7 @@ class EmailWebhookController extends Controller
             // Log the event
             EmailWebhookLog::create([
                 'provider' => $provider,
-                'provider_event_id' => $request->input('event-data.id', uniqid('evt_', true)),
+                'provider_event_id' => $eventId,
                 'event_type' => 'delivery_status',
                 'payload' => [
                     'event' => $eventData['event_type'],
@@ -98,7 +109,7 @@ class EmailWebhookController extends Controller
                     'provider_message_id' => $providerMessageId,
                 ],
                 'status' => $email ? 'processed' : 'failed',
-                'error_message' => $email ? null : 'Email not found',
+                'error_message' => $email ? null : 'Email not found for provider_message_id',
                 'created_at' => now(),
             ]);
 
@@ -107,9 +118,12 @@ class EmailWebhookController extends Controller
             Log::error("Delivery event webhook processing failed", [
                 'provider' => $provider,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json(['message' => 'Processing failed'], 500);
+            // Return 200 for parsing/data errors to prevent infinite retries.
+            // Only truly transient failures (DB down, etc.) should trigger retries.
+            return response()->json(['message' => 'accepted'], 200);
         }
     }
 }

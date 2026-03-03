@@ -44,11 +44,16 @@ return new class extends Migration
         });
 
         // Backfill: every existing mailbox owner gets an 'owner' row in mailbox_users
-        $now = now()->toDateTimeString();
-        DB::statement("
-            INSERT INTO mailbox_users (mailbox_id, user_id, role, created_at, updated_at)
-            SELECT id, user_id, 'owner', '{$now}', '{$now}' FROM mailboxes
-        ");
+        $now = now();
+        DB::table('mailboxes')->select('id', 'user_id')->get()->each(function ($mailbox) use ($now) {
+            DB::table('mailbox_users')->insert([
+                'mailbox_id' => $mailbox->id,
+                'user_id'    => $mailbox->user_id,
+                'role'       => 'owner',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        });
     }
 
     public function down(): void
