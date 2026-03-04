@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.7] - 2026-03-04
+
+### Fixed
+- Cast FieldError types in notifications page, add lint and build to push script
 ## [0.2.6] - 2026-03-04
 
 ### Fixed
