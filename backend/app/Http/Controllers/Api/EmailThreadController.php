@@ -36,20 +36,28 @@ class EmailThreadController extends Controller
             $filterMailboxIds = $mailboxIds;
         }
 
-        // Only include threads with at least one visible (non-trashed, non-spam) email
+        // Only include threads with at least one visible (non-trashed, non-spam, non-draft) email
         $query = EmailThread::whereHas('emails', function ($q) use ($filterMailboxIds) {
             $q->whereIn('mailbox_id', $filterMailboxIds)
                 ->where('is_trashed', false)
-                ->where('is_spam', false);
+                ->where('is_spam', false)
+                ->where('is_draft', false);
         });
 
         $threads = $query->withCount(['emails' => function ($q) use ($filterMailboxIds) {
             $q->whereIn('mailbox_id', $filterMailboxIds)
                 ->where('is_trashed', false)
-                ->where('is_spam', false);
+                ->where('is_spam', false)
+                ->where('is_draft', false);
         }])
-            ->with(['latestEmail' => function ($q) {
-                $q->select('emails.id', 'emails.thread_id', 'emails.from_address', 'emails.from_name', 'emails.subject', 'emails.is_read', 'emails.is_starred', 'emails.sent_at', 'emails.direction', 'emails.mailbox_id')
+            ->with(['latestEmail' => function ($q) use ($user) {
+                $q->leftJoin('email_user_states', function ($join) use ($user) {
+                    $join->on('emails.id', '=', 'email_user_states.email_id')
+                        ->where('email_user_states.user_id', '=', $user->id);
+                })
+                    ->select('emails.id', 'emails.thread_id', 'emails.from_address', 'emails.from_name', 'emails.subject', 'emails.is_read', 'emails.is_starred', 'emails.sent_at', 'emails.direction', 'emails.mailbox_id')
+                    ->selectRaw('COALESCE(email_user_states.is_read, emails.is_read) as effective_is_read')
+                    ->selectRaw('COALESCE(email_user_states.is_starred, emails.is_starred) as effective_is_starred')
                     ->selectRaw('SUBSTR(emails.body_text, 1, 150) as preview_text')
                     ->withCount('attachments')
                     ->with([
@@ -101,18 +109,24 @@ class EmailThreadController extends Controller
         }]);
 
         // Auto-mark all unread emails in the thread as read for this user
-        foreach ($emailThread->emails as $email) {
-            $userState = EmailUserState::where('email_id', $email->id)
-                ->where('user_id', $user->id)
-                ->first();
+        $emailIds = $emailThread->emails->pluck('id');
+        $existingStates = EmailUserState::where('user_id', $user->id)
+            ->whereIn('email_id', $emailIds)
+            ->pluck('is_read', 'email_id');
 
-            $effectiveRead = $userState ? $userState->is_read : $email->is_read;
+        $toUpsert = [];
+        foreach ($emailThread->emails as $email) {
+            $effectiveRead = $existingStates->has($email->id) ? $existingStates[$email->id] : $email->is_read;
             if (! $effectiveRead) {
-                EmailUserState::updateOrCreate(
-                    ['email_id' => $email->id, 'user_id' => $user->id],
-                    ['is_read' => true],
-                );
+                $toUpsert[] = [
+                    'email_id' => $email->id,
+                    'user_id' => $user->id,
+                    'is_read' => true,
+                ];
             }
+        }
+        if (! empty($toUpsert)) {
+            EmailUserState::upsert($toUpsert, ['email_id', 'user_id'], ['is_read']);
         }
 
         return response()->json(['thread' => $emailThread]);

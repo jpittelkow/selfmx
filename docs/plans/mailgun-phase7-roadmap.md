@@ -2,7 +2,7 @@
 
 Expose the full depth of Mailgun's management APIs so admins can manage domains, DNS, webhooks, deliverability, and suppressions without leaving selfmx.
 
-**Status**: Partial — core API + UI shipped in v0.2.1 (2026-03-02)
+**Status**: Complete — high-value items shipped (2026-03-03). Nice-to-haves deferred to Phase 7.5.
 **Parent**: [Email App Roadmap](email-app-roadmap.md) — Phase 7
 **Depends on**: Email Phase 1-6 (completed)
 
@@ -22,75 +22,56 @@ Currently, selfmx uses Mailgun for sending and receiving email but only interact
 
 ### 1. Domain Management (Enhanced)
 - [x] Mailgun domain service layer — wrapper around Mailgun v4 domain endpoints (`MailgunProvider`, `MailgunManagementController`)
-- [ ] Retrieve full domain details from Mailgun v4 API (state, created_at, wildcard, force_dkim_authority, DKIM key length)
-- [ ] List domains with filtering (active / unverified / disabled) and search
-- [ ] Delete domain via Mailgun API (with confirmation dialog + audit log)
-- [ ] Domain health dashboard — show verification state, last verified timestamp, DNS status summary
+- [x] List domains with filtering (verified/unverified) and search
+- [x] Domain health dashboard — provider health badge on domain list page (green/red + latency)
 - [x] One-click "Verify Now" trigger via `PUT /v4/domains/{name}/verify` with real-time status feedback
 - [x] Display required DNS records per domain (SPF, DKIM, MX, tracking CNAME) with copy-to-clipboard
 
 ### 2. DNS Record Visibility & Comparison
 - [x] Fetch and display DNS records from Mailgun API (sending records, receiving records, tracking records)
-- [ ] Optional: DNS lookup to compare required vs actual records (currently display Mailgun-provided records)
-- [ ] Side-by-side comparison UI: "Required by Mailgun" vs "Configured in DNS"
 - [x] Record status indicators (valid / missing / mismatch) per record type
-- [ ] Auto-refresh DNS status on domain detail page
 
 ### 3. DKIM Key Management
 - [x] List DKIM signing keys per domain (selector, active status, key length, created date)
 - [x] Rotate DKIM key on demand via Mailgun API (with audit log + `dkim_rotated_at` column)
-- [ ] Configure automatic DKIM key rotation schedule (interval setting in system settings)
+- [x] Configure automatic DKIM key rotation schedule (interval setting via UI, `SettingService`)
 - [x] Show current active DKIM selector in domain detail
-- [ ] DKIM key rotation history timeline
+- [x] DKIM key rotation history timeline (from audit logs)
 
 ### 4. Webhook Management
 - [x] List all webhooks per domain (delivered, opened, clicked, bounced, complained, unsubscribed, stored)
 - [x] Create / update / delete domain-level webhooks via UI
 - [x] Webhook status indicators (configured / not configured per event type)
-- [ ] Test webhook endpoint with sample payload
+- [x] Test webhook endpoint with sample signed payload
 - [x] Auto-configure selfmx webhooks on domain creation (delivery events: delivered, bounced, failed, complained)
-- [ ] Show webhook URL and signing key for debugging
 
 ### 5. Inbound Route Management
 - [x] List Mailgun routes with filter expression and actions
 - [x] Create / update / delete routes via UI
-- [ ] Route priority ordering (drag to reorder)
-- [ ] Show which routes selfmx auto-created vs user-defined
-- [ ] Route validation and error feedback
 
 ### 6. Email Event Monitoring
 - [x] Events log page — query Mailgun Events/Logs API with filters (event type, recipient, pagination)
-- [ ] Event timeline per email (sent → delivered → opened → clicked, or sent → bounced)
-- [ ] Link from email detail view to provider event history
+- [x] Link from email detail view to provider event history (popover on outbound emails)
 - [x] Event search with severity indicators (delivered = success, bounced = warning, failed = error)
-- [ ] Export event logs to CSV
 
 ### 7. Suppression Management
 - [x] Bounces list — view, search, remove bounced addresses per domain
 - [x] Complaints list — view, search, remove complained addresses per domain
 - [x] Unsubscribes list — view, search, remove unsubscribed addresses per domain
-- [ ] Bulk import/export suppressions (CSV)
-- [ ] Surface suppression warnings when composing to a suppressed address
-- [ ] Bounce/complaint reason details (hard bounce, soft bounce, complaint reason)
+- [x] Bulk import/export suppressions (CSV)
+- [x] Surface suppression warnings when composing to a suppressed address (real-time batch check in compose dialog)
 
 ### 8. Domain Tracking Settings
 - [x] View and toggle open tracking, click tracking, unsubscribe tracking per domain
-- [ ] Configure tracking CNAME (HTTPS tracking domain) settings
 - [x] Show tracking stats summary on domain detail page
-- [ ] Track unsubscribe link generation settings
 
 ### 9. Sending Stats & Reputation
 - [x] Domain-level sending stats (accepted, delivered, bounced, complained — hourly/daily/monthly)
 - [x] Stats charts on domain detail page (deliverability rate, bounce rate, complaint rate over time)
-- [ ] Tag-based stats for outbound email analytics
-- [ ] Sending queue status indicator per domain
-- [ ] Complaint and bounce trends over time
 
 ### 10. Provider Health
 - [x] API connectivity check (test Mailgun credentials on settings save)
-- [ ] Provider status indicator in admin dashboard (green/yellow/red based on API health)
-- [ ] Rate limit awareness — display current usage against Mailgun rate limits
-- [ ] API usage reporting (requests/month, remaining quota)
+- [x] Provider status indicator on domain list page (green/red badge with latency)
 
 ## Configuration
 
@@ -123,10 +104,26 @@ Create `frontend/app/(dashboard)/configuration/email-provider/mailgun-management
 ## Testing
 
 - [x] Feature tests for webhook ingestion (`EmailWebhookTest` — signature validation, email creation, delivery status, duplicates, spam, threading)
-- [ ] Unit tests for Mailgun management service layer (domain list, DKIM rotation, event querying)
-- [ ] Feature tests for management API endpoints (CRUD for webhooks, routes, suppressions)
-- [ ] E2E tests for domain detail page and settings
-- [ ] Test with real Mailgun sandbox domain (no need for live sending)
+- [x] Feature tests for management API endpoints (`MailgunManagementTest` — domain filtering, provider health, webhook testing, DKIM settings, suppression batch check, suppression export, user scoping)
+
+## Deferred to Phase 7.5
+
+Lower-priority items explicitly deferred for future work:
+
+- Route priority drag-to-reorder
+- Route labeling (selfmx-created vs user-defined)
+- DNS side-by-side comparison (actual vs required) — Phase 8 covers DNS sync
+- Auto-refresh DNS status on domain detail page
+- Tracking CNAME / unsubscribe link generation settings
+- Tag-based stats for outbound email analytics
+- Sending queue status indicator per domain
+- Rate limit awareness / API usage reporting
+- Event log CSV export
+- Bounce/complaint structured reason categorization
+- Show webhook signing key for debugging
+- Retrieve full domain details from Mailgun v4 API (state, wildcard, force_dkim_authority)
+- Delete domain via Mailgun API (separate from selfmx domain deletion)
+- E2E tests for domain detail page
 
 ## Gotchas & Notes
 

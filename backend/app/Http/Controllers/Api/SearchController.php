@@ -23,7 +23,7 @@ class SearchController extends Controller
     {
         $request->validate([
             'q' => ['nullable', 'string', 'max:500'],
-            'type' => ['nullable', 'string', 'in:users,user_groups,notifications,email_templates,notification_templates,api_tokens,ai_providers,webhooks'],
+            'type' => ['nullable', 'string', 'in:users,user_groups,notifications,email_templates,notification_templates,api_tokens,ai_providers,webhooks,emails,contacts'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);

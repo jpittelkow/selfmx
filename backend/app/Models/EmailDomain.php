@@ -24,6 +24,10 @@ class EmailDomain extends Model
         'is_active',
     ];
 
+    protected $hidden = [
+        'provider_config',
+    ];
+
     protected function casts(): array
     {
         return [

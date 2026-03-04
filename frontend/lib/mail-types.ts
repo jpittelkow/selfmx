@@ -12,6 +12,8 @@ export interface EmailThread {
     preview_text?: string | null;
     is_read: boolean;
     is_starred?: boolean;
+    effective_is_read?: boolean;
+    effective_is_starred?: boolean;
     attachments_count?: number;
     sent_at: string;
     direction: string;
@@ -36,6 +38,7 @@ export interface Email {
   is_starred: boolean;
   is_draft: boolean;
   is_spam: boolean;
+  spam_score: number | null;
   is_trashed: boolean;
   effective_is_read?: boolean;
   effective_is_starred?: boolean;

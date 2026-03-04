@@ -569,15 +569,19 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
 
     // Mailgun Management (Phase 7) — per-domain Mailgun API access
     Route::get('/email/provider/health', [MailgunManagementController::class, 'checkHealth']);
+    Route::get('/email/dkim-rotation-settings', [MailgunManagementController::class, 'getDkimRotationSettings']);
+    Route::put('/email/dkim-rotation-settings', [MailgunManagementController::class, 'updateDkimRotationSettings']);
     Route::prefix('email/domains/{domainId}/mailgun')->whereNumber('domainId')->group(function () {
         // DKIM
         Route::get('/dkim', [MailgunManagementController::class, 'getDkim']);
         Route::post('/dkim/rotate', [MailgunManagementController::class, 'rotateDkim']);
+        Route::get('/dkim/rotation-history', [MailgunManagementController::class, 'getDkimRotationHistory']);
 
         // Webhooks
         Route::get('/webhooks', [MailgunManagementController::class, 'listWebhooks']);
         Route::post('/webhooks', [MailgunManagementController::class, 'createWebhook']);
         Route::post('/webhooks/auto-configure', [MailgunManagementController::class, 'autoConfigureWebhooks']);
+        Route::post('/webhooks/{webhookId}/test', [MailgunManagementController::class, 'testWebhook']);
         Route::put('/webhooks/{webhookId}', [MailgunManagementController::class, 'updateWebhook']);
         Route::delete('/webhooks/{webhookId}', [MailgunManagementController::class, 'deleteWebhook']);
 
@@ -592,7 +596,10 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
 
         // Suppressions
         Route::get('/suppressions/check', [MailgunManagementController::class, 'checkSuppression']);
+        Route::post('/suppressions/check-batch', [MailgunManagementController::class, 'checkSuppressionBatch']);
         Route::get('/suppressions/{type}', [MailgunManagementController::class, 'listSuppressions']);
+        Route::get('/suppressions/{type}/export', [MailgunManagementController::class, 'exportSuppressions']);
+        Route::post('/suppressions/{type}/import', [MailgunManagementController::class, 'importSuppressions']);
         Route::delete('/suppressions/{type}/{address}', [MailgunManagementController::class, 'deleteSuppression'])
             ->where('address', '.*');
 
@@ -637,6 +644,7 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::put('/{email}/draft', [EmailController::class, 'updateDraft']);
         Route::post('/{email}/send', [EmailController::class, 'sendDraft']);
         Route::get('/{email}/reply-data', [EmailController::class, 'replyData']);
+        Route::get('/{email}/provider-events', [EmailController::class, 'providerEvents']);
         Route::post('/{email}/snooze', [EmailController::class, 'snooze']);
         Route::delete('/{email}/snooze', [EmailController::class, 'unsnooze']);
     });

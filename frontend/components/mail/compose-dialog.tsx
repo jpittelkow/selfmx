@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RecipientInput } from "./recipient-input";
+import { RecipientInput, type SuppressionWarning } from "./recipient-input";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,7 @@ interface Mailbox {
   display_name: string | null;
   signature: string | null;
   email_domain: { name: string };
+  email_domain_id: number;
   user_role?: string;
 }
 
@@ -102,6 +103,7 @@ export function ComposeDialog({
   const [bcc, setBcc] = useState<string[]>([]);
   const [showCcBcc, setShowCcBcc] = useState(false);
   const [subject, setSubject] = useState("");
+  const [suppressionWarnings, setSuppressionWarnings] = useState<Record<string, SuppressionWarning | null>>({});
   const [bodyHtml, setBodyHtml] = useState("");
   const [bodyText, setBodyText] = useState("");
   const [quotedHtml, setQuotedHtml] = useState("");
@@ -237,6 +239,48 @@ export function ComposeDialog({
       return withoutSig + sigHtml;
     });
   }, [selectedMailboxId, mailboxes, open]);
+
+  // Check suppressions when recipients change (debounced)
+  useEffect(() => {
+    if (!selectedMailboxId || !open) return;
+    const allRecipients = [...to, ...cc, ...bcc];
+    const unchecked = allRecipients.filter((addr) => !(addr in suppressionWarnings));
+    if (unchecked.length === 0) return;
+
+    const mailbox = mailboxes.find((m) => m.id.toString() === selectedMailboxId);
+    if (!mailbox?.email_domain_id) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.post<{
+          results: Record<string, { suppressed: boolean; reason: string | null; detail: string | null }>;
+        }>(`/email/domains/${mailbox.email_domain_id}/mailgun/suppressions/check-batch`, {
+          addresses: unchecked,
+        });
+        const newEntries: Record<string, SuppressionWarning | null> = {};
+        for (const [addr, data] of Object.entries(res.data.results)) {
+          if (data.suppressed && data.reason) {
+            newEntries[addr] = { reason: data.reason, detail: data.detail };
+          } else {
+            newEntries[addr] = null; // Mark as checked but not suppressed
+          }
+        }
+        if (Object.keys(newEntries).length > 0) {
+          setSuppressionWarnings((prev) => ({ ...prev, ...newEntries }));
+        }
+      } catch {
+        // Silent — suppression check is best-effort
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [to, cc, bcc, selectedMailboxId, mailboxes, open]);
+
+  // Clear suppression warnings when mailbox changes
+  useEffect(() => {
+    setSuppressionWarnings({});
+  }, [selectedMailboxId]);
 
   // Draft auto-save (5s debounce)
   const scheduleDraftSave = useCallback(() => {
@@ -483,6 +527,11 @@ export function ComposeDialog({
         ? "Select a sending mailbox"
         : null;
 
+  // Filter out null entries (checked but not suppressed) for the warnings prop
+  const activeWarnings = Object.fromEntries(
+    Object.entries(suppressionWarnings).filter(([, v]) => v !== null)
+  ) as Record<string, SuppressionWarning>;
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
@@ -521,6 +570,7 @@ export function ComposeDialog({
                   value={to}
                   onChange={setTo}
                   placeholder="recipient@example.com"
+                  warnings={activeWarnings}
                 />
               </div>
               <Button
@@ -545,6 +595,7 @@ export function ComposeDialog({
                       value={cc}
                       onChange={setCc}
                       placeholder="cc@example.com"
+                      warnings={activeWarnings}
                     />
                   </div>
                 </div>
@@ -556,6 +607,7 @@ export function ComposeDialog({
                       value={bcc}
                       onChange={setBcc}
                       placeholder="bcc@example.com"
+                      warnings={activeWarnings}
                     />
                   </div>
                 </div>

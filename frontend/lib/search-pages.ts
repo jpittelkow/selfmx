@@ -306,19 +306,40 @@ export const SEARCH_PAGES: SearchPage[] = [
   },
   {
     id: "config-spam-filter",
-    title: "Configuration > Spam Filter",
-    subtitle: "Allow and block sender lists",
+    title: "Configuration > Global Spam Filter",
+    subtitle: "System-wide allow and block lists (applies to all users)",
     url: "/configuration/spam-filter",
     adminOnly: true,
+    keywords: ["spam", "filter", "allow", "block", "sender", "domain", "global"],
+  },
+  // Mail Settings (all users)
+  {
+    id: "mail-settings",
+    title: "Mail Settings",
+    subtitle: "Email rules, spam filter, and import",
+    url: "/mail/settings",
+    keywords: ["mail", "settings", "preferences", "email"],
+  },
+  {
+    id: "mail-settings-rules",
+    title: "Mail Settings > Rules",
+    subtitle: "Automatic email processing rules",
+    url: "/mail/settings/rules",
+    keywords: ["email", "rules", "filters", "auto", "label", "archive", "forward"],
+  },
+  {
+    id: "mail-settings-spam",
+    title: "Mail Settings > Spam Filter",
+    subtitle: "Personal allow and block sender lists",
+    url: "/mail/settings/spam",
     keywords: ["spam", "filter", "allow", "block", "sender", "domain"],
   },
   {
-    id: "user-email-rules",
-    title: "Email Rules",
-    subtitle: "Automatic email processing rules",
-    url: "/user/rules",
-    adminOnly: false,
-    keywords: ["email", "rules", "filters", "auto", "label", "archive", "forward"],
+    id: "mail-settings-import",
+    title: "Mail Settings > Import Emails",
+    subtitle: "Import mbox or eml files",
+    url: "/mail/settings/import",
+    keywords: ["import", "mbox", "eml", "upload", "email"],
   },
 ];
 

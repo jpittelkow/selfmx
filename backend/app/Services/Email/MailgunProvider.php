@@ -2,6 +2,7 @@
 
 namespace App\Services\Email;
 
+use App\Exceptions\MailgunApiException;
 use App\Models\Mailbox;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -292,6 +293,26 @@ class MailgunProvider implements EmailProviderInterface
         }
     }
 
+    /**
+     * Like managementRequest(), but throws MailgunApiException on failure.
+     * Use for mutating operations (create, update, delete) where failure must be surfaced.
+     *
+     * @return array{status: int, body: array, ok: bool}
+     *
+     * @throws MailgunApiException
+     */
+    public function managementRequestOrFail(string $method, string $path, array $payload = [], array $config = []): array
+    {
+        $result = $this->managementRequest($method, $path, $payload, $config);
+
+        if (! $result['ok']) {
+            $message = $result['body']['message'] ?? ('Mailgun API error: HTTP '.$result['status']);
+            throw new MailgunApiException($message, $result['status'], $result['body']);
+        }
+
+        return $result;
+    }
+
     // -- Health --
 
     public function checkApiHealth(array $config = []): bool
@@ -310,7 +331,7 @@ class MailgunProvider implements EmailProviderInterface
 
     public function rotateDkimKey(string $domain, array $config = []): array
     {
-        $result = $this->managementRequest('post', "v4/domains/{$domain}/dkim", [], $config);
+        $result = $this->managementRequestOrFail('post', "v4/domains/{$domain}/dkim", [], $config);
         return $result['body'];
     }
 
@@ -324,7 +345,7 @@ class MailgunProvider implements EmailProviderInterface
 
     public function createWebhook(string $domain, string $event, string $url, array $config = []): array
     {
-        $result = $this->managementRequest('post', "v3/domains/{$domain}/webhooks", [
+        $result = $this->managementRequestOrFail('post', "v3/domains/{$domain}/webhooks", [
             'id'  => $event,
             'url' => [$url],
         ], $config);
@@ -333,7 +354,7 @@ class MailgunProvider implements EmailProviderInterface
 
     public function updateWebhook(string $domain, string $webhookId, string $url, array $config = []): array
     {
-        $result = $this->managementRequest('put', "v3/domains/{$domain}/webhooks/{$webhookId}", [
+        $result = $this->managementRequestOrFail('put', "v3/domains/{$domain}/webhooks/{$webhookId}", [
             'url' => [$url],
         ], $config);
         return $result['body'];
@@ -341,8 +362,67 @@ class MailgunProvider implements EmailProviderInterface
 
     public function deleteWebhook(string $domain, string $webhookId, array $config = []): array
     {
-        $result = $this->managementRequest('delete', "v3/domains/{$domain}/webhooks/{$webhookId}", [], $config);
+        $result = $this->managementRequestOrFail('delete', "v3/domains/{$domain}/webhooks/{$webhookId}", [], $config);
         return $result['body'];
+    }
+
+    /**
+     * Send a test webhook payload to a registered webhook URL.
+     * Generates a signed sample event and POSTs it to the target.
+     */
+    public function testWebhook(string $domain, string $eventType, string $targetUrl, array $config = []): array
+    {
+        $signingKey = $config['webhook_signing_key'] ?? $this->getSigningKey();
+        $timestamp = (string) time();
+        $token = bin2hex(random_bytes(25));
+        $signature = hash_hmac('sha256', $timestamp.$token, $signingKey);
+
+        $payload = [
+            'signature' => [
+                'timestamp' => $timestamp,
+                'token' => $token,
+                'signature' => $signature,
+            ],
+            'event-data' => [
+                'event' => $eventType,
+                'timestamp' => (float) $timestamp,
+                'id' => 'test_'.uniqid(),
+                'recipient' => 'test@example.com',
+                'message' => [
+                    'headers' => [
+                        'subject' => 'Webhook Test',
+                        'message-id' => '<test-'.uniqid().'@'.$domain.'>',
+                    ],
+                ],
+            ],
+        ];
+
+        // SSRF protection: validate URL and pin DNS to prevent rebinding
+        $urlValidator = app(\App\Services\UrlValidationService::class);
+        $resolved = $urlValidator->validateAndResolve($targetUrl);
+        if ($resolved === null) {
+            return ['success' => false, 'status_code' => null, 'message' => 'Webhook URL must not resolve to a private or reserved IP address'];
+        }
+
+        try {
+            $response = Http::timeout(10)
+                ->withOptions($urlValidator->pinnedOptions($resolved))
+                ->post($targetUrl, $payload);
+
+            return [
+                'success' => $response->successful(),
+                'status_code' => $response->status(),
+                'message' => $response->successful()
+                    ? 'Webhook test delivered successfully'
+                    : 'Webhook returned HTTP '.$response->status(),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'status_code' => null,
+                'message' => 'Failed to reach webhook URL: '.$e->getMessage(),
+            ];
+        }
     }
 
     // -- Inbound Routes --
@@ -353,17 +433,40 @@ class MailgunProvider implements EmailProviderInterface
      */
     public function listRoutes(string $domain, array $config = []): array
     {
-        $result = $this->managementRequest('get', 'v3/routes', ['limit' => 100], $config);
-        $routes = $result['body']['items'] ?? [];
+        $allRoutes = [];
+        $skip = 0;
+        $limit = 100;
 
-        return array_values(array_filter($routes, function ($route) use ($domain) {
-            return str_contains($route['expression'] ?? '', $domain);
+        do {
+            $result = $this->managementRequest('get', 'v3/routes', ['limit' => $limit, 'skip' => $skip], $config);
+            $routes = $result['body']['items'] ?? [];
+            $totalCount = $result['body']['total_count'] ?? 0;
+            $allRoutes = array_merge($allRoutes, $routes);
+            $skip += $limit;
+        } while (count($allRoutes) < $totalCount && ! empty($routes));
+
+        // Filter routes that reference this exact domain (anchored on @domain to avoid subdomain matches)
+        $escapedDomain = preg_quote($domain, '/');
+        $filtered = array_values(array_filter($allRoutes, function ($route) use ($escapedDomain) {
+            $expr = $route['expression'] ?? '';
+
+            return (bool) preg_match('/@'.$escapedDomain.'[\'")\\s,]|@'.$escapedDomain.'$/', $expr);
         }));
+
+        if (empty($filtered) && ! empty($allRoutes)) {
+            Log::debug('No routes matched domain filter', [
+                'domain' => $domain,
+                'total_routes' => count($allRoutes),
+                'expressions' => array_column($allRoutes, 'expression'),
+            ]);
+        }
+
+        return $filtered;
     }
 
     public function createRoute(string $expression, array $actions, string $description, int $priority = 0, array $config = []): array
     {
-        $result = $this->managementRequest('post', 'v3/routes', [
+        $result = $this->managementRequestOrFail('post', 'v3/routes', [
             'priority'    => $priority,
             'description' => $description,
             'expression'  => $expression,
@@ -374,13 +477,13 @@ class MailgunProvider implements EmailProviderInterface
 
     public function updateRoute(string $routeId, array $data, array $config = []): array
     {
-        $result = $this->managementRequest('put', "v3/routes/{$routeId}", $data, $config);
+        $result = $this->managementRequestOrFail('put', "v3/routes/{$routeId}", $data, $config);
         return $result['body'];
     }
 
     public function deleteRoute(string $routeId, array $config = []): array
     {
-        $result = $this->managementRequest('delete', "v3/routes/{$routeId}", [], $config);
+        $result = $this->managementRequestOrFail('delete', "v3/routes/{$routeId}", [], $config);
         return $result['body'];
     }
 
@@ -479,6 +582,28 @@ class MailgunProvider implements EmailProviderInterface
         return ['suppressed' => false, 'reason' => null, 'detail' => null];
     }
 
+    /**
+     * Bulk import suppression entries via Mailgun API.
+     * Mailgun accepts up to 1000 entries per request.
+     */
+    public function importBounces(string $domain, array $entries, array $config = []): array
+    {
+        $result = $this->managementRequestOrFail('post', "v3/{$domain}/bounces", $entries, $config);
+        return $result['body'];
+    }
+
+    public function importComplaints(string $domain, array $entries, array $config = []): array
+    {
+        $result = $this->managementRequestOrFail('post', "v3/{$domain}/complaints", $entries, $config);
+        return $result['body'];
+    }
+
+    public function importUnsubscribes(string $domain, array $entries, array $config = []): array
+    {
+        $result = $this->managementRequestOrFail('post', "v3/{$domain}/unsubscribes", $entries, $config);
+        return $result['body'];
+    }
+
     // -- Tracking --
 
     public function getTrackingSettings(string $domain, array $config = []): array
@@ -492,7 +617,7 @@ class MailgunProvider implements EmailProviderInterface
      */
     public function updateTrackingSetting(string $domain, string $type, bool $active, array $config = []): array
     {
-        $result = $this->managementRequest('put', "v3/domains/{$domain}/tracking/{$type}", [
+        $result = $this->managementRequestOrFail('put', "v3/domains/{$domain}/tracking/{$type}", [
             'active' => $active ? 'yes' : 'no',
         ], $config);
         return $result['body'];

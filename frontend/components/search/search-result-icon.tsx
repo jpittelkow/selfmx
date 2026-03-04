@@ -1,4 +1,4 @@
-import { User, Bell, Mail, Key, Bot, Webhook, FileText, Users, MessageSquareText, type LucideIcon } from "lucide-react";
+import { User, Bell, Mail, Key, Bot, Webhook, FileText, Users, MessageSquareText, Contact, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TYPE_ICONS: Record<string, LucideIcon> = {
@@ -11,6 +11,8 @@ const TYPE_ICONS: Record<string, LucideIcon> = {
   ai_provider: Bot,
   webhook: Webhook,
   page: FileText,
+  emails: Mail,
+  contacts: Contact,
 };
 
 interface SearchResultIconProps {

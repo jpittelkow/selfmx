@@ -4,7 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { ContactAvatar } from "@/components/contacts/contact-avatar";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -14,14 +19,20 @@ interface Contact {
   display_name: string | null;
 }
 
+export interface SuppressionWarning {
+  reason: string;
+  detail?: string | null;
+}
+
 interface RecipientInputProps {
   label: string;
   value: string[];
   onChange: (addresses: string[]) => void;
   placeholder?: string;
+  warnings?: Record<string, SuppressionWarning>;
 }
 
-export function RecipientInput({ label, value, onChange, placeholder }: RecipientInputProps) {
+export function RecipientInput({ label, value, onChange, placeholder, warnings }: RecipientInputProps) {
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState<Contact[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -131,19 +142,35 @@ export function RecipientInput({ label, value, onChange, placeholder }: Recipien
       {label && <Label className="text-xs">{label}</Label>}
       <div className="relative">
         <div className="flex flex-wrap gap-1 p-1.5 border rounded-md min-h-9 focus-within:ring-1 focus-within:ring-ring">
-          {value.map((addr) => (
-            <Badge key={addr} variant="secondary" className="gap-1 h-6 text-xs shrink-0">
-              {addr}
-              <button
-                type="button"
-                onClick={() => removeRecipient(addr)}
-                className="ml-0.5 hover:text-foreground"
-                title="Remove"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
+          {value.map((addr) => {
+            const warning = warnings?.[addr];
+            return (
+              <Tooltip key={addr}>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant={warning ? "destructive" : "secondary"}
+                    className={cn("gap-1 h-6 text-xs shrink-0", warning && "bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400")}
+                  >
+                    {warning && <AlertTriangle className="h-3 w-3" />}
+                    {addr}
+                    <button
+                      type="button"
+                      onClick={() => removeRecipient(addr)}
+                      className="ml-0.5 hover:text-foreground"
+                      title="Remove"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                </TooltipTrigger>
+                {warning && (
+                  <TooltipContent>
+                    <p>Suppressed ({warning.reason}){warning.detail ? `: ${warning.detail}` : ""}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            );
+          })}
           <input
             ref={inputRef}
             value={inputValue}

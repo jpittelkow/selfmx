@@ -110,9 +110,9 @@ export function UserDropdown() {
           <Shield className="mr-2 h-4 w-4" />
           Security
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/user/rules")}>
+        <DropdownMenuItem onClick={() => router.push("/mail/settings")}>
           <ListFilter className="mr-2 h-4 w-4" />
-          Email Rules
+          Mail Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleShowWizard}>

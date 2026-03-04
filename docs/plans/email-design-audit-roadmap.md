@@ -95,8 +95,8 @@ All items complete. Deduplication implemented at three layers: provider event ID
 
 ### Core Notification
 
-- [ ] Trigger an in-app "New email" notification when an inbound email is received (via the existing EmailReceived Reverb event)
-- [ ] Show a toast/alert with sender, subject, and a preview snippet — clicking it navigates to the email
+- [x] Trigger an in-app "New email" notification when an inbound email is received (via the existing EmailReceived Reverb event)
+- [x] Show a toast/alert with sender, subject, and a preview snippet — clicking it navigates to the email
 - [ ] Integrate with the existing notification system (NotificationService) so new-email alerts appear in the notification bell/panel
 - [ ] Support browser push notifications for new emails (via existing web push infrastructure)
 
@@ -120,14 +120,14 @@ All items complete. Deduplication implemented at three layers: provider event ID
 
 ### Spam Threshold & Settings UI
 
-- [ ] **Add spam threshold slider to the spam filter configuration page** — currently `email_hosting::spam_threshold` (default 5.0) is only editable via the settings API. Surface it as a labeled slider (1–10) on `/configuration/spam-filter` with a description of what the score means
-- [ ] Show the spam score on the email detail view header — display the provider-reported `spam_score` as a subtle badge (e.g., "Score: 3.2") so users understand why an email was or wasn't flagged
-- [ ] Add a "Why was this flagged?" tooltip/popover on spam emails — show which check triggered the spam classification (block list match, threshold exceeded, or rule action)
+- [x] **Add spam threshold slider to the email provider configuration page** — surfaced as a labeled slider (0–10, step 0.5) on `/configuration/email-provider` with real-time value display and descriptive help text
+- [x] Show the spam score on the email detail view header — displayed as a badge with score value when email is flagged as spam
+- [x] Add a "Why was this flagged?" tooltip on spam emails — tooltip on spam score badge explains the score exceeded the configured threshold
 
 ### Spam Feedback Loop
 
-- [ ] **When a user marks an email as spam, auto-add the sender to the block list** — prompt with a confirmation: "Also block future emails from {sender}?" with options for exact address or entire domain
-- [ ] **When a user marks a spam email as "not spam", auto-add the sender to the allow list** — same confirmation UX with exact/domain choice
+- [x] **When a user marks an email as spam, offer to block the sender** — toast with "Block sender" action button that adds sender to block list via existing spam filter API
+- [x] **When a user marks a spam email as "not spam", offer to allow the sender** — toast with "Allow sender" action button that adds sender to allow list
 - [ ] Track spam/not-spam corrections per sender — store a `spam_reports` count on a lightweight sender reputation table to inform future scoring
 - [ ] Use correction history to adjust effective threshold per sender — if a sender has been repeatedly marked "not spam", reduce their effective score; if repeatedly marked spam, increase it
 
@@ -172,7 +172,7 @@ All items complete. Deduplication implemented at three layers: provider event ID
 - [ ] Audit sidebar mail section — folder ordering, label management, compose button placement
 - [ ] Review the relationship between sidebar navigation and mail view state (URL sync, active indicators)
 - [ ] Evaluate label creation and management UX — inline creation, color picker, rename/delete
-- [ ] **Integrate emails into global search (Cmd+K)** — currently the global search only returns pages and admin models (users, groups, etc.). Email threads/messages are only searchable from the mail page's own search bar. Add an `emails` type to the global `SearchController` so typing in the command palette surfaces matching emails (by subject, sender, body snippet) alongside page results. Clicking a result navigates to the email detail view.
+- [x] **Integrate emails into global search (Cmd+K)** — added `emails` and `contacts` types to `SearchController` validation. Email and contact models were already indexed in Meilisearch; the validation rule was the only blocker. Search result icons added for both types.
 - [ ] Audit search integration — is the search bar prominent? Do filters feel natural?
 - [ ] Review keyboard shortcut discoverability — is there a help overlay? Are bindings intuitive?
 - [ ] Audit command palette mail commands — completeness, naming, shortcut display

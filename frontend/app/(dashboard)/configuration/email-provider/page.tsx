@@ -27,6 +27,7 @@ import { SaveButton } from "@/components/ui/save-button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
 interface ProviderSettings {
@@ -243,22 +244,24 @@ export default function EmailProviderPage() {
             </p>
           </div>
           <div className="space-y-2">
-            <Label>Spam Threshold</Label>
-            <Input
-              type="number"
-              step="0.1"
-              min="0"
-              max="20"
-              value={settings.email_hosting.spam_threshold}
-              onChange={(e) =>
+            <div className="flex items-center justify-between">
+              <Label>Spam Threshold</Label>
+              <span className="text-sm font-medium tabular-nums">{parseFloat(settings.email_hosting.spam_threshold) || 5.0}</span>
+            </div>
+            <Slider
+              min={1}
+              max={10}
+              step={0.5}
+              value={[parseFloat(settings.email_hosting.spam_threshold) || 5.0]}
+              onValueChange={([v]) =>
                 setSettings((s) => ({
                   ...s,
-                  email_hosting: { ...s.email_hosting, spam_threshold: e.target.value },
+                  email_hosting: { ...s.email_hosting, spam_threshold: v.toString() },
                 }))
               }
             />
             <p className="text-xs text-muted-foreground">
-              Emails with a spam score at or above this value are flagged as spam.
+              Emails with a spam score at or above this value are flagged as spam. Lower values catch more spam but may increase false positives.
             </p>
           </div>
           <div className="space-y-2">

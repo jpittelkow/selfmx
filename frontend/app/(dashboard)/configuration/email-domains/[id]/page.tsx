@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -65,6 +65,9 @@ import {
   ChevronRight,
   ChevronLeft,
   AlertTriangle,
+  Zap,
+  Download,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -262,6 +265,9 @@ function DkimTab({ domain }: { domain: EmailDomain }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isRotating, setIsRotating] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [intervalDays, setIntervalDays] = useState(0);
+  const [isSavingInterval, setIsSavingInterval] = useState(false);
+  const [rotationHistory, setRotationHistory] = useState<Array<{ id: number; created_at: string; new_values?: Record<string, unknown> }>>([]);
 
   const fetchDkim = useCallback(async () => {
     setIsLoading(true);
@@ -276,6 +282,29 @@ function DkimTab({ domain }: { domain: EmailDomain }) {
   }, [domain.id]);
 
   useEffect(() => { void fetchDkim(); }, [fetchDkim]);
+
+  useEffect(() => {
+    api.get<{ interval_days: number }>("/email/dkim-rotation-settings")
+      .then((res) => setIntervalDays(res.data.interval_days))
+      .catch((err) => { if (err?.response?.status !== 403) toast.error("Failed to load DKIM rotation settings"); });
+    api.get<{ history: Array<{ id: number; created_at: string; new_values?: Record<string, unknown> }> }>(
+      `/email/domains/${domain.id}/mailgun/dkim/rotation-history`
+    )
+      .then((res) => setRotationHistory(res.data.history ?? []))
+      .catch((err) => { if (err?.response?.status !== 403) toast.error("Failed to load rotation history"); });
+  }, [domain.id]);
+
+  const saveInterval = async () => {
+    setIsSavingInterval(true);
+    try {
+      await api.put("/email/dkim-rotation-settings", { interval_days: intervalDays });
+      toast.success(intervalDays > 0 ? `Auto-rotation set to every ${intervalDays} days` : "Auto-rotation disabled");
+    } catch {
+      toast.error("Failed to save rotation settings");
+    } finally {
+      setIsSavingInterval(false);
+    }
+  };
 
   const rotateDkim = async () => {
     setIsRotating(true);
@@ -346,6 +375,41 @@ function DkimTab({ domain }: { domain: EmailDomain }) {
         <p className="text-sm text-muted-foreground">No DKIM info available. The Mailgun API may not support this for your plan.</p>
       )}
 
+      <div className="space-y-3 pt-2 border-t">
+        <h3 className="text-sm font-medium">Auto-Rotation Schedule</h3>
+        <div className="flex items-center gap-3">
+          <Input
+            type="number"
+            min={0}
+            max={3650}
+            value={intervalDays}
+            onChange={(e) => setIntervalDays(parseInt(e.target.value) || 0)}
+            className="w-24 h-8"
+          />
+          <span className="text-sm text-muted-foreground">days (0 = disabled)</span>
+          <Button size="sm" onClick={saveInterval} disabled={isSavingInterval}>
+            {isSavingInterval && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+            Save
+          </Button>
+        </div>
+      </div>
+
+      {rotationHistory.length > 0 && (
+        <div className="space-y-2 pt-2 border-t">
+          <h3 className="text-sm font-medium">Rotation History</h3>
+          <div className="rounded-md border divide-y text-sm max-h-48 overflow-y-auto">
+            {rotationHistory.map((log) => (
+              <div key={log.id} className="px-4 py-2 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{formatTs(log.created_at)}</span>
+                <Badge variant="outline" className="text-xs">
+                  {log.new_values && "scheduled" in log.new_values ? "Scheduled" : "Manual"}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -375,6 +439,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
   const [editEvent, setEditEvent] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
 
   const fetchWebhooks = useCallback(async () => {
     setIsLoading(true);
@@ -393,8 +458,13 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
   const autoConfigure = async () => {
     setIsConfiguring(true);
     try {
-      await api.post(`/email/domains/${domain.id}/mailgun/webhooks/auto-configure`);
-      toast.success("Delivery webhooks configured for this domain.");
+      const res = await api.post(`/email/domains/${domain.id}/mailgun/webhooks/auto-configure`);
+      if (res.data.errors && Object.keys(res.data.errors).length > 0) {
+        const errorMessages = Object.values(res.data.errors as Record<string, string>).join(", ");
+        toast.warning(`Some webhooks failed: ${errorMessages}`);
+      } else {
+        toast.success("Delivery webhooks configured for this domain.");
+      }
       void fetchWebhooks();
     } catch {
       toast.error("Auto-configure failed");
@@ -427,6 +497,24 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
       toast.error("Failed to save webhook");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const testWebhook = async (event: string) => {
+    setTestingWebhook(event);
+    try {
+      const res = await api.post<{ success: boolean; status_code?: number; message?: string }>(
+        `/email/domains/${domain.id}/mailgun/webhooks/${event}/test`
+      );
+      if (res.data.success) {
+        toast.success(`Test ${event} webhook: ${res.data.status_code} OK`);
+      } else {
+        toast.error(`Test failed: ${res.data.message ?? "Unknown error"}`);
+      }
+    } catch {
+      toast.error("Webhook test failed");
+    } finally {
+      setTestingWebhook(null);
     }
   };
 
@@ -473,9 +561,21 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
                   {url ? "Edit" : <Plus className="h-3 w-3" />}
                 </Button>
                 {url && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteWebhook(event)}>
-                    <Trash2 className="h-3 w-3 text-destructive" />
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => testWebhook(event)}
+                      disabled={testingWebhook === event}
+                    >
+                      {testingWebhook === event ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="mr-1 h-3 w-3" />}
+                      {testingWebhook === event ? "" : "Test"}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteWebhook(event)}>
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -748,6 +848,8 @@ function SuppressionsTab({ domain }: { domain: EmailDomain }) {
   const [items, setItems] = useState<SuppressionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [nextPage, setNextPage] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchItems = useCallback(async (type: SuppressionType, page?: string) => {
     setIsLoading(true);
@@ -783,14 +885,67 @@ function SuppressionsTab({ domain }: { domain: EmailDomain }) {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const res = await api.get(
+        `/email/domains/${domain.id}/mailgun/suppressions/${subTab}/export`,
+        { responseType: "blob" }
+      );
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${domain.name}_${subTab}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post<{ imported: number }>(
+        `/email/domains/${domain.id}/mailgun/suppressions/${subTab}/import`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      toast.success(`Imported ${res.data.imported} entries`);
+      void fetchItems(subTab);
+    } catch {
+      toast.error("Import failed");
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        {(["bounces", "complaints", "unsubscribes"] as SuppressionType[]).map((t) => (
-          <Button key={t} variant={subTab === t ? "secondary" : "outline"} size="sm" onClick={() => setSubTab(t)}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex gap-1">
+          {(["bounces", "complaints", "unsubscribes"] as SuppressionType[]).map((t) => (
+            <Button key={t} variant={subTab === t ? "secondary" : "outline"} size="sm" onClick={() => setSubTab(t)}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </Button>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="mr-1 h-3 w-3" /> Export
           </Button>
-        ))}
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+            {isImporting ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
+            Import
+          </Button>
+          <input ref={fileInputRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleImport} aria-label="Import suppressions CSV" />
+        </div>
       </div>
 
       {isLoading && items.length === 0 ? (
@@ -861,8 +1016,15 @@ function TrackingTab({ domain }: { domain: EmailDomain }) {
     setSaving(type);
     try {
       await api.put(`/email/domains/${domain.id}/mailgun/tracking/${type}`, { active });
-      setTracking((prev) => prev ? { ...prev, [type]: { ...(prev[type] ?? {}), active } } : prev);
-      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} tracking ${active ? "enabled" : "disabled"}`);
+      // Re-fetch tracking state to confirm the change persisted
+      const res = await api.get<TrackingSettings>(`/email/domains/${domain.id}/mailgun/tracking`);
+      setTracking(res.data);
+      const actualState = res.data[type]?.active ?? false;
+      if (actualState !== active) {
+        toast.error(`${type.charAt(0).toUpperCase() + type.slice(1)} tracking could not be ${active ? "enabled" : "disabled"}. The domain may need to be verified first.`);
+      } else {
+        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} tracking ${active ? "enabled" : "disabled"}`);
+      }
     } catch {
       toast.error("Failed to update tracking setting");
     } finally {

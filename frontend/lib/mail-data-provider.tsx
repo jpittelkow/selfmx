@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, ReactNode } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { EmailLabel, AccessibleMailbox } from "@/lib/mail-types";
@@ -109,6 +110,22 @@ export function MailDataProvider({ children }: { children: ReactNode }) {
   const handleNewEmail = useCallback((payload: EmailReceivedPayload) => {
     fetchUnreadCounts();
     setLastReceivedEmail(payload);
+
+    // Show toast notification for non-spam emails
+    if (!payload.is_spam) {
+      const sender = payload.from_name || payload.from_address;
+      toast(sender, {
+        description: payload.subject || "(no subject)",
+        action: {
+          label: "View",
+          onClick: () => {
+            if (window.location.pathname !== "/mail") {
+              window.location.href = "/mail";
+            }
+          },
+        },
+      });
+    }
   }, [fetchUnreadCounts]);
 
   useMailStream(user?.id ?? null, !!user, handleNewEmail);

@@ -97,7 +97,7 @@ function SharePageContent() {
                   <Button>Sign in</Button>
                 </Link>
               ) : null}
-              <Link href="/">
+              <Link href="/mail">
                 <Button variant="outline">Home</Button>
               </Link>
             </div>

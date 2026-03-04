@@ -8,6 +8,7 @@ High-priority work complete. Only optional/lower-priority items remain.
 
 | Roadmap | Completed | Remaining Work |
 |---------|-----------|----------------|
+| Homepage Update | 2026-03-03 | None — removed public homepage in favor of auth-aware redirect (logged in → /mail, logged out → /login). |
 | Passkeys Code Review | 2026-02-24 | None — review complete. Added 15 backend tests, delete confirmation, rename UI, error handling refactor, input trimming, ARIA attributes, ADR-018 documentation. |
 | [Notification System Review](plans/notification-system-review.md) | 2026-02-22 | Remaining: Phase 9 — 48 code review fixes (7 high security/data integrity, 17 medium correctness, 21 low polish) |
 | Integration Usage Dashboard | 2026-02-14 | Optional: additional LLM pricing presets, broadcasting instrumentation via event listener |
@@ -34,6 +35,7 @@ All tasks complete.
 
 | Roadmap | Completed |
 |---------|-----------|
+| [Email Bug Fixes](plans/email-bugfixes-roadmap.md) | 2026-03-03 |
 | [Database Tables Audit](plans/database-tables-audit-roadmap.md) | 2026-02-28 |
 | Mobile Header Styling Fixes | 2026-02-24 |
 | [GraphQL API with User API Keys](plans/graphql-api-roadmap.md) | 2026-02-22 |

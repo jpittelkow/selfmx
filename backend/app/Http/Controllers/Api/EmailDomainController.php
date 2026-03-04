@@ -22,10 +22,23 @@ class EmailDomainController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $domains = EmailDomain::where('user_id', $request->user()->id)
-            ->with('catchallMailbox')
-            ->orderByDesc('created_at')
-            ->get();
+        $query = EmailDomain::where('user_id', $request->user()->id)
+            ->with('catchallMailbox');
+
+        if ($search = $request->query('search')) {
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+            $query->where('name', 'like', "%{$escaped}%");
+        }
+
+        if ($request->has('verified')) {
+            $query->where('is_verified', $request->boolean('verified'));
+        }
+
+        if ($provider = $request->query('provider')) {
+            $query->where('provider', $provider);
+        }
+
+        $domains = $query->orderByDesc('created_at')->get();
 
         return response()->json(['domains' => $domains]);
     }
@@ -33,19 +46,24 @@ class EmailDomainController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:email_domains,name'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('email_domains', 'name')->where('user_id', $request->user()->id)],
             'provider' => ['sometimes', 'string', 'in:mailgun,ses,sendgrid,postmark'],
             'provider_config' => ['sometimes', 'array'],
         ]);
 
-        $domain = $this->domainService->createDomain(
+        $result = $this->domainService->createDomain(
             $request->user(),
             $validated['name'],
             $validated['provider'] ?? 'mailgun',
             $validated['provider_config'] ?? [],
         );
 
-        return $this->createdResponse('Domain created successfully', ['domain' => $domain]);
+        $data = ['domain' => $result['domain']];
+        if (! empty($result['warnings'])) {
+            $data['warnings'] = $result['warnings'];
+        }
+
+        return $this->createdResponse('Domain created successfully', $data);
     }
 
     public function show(Request $request, EmailDomain $emailDomain): JsonResponse
@@ -66,7 +84,7 @@ class EmailDomainController extends Controller
         }
 
         $validated = $request->validate([
-            'catchall_mailbox_id' => ['sometimes', 'nullable', 'exists:mailboxes,id'],
+            'catchall_mailbox_id' => ['sometimes', 'nullable', Rule::exists('mailboxes', 'id')->where('email_domain_id', $emailDomain->id)],
             'is_active' => ['sometimes', 'boolean'],
             'provider_config' => ['sometimes', 'array'],
         ]);

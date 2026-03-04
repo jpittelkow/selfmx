@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { searchEmails } from "@/lib/email-search";
 import { useMailData } from "@/lib/mail-data-provider";
-import { useAppConfig } from "@/lib/app-config";
+import { usePageTitle } from "@/lib/use-page-title";
 import { ThreadList } from "@/components/mail/thread-list";
 import { EmailDetail } from "@/components/mail/email-detail";
 import { useIsMobile } from "@/lib/use-mobile";
@@ -32,7 +32,6 @@ const viewLabels: Record<string, string> = {
 export default function MailPage() {
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
-  const { appName } = useAppConfig();
   const {
     labels,
     activeMailboxId,
@@ -100,7 +99,10 @@ export default function MailPage() {
             from_address: email.from_address,
             from_name: email.from_name,
             subject: email.subject,
-            is_read: email.effective_is_read ?? email.is_read,
+            is_read: email.is_read,
+            effective_is_read: email.effective_is_read ?? email.is_read,
+            is_starred: email.is_starred,
+            effective_is_starred: email.effective_is_starred ?? email.is_starred,
             sent_at: email.sent_at,
             direction: email.direction,
             mailbox_id: email.mailbox_id,
@@ -137,6 +139,9 @@ export default function MailPage() {
           from_name: email.from_name,
           subject: email.subject,
           is_read: email.is_read,
+          effective_is_read: email.effective_is_read ?? email.is_read,
+          is_starred: email.is_starred,
+          effective_is_starred: email.effective_is_starred ?? email.is_starred,
           sent_at: email.sent_at,
           direction: email.direction,
           mailbox_id: email.mailbox_id,
@@ -189,14 +194,9 @@ export default function MailPage() {
     });
   }, [setOnSent, fetchThreads, refreshUnreadCount]);
 
-  // Update browser tab title with unread count
-  useEffect(() => {
-    const viewLabel = viewLabels[isSearchActive ? "search" : currentView] || "Mail";
-    const title = unreadCount > 0
-      ? `(${unreadCount}) ${viewLabel} | ${appName || "selfmx"}`
-      : `${viewLabel} | ${appName || "selfmx"}`;
-    document.title = title;
-  }, [unreadCount, currentView, isSearchActive, appName]);
+  // Update browser tab title with view label and unread count
+  const viewLabel = viewLabels[isSearchActive ? "search" : currentView] || "Mail";
+  usePageTitle(viewLabel, undefined, unreadCount);
 
   const handleSelectThread = async (thread: EmailThread) => {
     setSelectedThread(thread);
@@ -211,10 +211,11 @@ export default function MailPage() {
         setSelectedEmails([res.data.email]);
       }
       // Optimistically mark the thread as read in the list (backend already marked it)
-      if (thread.latest_email && !thread.latest_email.is_read) {
+      const isUnread = thread.latest_email && !(thread.latest_email.effective_is_read ?? thread.latest_email.is_read);
+      if (isUnread) {
         setThreads(prev => prev.map(t =>
           t.id === thread.id && t.latest_email
-            ? { ...t, latest_email: { ...t.latest_email, is_read: true } }
+            ? { ...t, latest_email: { ...t.latest_email, is_read: true, effective_is_read: true } }
             : t
         ));
         refreshUnreadCount();
@@ -259,10 +260,72 @@ export default function MailPage() {
   };
 
   const handleToggleSpam = async (emailId: number) => {
+    // Find the email to check its current spam state and sender
+    const email = selectedEmails.find((e) => e.id === emailId);
+    const wasSpam = email?.is_spam ?? false;
+    const senderAddress = email?.from_address;
+
     try {
       await api.patch(`/email/messages/${emailId}/spam`);
-      toast.success("Updated");
-      fetchThreads();
+      await fetchThreads();
+      // Update local state so a second toggle reads the correct is_spam value
+      setSelectedEmails(prev =>
+        prev.map(e => e.id === emailId ? { ...e, is_spam: !e.is_spam } : e)
+      );
+
+      if (senderAddress) {
+        if (!wasSpam) {
+          // Was not spam, now marked as spam — offer to block sender
+          toast.success("Marked as spam", {
+            action: {
+              label: "Block sender",
+              onClick: async () => {
+                try {
+                  await api.post("/email/spam-filter", {
+                    type: "block",
+                    match_type: "exact",
+                    value: senderAddress,
+                  });
+                  toast.success(`Blocked ${senderAddress}`);
+                } catch (err: unknown) {
+                  const status = (err as { response?: { status?: number } })?.response?.status;
+                  if (status === 422) {
+                    toast.success(`${senderAddress} already blocked`);
+                  } else {
+                    toast.error(`Failed to block ${senderAddress}`);
+                  }
+                }
+              },
+            },
+          });
+        } else {
+          // Was spam, now un-marked — offer to allow sender
+          toast.success("Removed from spam", {
+            action: {
+              label: "Allow sender",
+              onClick: async () => {
+                try {
+                  await api.post("/email/spam-filter", {
+                    type: "allow",
+                    match_type: "exact",
+                    value: senderAddress,
+                  });
+                  toast.success(`Allowed ${senderAddress}`);
+                } catch (err: unknown) {
+                  const status = (err as { response?: { status?: number } })?.response?.status;
+                  if (status === 422) {
+                    toast.success(`${senderAddress} already allowed`);
+                  } else {
+                    toast.error(`Failed to allow ${senderAddress}`);
+                  }
+                }
+              },
+            },
+          });
+        }
+      } else {
+        toast.success("Updated");
+      }
     } catch {
       toast.error("Failed to update");
     }

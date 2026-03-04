@@ -98,7 +98,7 @@ const navigationGroups: NavGroup[] = [
       { name: "Email Provider", href: "/configuration/email-provider", icon: Settings, description: "Provider API keys and settings", permission: "settings.view" },
       { name: "Domains", href: "/configuration/email-domains", icon: Globe, description: "Manage email domains", permission: "settings.view" },
       { name: "Mailboxes", href: "/configuration/mailboxes", icon: Mail, description: "Manage email addresses", permission: "settings.view" },
-      { name: "Spam Filter", href: "/configuration/spam-filter", icon: ShieldBan, description: "Allow and block sender lists", permission: "settings.view" },
+      { name: "Global Spam Filter", href: "/configuration/spam-filter", icon: ShieldBan, description: "System-wide allow and block lists (applies to all users)", permission: "settings.view" },
     ],
   },
   {

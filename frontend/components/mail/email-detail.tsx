@@ -27,6 +27,8 @@ import {
   FileSpreadsheet,
   File,
   Sun,
+  Loader2 as Loader2Icon,
+  Activity,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -35,6 +37,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/lib/use-mobile";
 import { api } from "@/lib/api";
@@ -141,6 +154,77 @@ function DeliveryStatusBadge({ status }: { status: string | null }) {
       {c.icon}
       {c.label}
     </span>
+  );
+}
+
+interface ProviderEvent {
+  timestamp: number;
+  event: string;
+  recipient?: string;
+}
+
+const eventColorMap: Record<string, string> = {
+  delivered: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  opened: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  clicked: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  bounced: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  complained: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  accepted: "bg-muted text-muted-foreground",
+};
+
+function ProviderEventsPopover({ emailId }: { emailId: number }) {
+  const [events, setEvents] = useState<ProviderEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetched, setFetched] = useState(false);
+
+  // Reset when emailId changes to avoid showing stale data
+  useEffect(() => {
+    setFetched(false);
+    setEvents([]);
+  }, [emailId]);
+
+  const fetchEvents = () => {
+    if (fetched) return;
+    setIsLoading(true);
+    api.get<{ items: ProviderEvent[] }>(`/email/messages/${emailId}/provider-events`)
+      .then((res) => setEvents(res.data.items ?? []))
+      .catch(() => {})
+      .finally(() => { setIsLoading(false); setFetched(true); });
+  };
+
+  return (
+    <Popover onOpenChange={(open) => { if (open) fetchEvents(); }}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs gap-1 text-muted-foreground">
+          <Activity className="h-3 w-3" />
+          Events
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0" align="start">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2Icon className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : events.length === 0 ? (
+          <p className="text-sm text-muted-foreground p-3">No provider events found.</p>
+        ) : (
+          <div className="divide-y max-h-48 overflow-y-auto">
+            {events.map((e, i) => (
+              <div key={i} className="px-3 py-2 flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {new Date(e.timestamp * 1000).toLocaleString()}
+                </span>
+                <span className={cn("inline-flex items-center rounded-full px-1.5 py-0.5 font-medium", eventColorMap[e.event] ?? "bg-muted text-muted-foreground")}>
+                  {e.event}
+                </span>
+                {e.recipient && <span className="truncate text-muted-foreground">{e.recipient}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -266,7 +350,25 @@ function EmailMessage({
                 <span className="text-xs text-muted-foreground">&lt;{email.from_address}&gt;</span>
               )}
               {email.direction === "outbound" && (
-                <DeliveryStatusBadge status={email.delivery_status} />
+                <>
+                  <DeliveryStatusBadge status={email.delivery_status} />
+                  <ProviderEventsPopover emailId={email.id} />
+                </>
+              )}
+              {email.is_spam && email.spam_score != null && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        <AlertOctagon className="h-3 w-3 mr-1" />
+                        Spam score: {Number(email.spam_score).toFixed(1)}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      This email was flagged as spam because its score ({Number(email.spam_score).toFixed(1)}) exceeds the configured threshold.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">

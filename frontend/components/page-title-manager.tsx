@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { usePageTitle } from "@/lib/use-page-title";
+import { useMailData } from "@/lib/mail-data-provider";
 
 /**
  * Route-to-title mapping for automatic page title detection.
@@ -16,7 +17,7 @@ const routeTitles: Record<string, string> = {
   "/reset-password": "Reset Password",
   "/verify-email": "Verify Email",
 
-  // Mail — title managed by MailPage with unread count
+  // Mail — title managed by MailPage with view-specific labels
 
   // Notifications
   "/notifications": "Notifications",
@@ -49,6 +50,15 @@ const routeTitles: Record<string, string> = {
   "/configuration/email-provider": "Email Provider",
   "/configuration/email-domains": "Email Domains",
   "/configuration/mailboxes": "Mailboxes",
+  "/configuration/changelog": "Changelog",
+  "/configuration/graphql": "GraphQL API",
+  "/configuration/payments": "Payment History",
+  "/configuration/usage": "Usage & Costs",
+  "/configuration/stripe": "Stripe",
+  "/configuration/novu": "Novu",
+  "/configuration/spam-filter": "Spam Filter",
+  "/configuration/notification-deliveries": "Delivery Log",
+  "/configuration/profile": "Profile",
 
   // Email client
   "/contacts": "Contacts",
@@ -58,6 +68,12 @@ const routeTitles: Record<string, string> = {
   "/user/security": "Security",
   "/user/preferences": "Preferences",
   "/user/rules": "Email Rules",
+
+  // Mail Settings
+  "/mail/settings": "Mail Settings",
+  "/mail/settings/rules": "Email Rules",
+  "/mail/settings/spam": "Spam Filter",
+  "/mail/settings/import": "Import Emails",
 
   // Admin pages
   "/admin": "Admin",
@@ -80,14 +96,30 @@ const routeTitles: Record<string, string> = {
 };
 
 /**
+ * Fallback title matching for dynamic routes with [id]/[key] segments.
+ */
+function getDynamicRouteTitle(pathname: string): string | undefined {
+  if (pathname.startsWith("/configuration/email-templates/")) return "Edit Template";
+  if (pathname.startsWith("/configuration/notification-templates/")) return "Edit Notification Template";
+  if (pathname.startsWith("/configuration/email-domains/")) return "Domain Details";
+  return undefined;
+}
+
+/**
  * PageTitleManager automatically sets page titles based on the current route.
+ * Includes unread email count in the browser tab for all dashboard pages.
  * This component should be placed in the AppShell to apply globally.
  */
 export function PageTitleManager() {
   const pathname = usePathname();
-  const pageTitle = routeTitles[pathname];
+  const { unreadCount } = useMailData();
 
-  usePageTitle(pageTitle);
+  const pageTitle = routeTitles[pathname] ?? getDynamicRouteTitle(pathname);
 
-  return null; // This component renders nothing
+  // Only active when we have a matched title, so pages that manage their
+  // own title (e.g. mail page) don't get competing title updates.
+  const hasTitle = !!pageTitle;
+  usePageTitle(pageTitle, undefined, hasTitle ? unreadCount : undefined, hasTitle);
+
+  return null;
 }

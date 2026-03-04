@@ -15,13 +15,20 @@ class DomainService
 
     /**
      * Create a new email domain and register it with the provider.
+     *
+     * @return array{domain: EmailDomain, warnings: string[]}
      */
-    public function createDomain(User $user, string $domainName, string $provider, array $providerConfig = []): EmailDomain
+    public function createDomain(User $user, string $domainName, string $provider, array $providerConfig = []): array
     {
         $emailProvider = $this->resolveProvider($provider);
+        $warnings = [];
 
         // Register with provider
         $result = $emailProvider->addDomain($domainName, $providerConfig);
+
+        if (! $result->success) {
+            throw new \RuntimeException("Failed to register domain with {$provider}: {$result->error}");
+        }
 
         $domain = EmailDomain::create([
             'user_id' => $user->id,
@@ -38,11 +45,33 @@ class DomainService
             'provider' => $provider,
         ]);
 
-        // Try to configure webhook
+        // Try to configure inbound webhook route
         $webhookUrl = url("/api/email/webhook/{$provider}");
-        $emailProvider->configureDomainWebhook($domainName, $webhookUrl, $providerConfig);
+        try {
+            $webhookOk = $emailProvider->configureDomainWebhook($domainName, $webhookUrl, $providerConfig);
+            if (! $webhookOk) {
+                Log::warning("Failed to configure inbound webhook for {$domainName}");
+                $warnings[] = 'Inbound webhook route could not be created. Configure it manually in the domain settings.';
+            }
+        } catch (\Exception $e) {
+            Log::warning("Failed to configure inbound webhook for {$domainName}", ['error' => $e->getMessage()]);
+            $warnings[] = "Inbound webhook setup failed: {$e->getMessage()}";
+        }
 
-        return $domain;
+        // Register delivery event webhooks (delivered, bounced, complained)
+        if ($emailProvider instanceof MailgunProvider) {
+            $eventsUrl = url("/api/email/webhook/{$provider}/events");
+            foreach (['delivered', 'bounced', 'complained'] as $event) {
+                try {
+                    $emailProvider->createWebhook($domainName, $event, $eventsUrl, $providerConfig);
+                } catch (\Exception $e) {
+                    Log::warning("Failed to configure {$event} webhook for {$domainName}", ['error' => $e->getMessage()]);
+                    $warnings[] = "Delivery webhook ({$event}) setup failed: {$e->getMessage()}";
+                }
+            }
+        }
+
+        return ['domain' => $domain, 'warnings' => $warnings];
     }
 
     /**

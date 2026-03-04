@@ -41,7 +41,7 @@ import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
-import { Globe, Plus, Trash2, RefreshCw, Loader2, Info, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
+import { Globe, Plus, Trash2, RefreshCw, Loader2, Info, CheckCircle2, XCircle, ChevronRight, Search, Circle } from "lucide-react";
 
 const providerLabels: Record<string, string> = {
   mailgun: "Mailgun",
@@ -60,6 +60,30 @@ interface EmailDomain {
   created_at: string;
 }
 
+function ProviderHealthBadge() {
+  const [health, setHealth] = useState<{ healthy: boolean; latency_ms?: number; provider?: string } | null>(null);
+
+  useEffect(() => {
+    api.get<{ healthy: boolean; latency_ms?: number; provider?: string }>("/email/provider/health")
+      .then((res) => setHealth(res.data))
+      .catch(() => setHealth({ healthy: false }));
+  }, []);
+
+  if (!health) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <Circle
+        className={`h-2 w-2 fill-current ${health.healthy ? "text-green-500" : "text-red-500"}`}
+      />
+      <span>{health.provider === "mailgun" ? "Mailgun" : "Provider"}: {health.healthy ? "Connected" : "Unreachable"}</span>
+      {health.healthy && health.latency_ms != null && (
+        <span className="text-xs">({health.latency_ms}ms)</span>
+      )}
+    </div>
+  );
+}
+
 export default function EmailDomainsPage() {
   const [domains, setDomains] = useState<EmailDomain[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,28 +94,43 @@ export default function EmailDomainsPage() {
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [dnsRecords, setDnsRecords] = useState<{ domainId: number; records: Array<{ type: string; name: string; value: string; valid: string }> } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [verifiedFilter, setVerifiedFilter] = useState<"all" | "verified" | "unverified">("all");
 
   const fetchDomains = useCallback(async () => {
     try {
-      const res = await api.get<{ domains: EmailDomain[] }>("/email/domains");
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+      if (verifiedFilter === "verified") params.set("verified", "1");
+      if (verifiedFilter === "unverified") params.set("verified", "0");
+      const qs = params.toString();
+      const res = await api.get<{ domains: EmailDomain[] }>(`/email/domains${qs ? `?${qs}` : ""}`);
       setDomains(res.data.domains);
     } catch {
       toast.error("Failed to load domains");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchQuery, verifiedFilter]);
 
+  // Debounce search — refetch 300ms after search/filter changes
   useEffect(() => {
-    fetchDomains();
-  }, [fetchDomains]);
+    const timer = setTimeout(() => {
+      fetchDomains();
+    }, searchQuery ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [fetchDomains, searchQuery]);
 
   const handleAdd = async () => {
     if (!newDomain.trim()) return;
     setIsAdding(true);
     try {
-      await api.post("/email/domains", { name: newDomain.trim(), provider: newProvider });
-      toast.success("Domain added successfully");
+      const res = await api.post<{ domain: unknown; warnings?: string[] }>("/email/domains", { name: newDomain.trim(), provider: newProvider });
+      if (res.data.warnings?.length) {
+        toast.warning(`Domain created, but: ${res.data.warnings.join("; ")}`);
+      } else {
+        toast.success("Domain added successfully");
+      }
       setShowAddDialog(false);
       setNewDomain("");
       setNewProvider("mailgun");
@@ -145,7 +184,10 @@ export default function EmailDomainsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Email Domains</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">Email Domains</h1>
+            <ProviderHealthBadge />
+          </div>
           <p className="text-muted-foreground mt-1">
             Manage domains configured for receiving and sending email.
           </p>
@@ -154,6 +196,30 @@ export default function EmailDomainsPage() {
           <Plus className="mr-2 h-4 w-4" />
           Add Domain
         </Button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative flex-1 w-full sm:max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search domains..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex gap-1">
+          {(["all", "verified", "unverified"] as const).map((filter) => (
+            <Button
+              key={filter}
+              variant={verifiedFilter === filter ? "default" : "outline"}
+              size="sm"
+              onClick={() => setVerifiedFilter(filter)}
+            >
+              {filter === "all" ? "All" : filter === "verified" ? "Verified" : "Unverified"}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <Card>

@@ -172,7 +172,7 @@ function MailNavSectionInner({
   const [showNewLabel, setShowNewLabel] = useState(false);
   const [newLabelName, setNewLabelName] = useState("");
 
-  const currentView = pathname?.startsWith("/mail")
+  const currentView = pathname?.startsWith("/mail") && !pathname?.startsWith("/mail/settings")
     ? searchParams.get("view") || "inbox"
     : null;
   const currentLabelId = searchParams.get("labelId");
@@ -254,11 +254,11 @@ function MailNavSectionInner({
           </Popover>
         )}
         <Button
-          variant={pathname?.startsWith("/mail") ? "secondary" : "ghost"}
+          variant={pathname?.startsWith("/mail") && !pathname?.startsWith("/mail/settings") ? "secondary" : "ghost"}
           size="icon"
           className={cn(
             "w-12 h-12 mx-auto relative",
-            pathname?.startsWith("/mail") && "bg-muted text-foreground font-medium"
+            pathname?.startsWith("/mail") && !pathname?.startsWith("/mail/settings") && "bg-muted text-foreground font-medium"
           )}
           title="Inbox"
           asChild
@@ -408,6 +408,10 @@ export function Sidebar() {
   const isAdmin =
     typeof isAdminUser === "function" ? isAdminUser(user) : Boolean(user?.is_admin);
 
+  const isMailSettings = pathname?.startsWith("/mail/settings") ?? false;
+  const isContacts = pathname?.startsWith("/contacts") ?? false;
+  const isConfiguration = pathname?.startsWith("/configuration") ?? false;
+
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname, isMobile, setMobileMenuOpen]);
@@ -434,11 +438,11 @@ export function Sidebar() {
               {/* Other nav */}
               <nav className="flex flex-col gap-1 px-1">
                 <Button
-                  variant={pathname?.startsWith("/contacts") ? "secondary" : "ghost"}
+                  variant={isContacts ? "secondary" : "ghost"}
                   size="default"
                   className={cn(
                     "w-full justify-start gap-3 min-h-11",
-                    pathname?.startsWith("/contacts") && "bg-muted text-foreground font-medium"
+                    isContacts && "bg-muted text-foreground font-medium"
                   )}
                   title="Contacts"
                   asChild
@@ -446,6 +450,21 @@ export function Sidebar() {
                   <Link href="/contacts" onClick={closeMobileMenu}>
                     <Users className="h-5 w-5 flex-shrink-0" />
                     <span>Contacts</span>
+                  </Link>
+                </Button>
+                <Button
+                  variant={isMailSettings ? "secondary" : "ghost"}
+                  size="default"
+                  className={cn(
+                    "w-full justify-start gap-3 min-h-11",
+                    isMailSettings && "bg-muted text-foreground font-medium"
+                  )}
+                  title="Mail Settings"
+                  asChild
+                >
+                  <Link href="/mail/settings" onClick={closeMobileMenu}>
+                    <Settings className="h-5 w-5 flex-shrink-0" />
+                    <span>Mail Settings</span>
                   </Link>
                 </Button>
               </nav>
@@ -456,14 +475,11 @@ export function Sidebar() {
                     <Separator orientation="horizontal" className="my-2" />
                     <nav className="flex flex-col gap-2 px-1">
                       <Button
-                        variant={
-                          pathname?.startsWith("/configuration") ? "secondary" : "ghost"
-                        }
+                        variant={isConfiguration ? "secondary" : "ghost"}
                         size="default"
                         className={cn(
                           "w-full justify-start gap-3 min-h-11",
-                          pathname?.startsWith("/configuration") &&
-                            "bg-muted text-foreground font-medium"
+                          isConfiguration && "bg-muted text-foreground font-medium"
                         )}
                         title="Configuration"
                         onClick={() => {
@@ -532,12 +548,12 @@ export function Sidebar() {
         {/* Other nav */}
         <nav className="flex flex-col mt-1">
           <Button
-            variant={pathname?.startsWith("/contacts") ? "secondary" : "ghost"}
+            variant={isContacts ? "secondary" : "ghost"}
             size={isExpanded ? "default" : "icon"}
             className={cn(
               "min-h-11",
               isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
-              pathname?.startsWith("/contacts") && "bg-muted text-foreground font-medium"
+              isContacts && "bg-muted text-foreground font-medium"
             )}
             title="Contacts"
             asChild
@@ -545,6 +561,22 @@ export function Sidebar() {
             <Link href="/contacts">
               <Users className="h-5 w-5 flex-shrink-0" />
               {isExpanded && <span>Contacts</span>}
+            </Link>
+          </Button>
+          <Button
+            variant={isMailSettings ? "secondary" : "ghost"}
+            size={isExpanded ? "default" : "icon"}
+            className={cn(
+              "min-h-11",
+              isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
+              isMailSettings && "bg-muted text-foreground font-medium"
+            )}
+            title="Mail Settings"
+            asChild
+          >
+            <Link href="/mail/settings">
+              <Settings className="h-5 w-5 flex-shrink-0" />
+              {isExpanded && <span>Mail Settings</span>}
             </Link>
           </Button>
         </nav>
@@ -555,15 +587,12 @@ export function Sidebar() {
               <Separator orientation="horizontal" className="my-2" />
               <nav className="flex flex-col gap-2">
                 <Button
-                  variant={
-                    pathname?.startsWith("/configuration") ? "secondary" : "ghost"
-                  }
+                  variant={isConfiguration ? "secondary" : "ghost"}
                   size={isExpanded ? "default" : "icon"}
                   className={cn(
                     "min-h-11",
                     isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
-                    pathname?.startsWith("/configuration") &&
-                      "bg-muted text-foreground font-medium"
+                    isConfiguration && "bg-muted text-foreground font-medium"
                   )}
                   title="Configuration"
                   asChild

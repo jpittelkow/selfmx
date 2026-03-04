@@ -10,6 +10,7 @@ use App\Models\Email;
 use App\Models\EmailUserState;
 use App\Services\Email\EmailService;
 use App\Services\Email\MailboxAccessService;
+use App\Services\Email\MailgunProvider;
 use App\Services\Search\SearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -449,5 +450,34 @@ class EmailController extends Controller
         );
 
         return $this->successResponse('Snooze removed');
+    }
+
+    /**
+     * Get provider delivery events for an outbound email.
+     */
+    public function providerEvents(Request $request, Email $email): JsonResponse
+    {
+        if (! $this->accessService->hasAccess($request->user(), $email->mailbox_id)) {
+            return $this->errorResponse('Not found', 404);
+        }
+
+        if ($email->direction !== 'outbound' || empty($email->provider_message_id)) {
+            return response()->json(['items' => []]);
+        }
+
+        $email->load('mailbox.emailDomain');
+        $domain = $email->mailbox?->emailDomain;
+
+        if (! $domain || $domain->provider !== 'mailgun') {
+            return response()->json(['items' => []]);
+        }
+
+        $mailgun = app(MailgunProvider::class);
+        $events = $mailgun->getEvents($domain->name, [
+            'message-id' => $email->provider_message_id,
+            'limit' => 25,
+        ], $domain->provider_config ?? []);
+
+        return response()->json($events);
     }
 }

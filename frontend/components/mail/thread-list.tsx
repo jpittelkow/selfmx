@@ -215,7 +215,7 @@ export function ThreadList({
           <div>
             {threads.map((thread) => {
               const isFocused = selectedThreadId === thread.id;
-              const isUnread = thread.latest_email && !thread.latest_email.is_read;
+              const isUnread = thread.latest_email && !(thread.latest_email.effective_is_read ?? thread.latest_email.is_read);
               const isChecked = selectedIds.has(thread.id);
               return (
                 <div
@@ -253,7 +253,7 @@ export function ThreadList({
                         {thread.latest_email?.attachments_count && thread.latest_email.attachments_count > 0 && (
                           <Paperclip className="h-3 w-3 text-muted-foreground" />
                         )}
-                        {thread.latest_email?.is_starred && (
+                        {(thread.latest_email?.effective_is_starred ?? thread.latest_email?.is_starred) && (
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                         )}
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
