@@ -497,13 +497,13 @@ function renderChannelFields(
     case "discord":
       return (
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField id="discord_webhook_url" label="Webhook URL" error={errors.discord_webhook_url?.message}>
+          <FormField id="discord_webhook_url" label="Webhook URL" error={errors.discord_webhook_url?.message as string | undefined}>
             <Input id="discord_webhook_url" type="password" placeholder="Optional" {...register("discord_webhook_url")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="discord_bot_name" label="Bot name" error={errors.discord_bot_name?.message}>
+          <FormField id="discord_bot_name" label="Bot name" error={errors.discord_bot_name?.message as string | undefined}>
             <Input id="discord_bot_name" placeholder="selfmx" {...register("discord_bot_name")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="discord_avatar_url" label="Avatar URL" error={errors.discord_avatar_url?.message}>
+          <FormField id="discord_avatar_url" label="Avatar URL" error={errors.discord_avatar_url?.message as string | undefined}>
             <Input id="discord_avatar_url" placeholder="Optional" {...register("discord_avatar_url")} className="min-h-[44px]" />
           </FormField>
         </div>
@@ -512,13 +512,13 @@ function renderChannelFields(
     case "slack":
       return (
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField id="slack_webhook_url" label="Webhook URL" error={errors.slack_webhook_url?.message}>
+          <FormField id="slack_webhook_url" label="Webhook URL" error={errors.slack_webhook_url?.message as string | undefined}>
             <Input id="slack_webhook_url" type="password" placeholder="Optional" {...register("slack_webhook_url")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="slack_bot_name" label="Bot name" error={errors.slack_bot_name?.message}>
+          <FormField id="slack_bot_name" label="Bot name" error={errors.slack_bot_name?.message as string | undefined}>
             <Input id="slack_bot_name" placeholder="selfmx" {...register("slack_bot_name")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="slack_icon" label="Icon (e.g. :robot_face:)" error={errors.slack_icon?.message}>
+          <FormField id="slack_icon" label="Icon (e.g. :robot_face:)" error={errors.slack_icon?.message as string | undefined}>
             <Input id="slack_icon" placeholder=":robot_face:" {...register("slack_icon")} className="min-h-[44px]" />
           </FormField>
         </div>
@@ -527,13 +527,13 @@ function renderChannelFields(
     case "signal":
       return (
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField id="signal_cli_path" label="CLI path" error={errors.signal_cli_path?.message}>
+          <FormField id="signal_cli_path" label="CLI path" error={errors.signal_cli_path?.message as string | undefined}>
             <Input id="signal_cli_path" placeholder="/usr/local/bin/signal-cli" {...register("signal_cli_path")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="signal_phone_number" label="Phone number" error={errors.signal_phone_number?.message}>
+          <FormField id="signal_phone_number" label="Phone number" error={errors.signal_phone_number?.message as string | undefined}>
             <Input id="signal_phone_number" type="password" placeholder="+1234567890" {...register("signal_phone_number")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="signal_config_dir" label="Config directory" error={errors.signal_config_dir?.message}>
+          <FormField id="signal_config_dir" label="Config directory" error={errors.signal_config_dir?.message as string | undefined}>
             <Input id="signal_config_dir" placeholder="Optional" {...register("signal_config_dir")} className="min-h-[44px]" />
           </FormField>
         </div>
@@ -542,13 +542,13 @@ function renderChannelFields(
     case "twilio":
       return (
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField id="twilio_sid" label="Account SID" error={errors.twilio_sid?.message}>
+          <FormField id="twilio_sid" label="Account SID" error={errors.twilio_sid?.message as string | undefined}>
             <Input id="twilio_sid" placeholder="Optional" {...register("twilio_sid")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="twilio_token" label="Auth token" error={errors.twilio_token?.message}>
+          <FormField id="twilio_token" label="Auth token" error={errors.twilio_token?.message as string | undefined}>
             <Input id="twilio_token" type="password" placeholder="Optional" {...register("twilio_token")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="twilio_from" label="From number" error={errors.twilio_from?.message}>
+          <FormField id="twilio_from" label="From number" error={errors.twilio_from?.message as string | undefined}>
             <Input id="twilio_from" placeholder="+1234567890" {...register("twilio_from")} className="min-h-[44px]" />
           </FormField>
         </div>
@@ -557,13 +557,13 @@ function renderChannelFields(
     case "vonage":
       return (
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField id="vonage_api_key" label="API key" error={errors.vonage_api_key?.message}>
+          <FormField id="vonage_api_key" label="API key" error={errors.vonage_api_key?.message as string | undefined}>
             <Input id="vonage_api_key" placeholder="Optional" {...register("vonage_api_key")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="vonage_api_secret" label="API secret" error={errors.vonage_api_secret?.message}>
+          <FormField id="vonage_api_secret" label="API secret" error={errors.vonage_api_secret?.message as string | undefined}>
             <Input id="vonage_api_secret" type="password" placeholder="Optional" {...register("vonage_api_secret")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="vonage_from" label="From number" error={errors.vonage_from?.message}>
+          <FormField id="vonage_from" label="From number" error={errors.vonage_from?.message as string | undefined}>
             <Input id="vonage_from" placeholder="Optional" {...register("vonage_from")} className="min-h-[44px]" />
           </FormField>
         </div>
@@ -589,13 +589,13 @@ function renderChannelFields(
       return (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <FormField id="vapid_public_key" label="Public key" error={errors.vapid_public_key?.message}>
+            <FormField id="vapid_public_key" label="Public key" error={errors.vapid_public_key?.message as string | undefined}>
               <Input id="vapid_public_key" placeholder="Optional" {...register("vapid_public_key")} className="min-h-[44px]" />
             </FormField>
-            <FormField id="vapid_private_key" label="Private key" error={errors.vapid_private_key?.message}>
+            <FormField id="vapid_private_key" label="Private key" error={errors.vapid_private_key?.message as string | undefined}>
               <Input id="vapid_private_key" type="password" placeholder="Optional" {...register("vapid_private_key")} className="min-h-[44px]" />
             </FormField>
-            <FormField id="vapid_subject" label="Subject (mailto or URL)" error={errors.vapid_subject?.message}>
+            <FormField id="vapid_subject" label="Subject (mailto or URL)" error={errors.vapid_subject?.message as string | undefined}>
               <Input id="vapid_subject" placeholder="Optional" {...register("vapid_subject")} className="min-h-[44px]" />
             </FormField>
             <div className="flex items-end">
@@ -618,10 +618,10 @@ function renderChannelFields(
     case "fcm":
       return (
         <div className="space-y-4">
-          <FormField id="fcm_project_id" label="Project ID" error={errors.fcm_project_id?.message}>
+          <FormField id="fcm_project_id" label="Project ID" error={errors.fcm_project_id?.message as string | undefined}>
             <Input id="fcm_project_id" placeholder="my-project-id" {...register("fcm_project_id")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="fcm_service_account" label="Service Account JSON" error={errors.fcm_service_account?.message} description="Paste the full service account JSON key from Firebase Console.">
+          <FormField id="fcm_service_account" label="Service Account JSON" error={errors.fcm_service_account?.message as string | undefined} description="Paste the full service account JSON key from Firebase Console.">
             <Input id="fcm_service_account" type="password" placeholder="Optional" {...register("fcm_service_account")} className="min-h-[44px]" />
           </FormField>
         </div>
@@ -637,7 +637,7 @@ function renderChannelFields(
               onCheckedChange={(checked: boolean) => setValue("ntfy_enabled", checked, { shouldDirty: true })}
             />
           </div>
-          <FormField id="ntfy_server" label="Server URL" error={errors.ntfy_server?.message}>
+          <FormField id="ntfy_server" label="Server URL" error={errors.ntfy_server?.message as string | undefined}>
             <Input id="ntfy_server" placeholder="https://ntfy.sh" {...register("ntfy_server")} className="min-h-[44px]" />
           </FormField>
         </div>
@@ -646,13 +646,13 @@ function renderChannelFields(
     case "matrix":
       return (
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField id="matrix_homeserver" label="Homeserver URL" error={errors.matrix_homeserver?.message}>
+          <FormField id="matrix_homeserver" label="Homeserver URL" error={errors.matrix_homeserver?.message as string | undefined}>
             <Input id="matrix_homeserver" placeholder="https://matrix.example.com" {...register("matrix_homeserver")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="matrix_access_token" label="Access token" error={errors.matrix_access_token?.message}>
+          <FormField id="matrix_access_token" label="Access token" error={errors.matrix_access_token?.message as string | undefined}>
             <Input id="matrix_access_token" type="password" placeholder="Optional" {...register("matrix_access_token")} className="min-h-[44px]" />
           </FormField>
-          <FormField id="matrix_default_room" label="Default room ID" error={errors.matrix_default_room?.message}>
+          <FormField id="matrix_default_room" label="Default room ID" error={errors.matrix_default_room?.message as string | undefined}>
             <Input id="matrix_default_room" placeholder="Optional" {...register("matrix_default_room")} className="min-h-[44px]" />
           </FormField>
         </div>

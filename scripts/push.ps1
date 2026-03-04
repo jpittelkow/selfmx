@@ -162,13 +162,42 @@ $FrontendTestExit = $LASTEXITCODE
 if ($FrontendTestExit -ne 0) {
     Write-Host "`nFrontend tests failed!" -ForegroundColor Red
     Write-Host "Fix the test failures and try again." -ForegroundColor Red
-    # Reset the commits we made
     Write-Host "Resetting commits..." -ForegroundColor Yellow
     git reset --soft HEAD~1
     exit 1
 }
 
 Write-Host "Frontend tests passed!" -ForegroundColor Green
+
+# Run frontend lint
+Write-Host "`nRunning frontend linter in Docker..." -ForegroundColor Yellow
+docker compose exec -T app bash -c "cd /var/www/html/frontend && npm run lint" 2>&1
+$LintExit = $LASTEXITCODE
+
+if ($LintExit -ne 0) {
+    Write-Host "`nFrontend lint failed!" -ForegroundColor Red
+    Write-Host "Fix the lint errors and try again." -ForegroundColor Red
+    Write-Host "Resetting commits..." -ForegroundColor Yellow
+    git reset --soft HEAD~1
+    exit 1
+}
+
+Write-Host "Frontend lint passed!" -ForegroundColor Green
+
+# Run frontend build (catches TypeScript errors)
+Write-Host "`nRunning frontend build in Docker..." -ForegroundColor Yellow
+docker compose exec -T app bash -c "cd /var/www/html/frontend && npm run build" 2>&1
+$BuildExit = $LASTEXITCODE
+
+if ($BuildExit -ne 0) {
+    Write-Host "`nFrontend build failed!" -ForegroundColor Red
+    Write-Host "Fix the build errors and try again." -ForegroundColor Red
+    Write-Host "Resetting commits..." -ForegroundColor Yellow
+    git reset --soft HEAD~1
+    exit 1
+}
+
+Write-Host "Frontend build passed!" -ForegroundColor Green
 
 Write-Host "`n========================================" -ForegroundColor Green
 Write-Host "All tests passed! Proceeding with release..." -ForegroundColor Green
