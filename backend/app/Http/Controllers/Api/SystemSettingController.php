@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\SystemSetting;
 use App\Services\AuditService;
 use App\Services\EmailConfigService;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 
 class SystemSettingController extends Controller
 {
+    use ApiResponseTrait;
     public function __construct(
         private AuditService $auditService,
         private SettingService $settingService
@@ -32,7 +34,7 @@ class SystemSettingController extends Controller
         $general['app_url'] = config('app.url');
         $settings['general'] = $general;
 
-        return response()->json([
+        return $this->dataResponse([
             'settings' => $settings,
         ]);
     }
@@ -68,7 +70,7 @@ class SystemSettingController extends Controller
             FILTER_VALIDATE_BOOLEAN
         );
 
-        return response()->json([
+        return $this->dataResponse([
             'settings' => $settings,
             'features' => [
                 'email_configured' => $emailConfigured,
@@ -103,7 +105,7 @@ class SystemSettingController extends Controller
             $settings['app_url'] = config('app.url');
         }
 
-        return response()->json([
+        return $this->dataResponse([
             'group' => $group,
             'settings' => $settings,
         ]);
@@ -144,8 +146,6 @@ class SystemSettingController extends Controller
 
         $this->auditService->logSettings('system', [], ['settings' => $validated['settings']], $user->id);
 
-        return response()->json([
-            'message' => 'System settings updated successfully',
-        ]);
+        return $this->successResponse('System settings updated successfully');
     }
 }

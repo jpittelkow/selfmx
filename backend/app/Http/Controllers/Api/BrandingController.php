@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 
 class BrandingController extends Controller
 {
+    use ApiResponseTrait;
+
     /**
      * Get branding settings (public - no auth required).
      */
@@ -20,7 +23,7 @@ class BrandingController extends Controller
             ->get()
             ->pluck('value', 'key');
 
-        return response()->json([
+        return $this->dataResponse([
             'settings' => $settings,
         ]);
     }
@@ -46,13 +49,11 @@ class BrandingController extends Controller
         foreach ($validated as $key => $value) {
             // Logo, favicon URLs, colors, and custom CSS are public
             $isPublic = in_array($key, ['logo_url', 'logo_url_dark', 'favicon_url', 'primary_color', 'secondary_color', 'color_theme', 'dark_mode_default', 'custom_css']);
-            
+
             SystemSetting::set($key, $value, 'branding', $user->id, $isPublic);
         }
 
-        return response()->json([
-            'message' => 'Branding settings updated successfully',
-        ]);
+        return $this->successResponse('Branding settings updated successfully');
     }
 
     /**
@@ -83,14 +84,9 @@ class BrandingController extends Controller
             $user = $request->user();
             SystemSetting::set('logo_url', $url, 'branding', $user->id, true);
 
-            return response()->json([
-                'message' => 'Logo uploaded successfully',
-                'url' => $url,
-            ]);
+            return $this->successResponse('Logo uploaded successfully', ['url' => $url]);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to upload logo: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to upload logo: ' . $e->getMessage(), 500);
         }
     }
 
@@ -120,14 +116,9 @@ class BrandingController extends Controller
             $user = $request->user();
             SystemSetting::set('logo_url_dark', $url, 'branding', $user->id, true);
 
-            return response()->json([
-                'message' => 'Dark mode logo uploaded successfully',
-                'url' => $url,
-            ]);
+            return $this->successResponse('Dark mode logo uploaded successfully', ['url' => $url]);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to upload dark mode logo: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to upload dark mode logo: ' . $e->getMessage(), 500);
         }
     }
 
@@ -159,14 +150,9 @@ class BrandingController extends Controller
             $user = $request->user();
             SystemSetting::set('favicon_url', $url, 'branding', $user->id, true);
 
-            return response()->json([
-                'message' => 'Favicon uploaded successfully',
-                'url' => $url,
-            ]);
+            return $this->successResponse('Favicon uploaded successfully', ['url' => $url]);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to upload favicon: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to upload favicon: ' . $e->getMessage(), 500);
         }
     }
 
@@ -187,13 +173,9 @@ class BrandingController extends Controller
             $user = $request->user();
             SystemSetting::set('logo_url_dark', null, 'branding', $user->id, true);
 
-            return response()->json([
-                'message' => 'Dark mode logo deleted successfully',
-            ]);
+            return $this->deleteResponse('Dark mode logo deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to delete dark mode logo: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to delete dark mode logo: ' . $e->getMessage(), 500);
         }
     }
 
@@ -216,13 +198,9 @@ class BrandingController extends Controller
             $user = $request->user();
             SystemSetting::set('logo_url', null, 'branding', $user->id, true);
 
-            return response()->json([
-                'message' => 'Logo deleted successfully',
-            ]);
+            return $this->deleteResponse('Logo deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to delete logo: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to delete logo: ' . $e->getMessage(), 500);
         }
     }
 
@@ -245,13 +223,9 @@ class BrandingController extends Controller
             $user = $request->user();
             SystemSetting::set('favicon_url', null, 'branding', $user->id, true);
 
-            return response()->json([
-                'message' => 'Favicon deleted successfully',
-            ]);
+            return $this->deleteResponse('Favicon deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to delete favicon: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to delete favicon: ' . $e->getMessage(), 500);
         }
     }
 }

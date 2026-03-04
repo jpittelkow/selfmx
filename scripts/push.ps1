@@ -72,6 +72,36 @@ if ([string]::IsNullOrWhiteSpace($status)) {
     exit 0
 }
 
+# Check for sensitive files in staged/untracked changes
+$SensitivePatterns = @('\.env$', '\.env\.', '\.key$', '\.pem$', 'credentials\.json', '\.p12$', 'id_rsa', 'id_ed25519')
+$ChangedFiles = @(git status --porcelain | ForEach-Object { $_.Substring(3).Trim() })
+$SensitiveFound = @()
+foreach ($file in $ChangedFiles) {
+    foreach ($pattern in $SensitivePatterns) {
+        if ($file -match $pattern) {
+            $SensitiveFound += $file
+            break
+        }
+    }
+}
+if ($SensitiveFound.Count -gt 0) {
+    Write-Host "`nWARNING: Potentially sensitive files detected:" -ForegroundColor Red
+    foreach ($f in $SensitiveFound) {
+        Write-Host "  - $f" -ForegroundColor Red
+    }
+    if ([Environment]::UserInteractive -and (-not [Console]::IsInputRedirected)) {
+        Write-Host "These files will be included in the commit. Continue? (y/N)" -ForegroundColor Yellow
+        $Response = Read-Host
+        if ($Response -ne "y" -and $Response -ne "Y") {
+            Write-Host "Aborted. Add sensitive files to .gitignore or remove them from staging." -ForegroundColor Yellow
+            exit 0
+        }
+    } else {
+        Write-Error "Sensitive files detected in non-interactive mode. Aborting."
+        exit 1
+    }
+}
+
 # Show what will be committed
 Write-Host "`nChanges to be committed:" -ForegroundColor Cyan
 git status --short

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\Email;
 use App\Models\EmailWebhookLog;
 use App\Services\Email\DomainService;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class EmailWebhookController extends Controller
 {
+    use ApiResponseTrait;
     public function __construct(
         private EmailService $emailService,
         private DomainService $domainService,
@@ -26,13 +28,13 @@ class EmailWebhookController extends Controller
         try {
             $emailProvider = $this->domainService->resolveProvider($provider);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => 'Unknown provider'], 404);
+            return $this->errorResponse('Unknown provider', 404);
         }
 
         // Verify webhook signature
         if (!$emailProvider->verifyWebhookSignature($request)) {
             Log::warning("Email webhook signature verification failed for provider: {$provider}");
-            return response()->json(['message' => 'Invalid signature'], 401);
+            return $this->errorResponse('Invalid signature', 401);
         }
 
         try {
@@ -41,10 +43,10 @@ class EmailWebhookController extends Controller
 
             if ($email === null) {
                 // Duplicate or no matching mailbox — still return 200 so provider doesn't retry
-                return response()->json(['message' => 'accepted'], 200);
+                return $this->successResponse('accepted');
             }
 
-            return response()->json(['message' => 'ok', 'email_id' => $email->id], 200);
+            return $this->successResponse('ok', ['email_id' => $email->id]);
         } catch (\Exception $e) {
             Log::error("Email webhook processing failed", [
                 'provider' => $provider,
@@ -52,7 +54,7 @@ class EmailWebhookController extends Controller
             ]);
 
             // Return 500 so provider retries
-            return response()->json(['message' => 'Processing failed'], 500);
+            return $this->errorResponse('Processing failed', 500);
         }
     }
 
@@ -64,12 +66,12 @@ class EmailWebhookController extends Controller
         try {
             $emailProvider = $this->domainService->resolveProvider($provider);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => 'Unknown provider'], 404);
+            return $this->errorResponse('Unknown provider', 404);
         }
 
         if (!$emailProvider->verifyWebhookSignature($request)) {
             Log::warning("Delivery event webhook signature verification failed for provider: {$provider}");
-            return response()->json(['message' => 'Invalid signature'], 401);
+            return $this->errorResponse('Invalid signature', 401);
         }
 
         try {
@@ -88,7 +90,7 @@ class EmailWebhookController extends Controller
                     'error_message' => 'No provider_message_id in payload',
                     'created_at' => now(),
                 ]);
-                return response()->json(['message' => 'accepted'], 200);
+                return $this->successResponse('accepted');
             }
 
             // Find the email by provider_message_id
@@ -113,7 +115,7 @@ class EmailWebhookController extends Controller
                 'created_at' => now(),
             ]);
 
-            return response()->json(['message' => 'ok'], 200);
+            return $this->successResponse('ok');
         } catch (\Exception $e) {
             Log::error("Delivery event webhook processing failed", [
                 'provider' => $provider,
@@ -123,7 +125,7 @@ class EmailWebhookController extends Controller
 
             // Return 200 for parsing/data errors to prevent infinite retries.
             // Only truly transient failures (DB down, etc.) should trigger retries.
-            return response()->json(['message' => 'accepted'], 200);
+            return $this->successResponse('accepted');
         }
     }
 }

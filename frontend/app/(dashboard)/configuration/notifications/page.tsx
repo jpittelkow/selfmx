@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors, FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -473,13 +473,12 @@ function ChannelCredentialCard({
 
 // ── Field renderers ──────────────────────────────────────────────────────
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 function renderChannelFields(
   channelId: string,
-  register: any,
-  errors: any,
-  watch: any,
-  setValue: any,
+  register: UseFormRegister<FieldValues>,
+  errors: FieldErrors<FieldValues>,
+  watch: UseFormWatch<FieldValues>,
+  setValue: UseFormSetValue<FieldValues>,
   extra: {
     isGeneratingVapid: boolean;
     onGenerateVapid: () => void;

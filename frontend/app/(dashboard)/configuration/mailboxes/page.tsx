@@ -169,12 +169,32 @@ export default function MailboxesPage() {
     }
   };
 
+  const parseMembersResponse = (data: {
+    users: Array<{ id: number; type: string; user: { id: number; name: string; email: string; avatar?: string }; role: string }>;
+    groups: Array<{ id: number; type: string; group: { id: number; name: string; slug: string }; role: string }>;
+  }): MailboxMember[] => {
+    const userMembers: MailboxMember[] = (data.users || []).map((u) => ({
+      id: u.id,
+      type: "user" as const,
+      name: u.user.name,
+      email: u.user.email,
+      role: u.role,
+    }));
+    const groupMembers: MailboxMember[] = (data.groups || []).map((g) => ({
+      id: g.id,
+      type: "group" as const,
+      name: g.group.name,
+      role: g.role,
+    }));
+    return [...userMembers, ...groupMembers];
+  };
+
   const openMembersDialog = async (mailbox: Mailbox) => {
     setMembersMailbox(mailbox);
     setIsMembersLoading(true);
     try {
-      const res = await api.get<{ members: MailboxMember[] }>(`/email/mailboxes/${mailbox.id}/members`);
-      setMembers(res.data.members);
+      const res = await api.get(`/email/mailboxes/${mailbox.id}/members`);
+      setMembers(parseMembersResponse(res.data));
     } catch {
       toast.error("Failed to load members");
     } finally {
@@ -221,8 +241,8 @@ export default function MailboxesPage() {
       setAddMemberSearch("");
       setSearchResults([]);
       // Refresh members list
-      const res = await api.get<{ members: MailboxMember[] }>(`/email/mailboxes/${membersMailbox.id}/members`);
-      setMembers(res.data.members);
+      const res = await api.get(`/email/mailboxes/${membersMailbox.id}/members`);
+      setMembers(parseMembersResponse(res.data));
     } catch {
       toast.error("Failed to add member");
     } finally {
@@ -230,23 +250,23 @@ export default function MailboxesPage() {
     }
   };
 
-  const handleUpdateMemberRole = async (memberId: number, newRole: string) => {
+  const handleUpdateMemberRole = async (memberId: number, memberType: "user" | "group", newRole: string) => {
     if (!membersMailbox) return;
     try {
-      await api.put(`/email/mailboxes/${membersMailbox.id}/members/${memberId}`, { role: newRole });
-      setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m)));
+      await api.put(`/email/mailboxes/${membersMailbox.id}/members/${memberId}`, { type: memberType, role: newRole });
+      setMembers((prev) => prev.map((m) => (m.id === memberId && m.type === memberType ? { ...m, role: newRole } : m)));
       toast.success("Role updated");
     } catch {
       toast.error("Failed to update role");
     }
   };
 
-  const handleRemoveMember = async (memberId: number) => {
+  const handleRemoveMember = async (memberId: number, memberType: "user" | "group") => {
     if (!membersMailbox) return;
     setRemovingMemberId(memberId);
     try {
-      await api.delete(`/email/mailboxes/${membersMailbox.id}/members/${memberId}`);
-      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      await api.delete(`/email/mailboxes/${membersMailbox.id}/members/${memberId}`, { data: { type: memberType } });
+      setMembers((prev) => prev.filter((m) => !(m.id === memberId && m.type === memberType)));
       toast.success("Member removed");
     } catch {
       toast.error("Failed to remove member");
@@ -531,7 +551,7 @@ export default function MailboxesPage() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <Select
                           value={member.role}
-                          onValueChange={(role) => handleUpdateMemberRole(member.id, role)}
+                          onValueChange={(role) => handleUpdateMemberRole(member.id, member.type, role)}
                         >
                           <SelectTrigger className="h-7 w-24 text-xs">
                             <SelectValue />
@@ -546,7 +566,7 @@ export default function MailboxesPage() {
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 p-0"
-                          onClick={() => handleRemoveMember(member.id)}
+                          onClick={() => handleRemoveMember(member.id, member.type)}
                           disabled={removingMemberId === member.id}
                           title="Remove member"
                         >

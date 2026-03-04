@@ -12,7 +12,7 @@ import {
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-export interface Notification {
+export interface AppNotification {
   id: string;
   user_id: number;
   type: string;
@@ -25,7 +25,7 @@ export interface Notification {
 }
 
 interface NotificationContextValue {
-  notifications: Notification[];
+  notifications: AppNotification[];
   unreadCount: number;
   isLoading: boolean;
   fetchNotifications: () => Promise<void>;
@@ -33,7 +33,7 @@ interface NotificationContextValue {
   markAsRead: (ids: string[]) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
-  prependNotification?: (n: Notification) => void;
+  prependNotification?: (n: AppNotification) => void;
 }
 
 const NotificationContext = createContext<NotificationContextValue | null>(null);
@@ -50,7 +50,7 @@ export function useNotifications() {
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const mounted = useRef(true);
@@ -70,7 +70,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const { data } = await api.get<{
-        data: Notification[];
+        data: AppNotification[];
         current_page: number;
         per_page: number;
         total: number;
@@ -147,7 +147,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     [user, fetchNotifications]
   );
 
-  const prependNotification = useCallback((n: Notification) => {
+  const prependNotification = useCallback((n: AppNotification) => {
     setNotifications((prev) => {
       const exists = prev.some((x) => x.id === n.id);
       if (exists) return prev;
@@ -184,7 +184,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       const channel = echo.private(`user.${user.id}`);
       channel.listen(".NotificationSent", (e: { id?: string; [k: string]: unknown }) => {
         if (!mounted.current || !e) return;
-        const n = e as unknown as Notification;
+        const n = e as unknown as AppNotification;
         if (n?.id && prependNotification) {
           prependNotification({
             id: n.id,

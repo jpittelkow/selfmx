@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateMailSettingRequest;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\AuditService;
 use App\Services\EmailConfigService;
 use App\Services\SettingService;
@@ -13,6 +15,8 @@ use Illuminate\Support\Facades\Mail;
 
 class MailSettingController extends Controller
 {
+    use ApiResponseTrait;
+
     private const GROUP = 'mail';
 
     /**
@@ -76,7 +80,7 @@ class MailSettingController extends Controller
             }
         }
 
-        return response()->json([
+        return $this->dataResponse([
             'settings' => $mapped,
         ]);
     }
@@ -84,25 +88,9 @@ class MailSettingController extends Controller
     /**
      * Update mail settings.
      */
-    public function update(Request $request): JsonResponse
+    public function update(UpdateMailSettingRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'provider' => ['required', 'string', 'in:smtp,mailgun,sendgrid,ses,postmark'],
-            'host' => ['required_if:provider,smtp', 'nullable', 'string'],
-            'port' => ['required_if:provider,smtp', 'nullable', 'integer', 'min:1', 'max:65535'],
-            'encryption' => ['sometimes', 'string', 'in:tls,ssl'],
-            'username' => ['sometimes', 'nullable', 'string'],
-            'password' => ['sometimes', 'nullable', 'string'],
-            'from_address' => ['required', 'string', 'email'],
-            'from_name' => ['required', 'string', 'max:255'],
-            'mailgun_domain' => ['required_if:provider,mailgun', 'nullable', 'string'],
-            'mailgun_secret' => ['required_if:provider,mailgun', 'nullable', 'string'],
-            'sendgrid_api_key' => ['required_if:provider,sendgrid', 'nullable', 'string'],
-            'ses_key' => ['required_if:provider,ses', 'nullable', 'string'],
-            'ses_secret' => ['required_if:provider,ses', 'nullable', 'string'],
-            'ses_region' => ['required_if:provider,ses', 'nullable', 'string'],
-            'postmark_token' => ['required_if:provider,postmark', 'nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $userId = $request->user()->id;
         $oldSettings = $this->settingService->getGroup(self::GROUP);
@@ -119,9 +107,7 @@ class MailSettingController extends Controller
         }
         $this->auditService->logSettings(self::GROUP, $oldSettings, $newSettings, $userId);
 
-        return response()->json([
-            'message' => 'Mail settings updated successfully',
-        ]);
+        return $this->successResponse('Mail settings updated successfully');
     }
 
     /**
@@ -132,10 +118,10 @@ class MailSettingController extends Controller
         $schemaKey = $key;
         $schema = config('settings-schema.mail', []);
         if (!array_key_exists($schemaKey, $schema)) {
-            return response()->json(['message' => 'Unknown setting key'], 422);
+            return $this->errorResponse('Unknown setting key', 422);
         }
         $this->settingService->reset(self::GROUP, $schemaKey);
-        return response()->json(['message' => 'Setting reset to default']);
+        return $this->successResponse('Setting reset to default');
     }
 
     /**
@@ -160,9 +146,7 @@ class MailSettingController extends Controller
                     );
             });
 
-            return response()->json([
-                'message' => 'Test email sent successfully',
-            ]);
+            return $this->successResponse('Test email sent successfully');
         } catch (\Throwable $e) {
             Log::error('Test email failed', [
                 'to' => $validated['to'],
@@ -174,9 +158,7 @@ class MailSettingController extends Controller
             if (str_contains($message, 'Class') && str_contains($message, 'not found')) {
                 $message = 'Mail driver is not installed. Run composer install in the backend (e.g. symfony/mailgun-mailer for Mailgun).';
             }
-            return response()->json([
-                'message' => 'Failed to send test email: ' . $message,
-            ], 500);
+            return $this->errorResponse('Failed to send test email: ' . $message, 500);
         }
     }
 }

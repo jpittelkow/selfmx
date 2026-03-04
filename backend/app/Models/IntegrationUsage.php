@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -68,7 +69,7 @@ class IntegrationUsage extends Model
     /**
      * Scope to filter by integration type.
      */
-    public function scopeByIntegration($query, string $integration)
+    public function scopeByIntegration(Builder $query, string $integration): Builder
     {
         return $query->where('integration', $integration);
     }
@@ -76,7 +77,7 @@ class IntegrationUsage extends Model
     /**
      * Scope to filter by provider.
      */
-    public function scopeByProvider($query, string $provider)
+    public function scopeByProvider(Builder $query, string $provider): Builder
     {
         return $query->where('provider', $provider);
     }
@@ -84,7 +85,7 @@ class IntegrationUsage extends Model
     /**
      * Scope to filter by date range.
      */
-    public function scopeByDateRange($query, string $from, string $to)
+    public function scopeByDateRange(Builder $query, string $from, string $to): Builder
     {
         return $query->whereBetween('created_at', [
             Carbon::parse($from)->startOfDay(),
@@ -95,7 +96,7 @@ class IntegrationUsage extends Model
     /**
      * Scope to filter by user.
      */
-    public function scopeByUser($query, int $userId)
+    public function scopeByUser(Builder $query, int $userId): Builder
     {
         return $query->where('user_id', $userId);
     }

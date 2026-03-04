@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Command,
@@ -25,16 +25,18 @@ export function MailCommandPalette({ open, onOpenChange, onImport }: MailCommand
   const { openCompose } = useMailData();
 
   // Ctrl+K to toggle (mail-specific) — only when on mail page
+  const openRef = useRef(open);
+  openRef.current = open;
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        onOpenChange(!open);
+        onOpenChange(!openRef.current);
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, onOpenChange]);
+  }, [onOpenChange]);
 
   const handleSelect = useCallback(
     (actionKey: string) => {

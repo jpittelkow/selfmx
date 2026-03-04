@@ -95,17 +95,13 @@ export async function subscribe(vapidPublicKey: string): Promise<PushSubscriptio
     return null;
   }
 
-  try {
-    const key = urlBase64ToUint8Array(vapidPublicKey);
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      // Type assertion needed due to Node.js/browser ArrayBuffer type mismatch during build
-      applicationServerKey: key as unknown as ArrayBuffer,
-    });
-    return subscriptionToPayload(subscription);
-  } catch (error) {
-    throw error;
-  }
+  const key = urlBase64ToUint8Array(vapidPublicKey);
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    // Type assertion needed due to Node.js/browser ArrayBuffer type mismatch during build
+    applicationServerKey: key as unknown as ArrayBuffer,
+  });
+  return subscriptionToPayload(subscription);
 }
 
 /**

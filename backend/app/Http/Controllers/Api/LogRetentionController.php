@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\AuditService;
 use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
@@ -10,6 +11,8 @@ use Illuminate\Http\Request;
 
 class LogRetentionController extends Controller
 {
+    use ApiResponseTrait;
+
     public const GROUP = 'logging';
 
     public function __construct(
@@ -30,7 +33,7 @@ class LogRetentionController extends Controller
         ];
         $settings = array_merge($defaults, $settings);
 
-        return response()->json([
+        return $this->dataResponse([
             'settings' => $settings,
         ]);
     }
@@ -53,8 +56,6 @@ class LogRetentionController extends Controller
 
         $this->auditService->logSettings('log_retention', $oldSettings, $validated, $user->id);
 
-        return response()->json([
-            'message' => 'Log retention settings updated.',
-        ]);
+        return $this->successResponse('Log retention settings updated.');
     }
 }

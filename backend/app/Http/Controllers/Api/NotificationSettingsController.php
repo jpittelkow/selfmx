@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\EmailConfigService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
  */
 class NotificationSettingsController extends Controller
 {
+    use ApiResponseTrait;
     /**
      * Get notification channel configuration.
      */
@@ -36,7 +38,7 @@ class NotificationSettingsController extends Controller
             ];
         })->values();
 
-        return response()->json(['channels' => $channels]);
+        return $this->dataResponse(['channels' => $channels]);
     }
 
     /**
@@ -65,7 +67,7 @@ class NotificationSettingsController extends Controller
             }
         }
 
-        return response()->json(['message' => 'Notification settings updated']);
+        return $this->successResponse('Notification settings updated');
     }
 
     /**

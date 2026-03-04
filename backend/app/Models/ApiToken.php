@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
@@ -101,7 +102,7 @@ class ApiToken extends Model
     /**
      * Scope: active tokens (not expired, not revoked).
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where(function ($q) {
             $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
@@ -111,7 +112,7 @@ class ApiToken extends Model
     /**
      * Scope: expired tokens.
      */
-    public function scopeExpired($query)
+    public function scopeExpired(Builder $query): Builder
     {
         return $query->whereNotNull('expires_at')->where('expires_at', '<=', now());
     }
@@ -119,7 +120,7 @@ class ApiToken extends Model
     /**
      * Scope: revoked tokens.
      */
-    public function scopeRevoked($query)
+    public function scopeRevoked(Builder $query): Builder
     {
         return $query->whereNotNull('revoked_at');
     }

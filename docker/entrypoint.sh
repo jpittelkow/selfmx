@@ -184,6 +184,25 @@ fi
 export MEILISEARCH_KEY="${MEILISEARCH_KEY:-${MEILI_MASTER_KEY}}"
 
 #==============================================================================
+# Auto-generate and persist REVERB_APP_SECRET to data volume
+#==============================================================================
+REVERB_SECRET_FILE="${DATA_DIR}/.reverb_app_secret"
+if [ -z "${REVERB_APP_SECRET}" ] || [ "${REVERB_APP_SECRET}" = "selfmx-secret" ]; then
+    if [ -f "${REVERB_SECRET_FILE}" ]; then
+        echo "Loading REVERB_APP_SECRET from persistent storage..."
+        export REVERB_APP_SECRET=$(cat "${REVERB_SECRET_FILE}")
+    else
+        echo "Generating new REVERB_APP_SECRET..."
+        REVERB_APP_SECRET=$(openssl rand -base64 32)
+        echo "${REVERB_APP_SECRET}" > "${REVERB_SECRET_FILE}"
+        chmod 600 "${REVERB_SECRET_FILE}"
+        chown www-data:www-data "${REVERB_SECRET_FILE}"
+        export REVERB_APP_SECRET
+        echo "REVERB_APP_SECRET generated and saved to persistent storage"
+    fi
+fi
+
+#==============================================================================
 # Auto-derive environment variables from APP_URL
 #==============================================================================
 # Default FRONTEND_URL to APP_URL (same origin in single-container setup)

@@ -26,12 +26,12 @@ class TwoFactorService
     {
         $secret = $this->google2fa->generateSecretKey();
 
-        // Store the secret (unconfirmed)
-        $user->update([
+        // Store the secret (unconfirmed) — forceFill since 2FA fields are guarded
+        $user->forceFill([
             'two_factor_secret' => encrypt($secret),
             'two_factor_enabled' => false,
             'two_factor_confirmed_at' => null,
-        ]);
+        ])->save();
 
         // Generate QR code
         $qrCodeUrl = $this->google2fa->getQRCodeUrl(
@@ -75,11 +75,11 @@ class TwoFactorService
     {
         $recoveryCodes = $this->generateRecoveryCodes();
 
-        $user->update([
+        $user->forceFill([
             'two_factor_enabled' => true,
             'two_factor_confirmed_at' => now(),
             'two_factor_recovery_codes' => $recoveryCodes,
-        ]);
+        ])->save();
 
         return $recoveryCodes;
     }
@@ -89,12 +89,12 @@ class TwoFactorService
      */
     public function disable(User $user): void
     {
-        $user->update([
+        $user->forceFill([
             'two_factor_enabled' => false,
             'two_factor_secret' => null,
             'two_factor_confirmed_at' => null,
             'two_factor_recovery_codes' => null,
-        ]);
+        ])->save();
     }
 
     /**
@@ -114,9 +114,9 @@ class TwoFactorService
             fn ($c) => $c !== $code
         ));
 
-        $user->update([
+        $user->forceFill([
             'two_factor_recovery_codes' => $recoveryCodes,
-        ]);
+        ])->save();
 
         return true;
     }
@@ -152,9 +152,9 @@ class TwoFactorService
     {
         $recoveryCodes = $this->generateRecoveryCodes();
 
-        $user->update([
+        $user->forceFill([
             'two_factor_recovery_codes' => $recoveryCodes,
-        ]);
+        ])->save();
 
         return $recoveryCodes;
     }

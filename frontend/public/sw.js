@@ -54,7 +54,9 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (err) {
-    console.error('[SW] Failed to parse push payload:', err);
+    if (self.location.hostname === 'localhost') {
+      console.error('[SW] Failed to parse push payload:', err);
+    }
   }
   const title = data.title || 'Notification';
   const options = {
@@ -78,7 +80,9 @@ self.addEventListener('push', (event) => {
       // Always show native OS notification — the bell handles in-app display
       // separately, so there's no duplication.
       return self.registration.showNotification(title, options).catch((err) => {
-        console.error('[SW] showNotification failed:', err);
+        if (self.location.hostname === 'localhost') {
+          console.error('[SW] showNotification failed:', err);
+        }
       });
     })
   );

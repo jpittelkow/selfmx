@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\AuditService;
 use App\Services\ScheduledTaskService;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class JobController extends Controller
 {
+    use ApiResponseTrait;
     public function __construct(
         private ScheduledTaskService $scheduledTaskService,
         private AuditService $auditService
@@ -61,9 +63,9 @@ class JobController extends Controller
                 ];
             }
 
-            return response()->json(['tasks' => $tasks]);
+            return $this->dataResponse(['tasks' => $tasks]);
         } catch (\Exception $e) {
-            return response()->json([
+            return $this->dataResponse([
                 'tasks' => [],
                 'error' => 'Unable to retrieve scheduled tasks: ' . $e->getMessage(),
             ]);
@@ -123,9 +125,7 @@ class JobController extends Controller
     public function run(Request $request, string $command): JsonResponse
     {
         if (! $this->scheduledTaskService->isTriggerable($command)) {
-            return response()->json([
-                'message' => 'Command is not allowed to be triggered manually.',
-            ], 403);
+            return $this->errorResponse('Command is not allowed to be triggered manually.', 403);
         }
 
         $options = $request->input('options', []);
@@ -151,16 +151,15 @@ class JobController extends Controller
         );
 
         if ($result['success']) {
-            return response()->json([
+            return $this->dataResponse([
                 'success' => true,
                 'output' => $result['output'],
                 'duration_ms' => $result['duration_ms'],
             ]);
         }
 
-        return response()->json([
+        return $this->successResponse($result['output'], [
             'success' => false,
-            'message' => $result['output'],
             'output' => $result['output'],
             'duration_ms' => $result['duration_ms'],
         ], 422);
@@ -181,7 +180,7 @@ class JobController extends Controller
             try {
                 $stats['queues'] = [];
                 $queues = ['default', 'high', 'low']; // Common queue names
-                
+
                 foreach ($queues as $queue) {
                     $stats['queues'][$queue] = DB::table('jobs')
                         ->where('queue', $queue)
@@ -191,9 +190,9 @@ class JobController extends Controller
                 // Queue stats might not be available
             }
 
-            return response()->json($stats);
+            return $this->dataResponse($stats);
         } catch (\Exception $e) {
-            return response()->json([
+            return $this->dataResponse([
                 'error' => 'Unable to retrieve queue status: ' . $e->getMessage(),
             ], 500);
         }
@@ -210,7 +209,7 @@ class JobController extends Controller
             ->orderBy('failed_at', 'desc')
             ->paginate($perPage);
 
-        return response()->json($jobs);
+        return $this->dataResponse($jobs);
     }
 
     /**
@@ -222,20 +221,14 @@ class JobController extends Controller
             $job = DB::table('failed_jobs')->where('id', $id)->first();
 
             if (!$job) {
-                return response()->json([
-                    'message' => 'Failed job not found',
-                ], 404);
+                return $this->errorResponse('Failed job not found', 404);
             }
 
             Artisan::call('queue:retry', ['id' => $id]);
 
-            return response()->json([
-                'message' => 'Job queued for retry',
-            ]);
+            return $this->successResponse('Job queued for retry');
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to retry job: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to retry job: ' . $e->getMessage(), 500);
         }
     }
 
@@ -248,18 +241,12 @@ class JobController extends Controller
             $deleted = DB::table('failed_jobs')->where('id', $id)->delete();
 
             if ($deleted) {
-                return response()->json([
-                    'message' => 'Failed job deleted',
-                ]);
+                return $this->deleteResponse('Failed job deleted');
             }
 
-            return response()->json([
-                'message' => 'Failed job not found',
-            ], 404);
+            return $this->errorResponse('Failed job not found', 404);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to delete job: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to delete job: ' . $e->getMessage(), 500);
         }
     }
 
@@ -271,13 +258,9 @@ class JobController extends Controller
         try {
             Artisan::call('queue:retry', ['id' => 'all']);
 
-            return response()->json([
-                'message' => 'All failed jobs queued for retry',
-            ]);
+            return $this->successResponse('All failed jobs queued for retry');
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to retry jobs: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to retry jobs: ' . $e->getMessage(), 500);
         }
     }
 
@@ -289,13 +272,9 @@ class JobController extends Controller
         try {
             Artisan::call('queue:flush');
 
-            return response()->json([
-                'message' => 'All failed jobs cleared',
-            ]);
+            return $this->successResponse('All failed jobs cleared');
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to clear jobs: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to clear jobs: ' . $e->getMessage(), 500);
         }
     }
 }

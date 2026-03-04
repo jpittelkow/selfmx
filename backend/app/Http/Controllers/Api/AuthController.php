@@ -15,6 +15,7 @@ use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -36,17 +37,16 @@ class AuthController extends Controller
 
     /**
      * Check if an email is available for registration.
-     * Rate limited to prevent enumeration. Returns constant structure for timing consistency.
+     * Always returns available to prevent email enumeration.
+     * Real uniqueness validation happens on the register endpoint.
      */
     public function checkEmail(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $request->validate([
             'email' => ['required', 'string', 'email', 'max:255'],
         ]);
 
-        $exists = User::where('email', $validated['email'])->exists();
-
-        return $this->dataResponse(['available' => !$exists]);
+        return $this->dataResponse(['available' => true]);
     }
 
     /**
@@ -56,27 +56,41 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'confirmed', PasswordRule::defaults()],
         ]);
 
+        // Check uniqueness separately to return a generic error (prevent email enumeration).
+        // The unique check above was removed so Laravel doesn't return "email already taken".
+        if (User::where('email', $validated['email'])->exists()) {
+            Log::info('Registration attempted with existing email', ['email' => $validated['email']]);
+            return $this->errorResponse('Registration could not be completed. Please try again or contact support.', 422);
+        }
+
         $groupService = app(GroupService::class);
-        $isFirstUser = User::count() === 0;
-        if ($isFirstUser) {
-            $groupService->ensureDefaultGroupsExist();
-        }
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-        ]);
+        // Wrap in transaction to prevent race condition where multiple users
+        // could register simultaneously and all see count === 0
+        $user = DB::transaction(function () use ($validated, $groupService) {
+            $isFirstUser = User::lockForUpdate()->count() === 0;
+            if ($isFirstUser) {
+                $groupService->ensureDefaultGroupsExist();
+            }
 
-        if ($isFirstUser) {
-            $user->assignGroup('admin');
-        } else {
-            $groupService->assignDefaultGroupToUser($user);
-        }
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => $validated['password'],
+            ]);
+
+            if ($isFirstUser) {
+                $user->assignGroup('admin');
+            } else {
+                $groupService->assignDefaultGroupToUser($user);
+            }
+
+            return $user;
+        });
 
         if ($emailConfigService->isConfigured()) {
             event(new Registered($user));

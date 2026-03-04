@@ -23,7 +23,7 @@ class ContactController extends Controller
         $query = Contact::where('user_id', $request->user()->id);
 
         if ($request->has('q') && $request->input('q') !== '') {
-            $searchTerm = $request->input('q');
+            $searchTerm = \App\Support\Str::escapeLike($request->input('q'));
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('email_address', 'like', "%{$searchTerm}%")
                     ->orWhere('display_name', 'like', "%{$searchTerm}%");

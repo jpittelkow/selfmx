@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 import { errorLogger } from "@/lib/error-logger";
 import { useOnline } from "@/lib/use-online";
+import { isIOSDevice } from "@/lib/browser-utils";
 import { OfflineBadge } from "@/components/offline-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,11 +72,6 @@ interface NotificationChannelPref {
   settings: NotificationSetting[];
 }
 
-function isIOSDevice(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-}
 
 function isStandaloneMode(): boolean {
   if (typeof window === "undefined") return false;

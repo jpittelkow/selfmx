@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SettingController extends Controller
 {
+    use ApiResponseTrait;
+
     /**
      * Get all user settings.
      */
@@ -19,7 +22,7 @@ class SettingController extends Controller
             ->groupBy('group')
             ->map(fn ($group) => $group->pluck('value', 'key'));
 
-        return response()->json([
+        return $this->dataResponse([
             'settings' => $settings,
         ]);
     }
@@ -35,7 +38,7 @@ class SettingController extends Controller
             ->get()
             ->pluck('value', 'key');
 
-        return response()->json([
+        return $this->dataResponse([
             'group' => $group,
             'settings' => $settings,
         ]);
@@ -63,9 +66,7 @@ class SettingController extends Controller
             );
         }
 
-        return response()->json([
-            'message' => 'Settings updated successfully',
-        ]);
+        return $this->successResponse('Settings updated successfully');
     }
 
     /**
@@ -83,9 +84,6 @@ class SettingController extends Controller
             $user->setSetting($group, $key, $value);
         }
 
-        return response()->json([
-            'message' => 'Settings updated successfully',
-            'group' => $group,
-        ]);
+        return $this->successResponse('Settings updated successfully', ['group' => $group]);
     }
 }

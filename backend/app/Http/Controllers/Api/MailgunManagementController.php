@@ -90,10 +90,12 @@ class MailgunManagementController extends Controller
 
     public function getDkim(Request $request, int $domainId): JsonResponse
     {
-        $domain = $this->resolveDomain($request, $domainId);
-        $data = $this->mailgun->getDkimKey($domain->name, $this->domainConfig($domain));
+        return $this->wrapMailgunCall(function () use ($request, $domainId) {
+            $domain = $this->resolveDomain($request, $domainId);
+            $data = $this->mailgun->getDkimKey($domain->name, $this->domainConfig($domain));
 
-        return response()->json($data);
+            return response()->json($data);
+        });
     }
 
     public function rotateDkim(Request $request, int $domainId): JsonResponse
@@ -176,10 +178,12 @@ class MailgunManagementController extends Controller
 
     public function listWebhooks(Request $request, int $domainId): JsonResponse
     {
-        $domain = $this->resolveDomain($request, $domainId);
-        $webhooks = $this->mailgun->listWebhooks($domain->name, $this->domainConfig($domain));
+        return $this->wrapMailgunCall(function () use ($request, $domainId) {
+            $domain = $this->resolveDomain($request, $domainId);
+            $webhooks = $this->mailgun->listWebhooks($domain->name, $this->domainConfig($domain));
 
-        return response()->json(['webhooks' => $webhooks]);
+            return response()->json(['webhooks' => $webhooks]);
+        });
     }
 
     public function createWebhook(Request $request, int $domainId): JsonResponse
@@ -262,6 +266,7 @@ class MailgunManagementController extends Controller
     /**
      * Auto-configure all selfmx delivery webhooks for this domain.
      * Sets delivered, bounced, complained to the selfmx events endpoint.
+     * Uses upsert: tries to create, falls back to update if already exists.
      */
     public function autoConfigureWebhooks(Request $request, int $domainId): JsonResponse
     {
@@ -278,7 +283,16 @@ class MailgunManagementController extends Controller
             try {
                 $results[$event] = $this->mailgun->createWebhook($domain->name, $event, $eventsUrl, $config);
             } catch (MailgunApiException $e) {
-                $errors[$event] = $e->getMessage();
+                // Only retry as update if Mailgun returned 400 (webhook already exists)
+                if ($e->httpStatus === 400) {
+                    try {
+                        $results[$event] = $this->mailgun->updateWebhook($domain->name, $event, $eventsUrl, $config);
+                    } catch (MailgunApiException $updateEx) {
+                        $errors[$event] = $updateEx->getMessage();
+                    }
+                } else {
+                    $errors[$event] = $e->getMessage();
+                }
             }
         }
 
@@ -310,10 +324,12 @@ class MailgunManagementController extends Controller
 
     public function listRoutes(Request $request, int $domainId): JsonResponse
     {
-        $domain = $this->resolveDomain($request, $domainId);
-        $routes = $this->mailgun->listRoutes($domain->name, $this->domainConfig($domain));
+        return $this->wrapMailgunCall(function () use ($request, $domainId) {
+            $domain = $this->resolveDomain($request, $domainId);
+            $routes = $this->mailgun->listRoutes($domain->name, $this->domainConfig($domain));
 
-        return response()->json(['routes' => $routes]);
+            return response()->json(['routes' => $routes]);
+        });
     }
 
     public function createRoute(Request $request, int $domainId): JsonResponse
@@ -374,21 +390,23 @@ class MailgunManagementController extends Controller
 
     public function getEvents(Request $request, int $domainId): JsonResponse
     {
-        $domain = $this->resolveDomain($request, $domainId);
-        $validated = $request->validate([
-            'event'      => ['sometimes', 'string'],
-            'recipient'  => ['sometimes', 'string'],
-            'begin'      => ['sometimes', 'string'],
-            'end'        => ['sometimes', 'string'],
-            'subject'    => ['sometimes', 'string'],
-            'message-id' => ['sometimes', 'string'],
-            'limit'      => ['sometimes', 'integer', 'min:1', 'max:300'],
-            'page'       => ['sometimes', 'nullable', 'string'],
-        ]);
+        return $this->wrapMailgunCall(function () use ($request, $domainId) {
+            $domain = $this->resolveDomain($request, $domainId);
+            $validated = $request->validate([
+                'event'      => ['sometimes', 'string'],
+                'recipient'  => ['sometimes', 'string'],
+                'begin'      => ['sometimes', 'string'],
+                'end'        => ['sometimes', 'string'],
+                'subject'    => ['sometimes', 'string'],
+                'message-id' => ['sometimes', 'string'],
+                'limit'      => ['sometimes', 'integer', 'min:1', 'max:300'],
+                'page'       => ['sometimes', 'nullable', 'string'],
+            ]);
 
-        $data = $this->mailgun->getEvents($domain->name, $validated, $this->domainConfig($domain));
+            $data = $this->mailgun->getEvents($domain->name, $validated, $this->domainConfig($domain));
 
-        return response()->json($data);
+            return response()->json($data);
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -401,18 +419,20 @@ class MailgunManagementController extends Controller
             abort(422, 'Invalid suppression type. Must be: bounces, complaints, unsubscribes');
         }
 
-        $domain = $this->resolveDomain($request, $domainId);
-        $limit = (int) $request->query('limit', 25);
-        $page  = $request->query('page');
-        $config = $this->domainConfig($domain);
+        return $this->wrapMailgunCall(function () use ($request, $domainId, $type) {
+            $domain = $this->resolveDomain($request, $domainId);
+            $limit = (int) $request->query('limit', 25);
+            $page  = $request->query('page');
+            $config = $this->domainConfig($domain);
 
-        $data = match ($type) {
-            'bounces'      => $this->mailgun->listBounces($domain->name, $limit, $page, $config),
-            'complaints'   => $this->mailgun->listComplaints($domain->name, $limit, $page, $config),
-            'unsubscribes' => $this->mailgun->listUnsubscribes($domain->name, $limit, $page, $config),
-        };
+            $data = match ($type) {
+                'bounces'      => $this->mailgun->listBounces($domain->name, $limit, $page, $config),
+                'complaints'   => $this->mailgun->listComplaints($domain->name, $limit, $page, $config),
+                'unsubscribes' => $this->mailgun->listUnsubscribes($domain->name, $limit, $page, $config),
+            };
 
-        return response()->json($data);
+            return response()->json($data);
+        });
     }
 
     public function deleteSuppression(Request $request, int $domainId, string $type, string $address): JsonResponse
@@ -588,10 +608,12 @@ class MailgunManagementController extends Controller
 
     public function getTracking(Request $request, int $domainId): JsonResponse
     {
-        $domain = $this->resolveDomain($request, $domainId);
-        $data = $this->mailgun->getTrackingSettings($domain->name, $this->domainConfig($domain));
+        return $this->wrapMailgunCall(function () use ($request, $domainId) {
+            $domain = $this->resolveDomain($request, $domainId);
+            $data = $this->mailgun->getTrackingSettings($domain->name, $this->domainConfig($domain));
 
-        return response()->json($data);
+            return response()->json($data);
+        });
     }
 
     public function updateTracking(Request $request, int $domainId, string $type): JsonResponse
@@ -623,21 +645,23 @@ class MailgunManagementController extends Controller
 
     public function getStats(Request $request, int $domainId): JsonResponse
     {
-        $domain = $this->resolveDomain($request, $domainId);
-        $validated = $request->validate([
-            'duration'   => ['sometimes', 'string', 'in:1d,7d,30d,90d'],
-            'resolution' => ['sometimes', 'string', 'in:hour,day,month'],
-        ]);
+        return $this->wrapMailgunCall(function () use ($request, $domainId) {
+            $domain = $this->resolveDomain($request, $domainId);
+            $validated = $request->validate([
+                'duration'   => ['sometimes', 'string', 'in:1d,7d,30d,90d'],
+                'resolution' => ['sometimes', 'string', 'in:hour,day,month'],
+            ]);
 
-        $events = ['accepted', 'delivered', 'failed', 'bounced', 'complained'];
-        $data = $this->mailgun->getDomainStats(
-            $domain->name,
-            $events,
-            $validated['duration'] ?? '30d',
-            $validated['resolution'] ?? 'day',
-            $this->domainConfig($domain),
-        );
+            $events = ['accepted', 'delivered', 'failed', 'bounced', 'complained'];
+            $data = $this->mailgun->getDomainStats(
+                $domain->name,
+                $events,
+                $validated['duration'] ?? '30d',
+                $validated['resolution'] ?? 'day',
+                $this->domainConfig($domain),
+            );
 
-        return response()->json($data);
+            return response()->json($data);
+        });
     }
 }

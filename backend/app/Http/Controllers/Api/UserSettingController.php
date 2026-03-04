@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\UserSettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserSettingController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private readonly UserSettingService $settingService
     ) {}
@@ -18,7 +21,7 @@ class UserSettingController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
-        return response()->json(
+        return $this->dataResponse(
             $this->settingService->getPreferences($request->user())
         );
     }
@@ -41,8 +44,7 @@ class UserSettingController extends Controller
         $user = $request->user();
         $this->settingService->applyPreferences($user, $validated);
 
-        return response()->json([
-            'message' => 'Preferences updated successfully',
+        return $this->successResponse('Preferences updated successfully', [
             'preferences' => $this->settingService->getPreferences($user),
         ]);
     }
@@ -68,7 +70,7 @@ class UserSettingController extends Controller
             $user->setSetting('general', 'timezone', $validated['timezone']);
         }
 
-        return response()->json([
+        return $this->dataResponse([
             'timezone' => $user->getSetting('general', 'timezone') ?? $validated['timezone'],
             'effective_timezone' => $user->getTimezone(),
             'was_set' => $current === null,

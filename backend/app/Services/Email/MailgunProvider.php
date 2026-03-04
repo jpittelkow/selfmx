@@ -325,7 +325,7 @@ class MailgunProvider implements EmailProviderInterface
 
     public function getDkimKey(string $domain, array $config = []): array
     {
-        $result = $this->managementRequest('get', "v4/domains/{$domain}/dkim", [], $config);
+        $result = $this->managementRequestOrFail('get', "v4/domains/{$domain}/dkim", [], $config);
         return $result['body'];
     }
 
@@ -339,7 +339,7 @@ class MailgunProvider implements EmailProviderInterface
 
     public function listWebhooks(string $domain, array $config = []): array
     {
-        $result = $this->managementRequest('get', "v3/domains/{$domain}/webhooks", [], $config);
+        $result = $this->managementRequestOrFail('get', "v3/domains/{$domain}/webhooks", [], $config);
         return $result['body']['webhooks'] ?? [];
     }
 
@@ -430,6 +430,8 @@ class MailgunProvider implements EmailProviderInterface
     /**
      * List Mailgun routes that match the given domain in their expression.
      * Mailgun's routes API returns all routes globally; we filter by domain.
+     *
+     * @throws MailgunApiException if the API call fails
      */
     public function listRoutes(string $domain, array $config = []): array
     {
@@ -438,19 +440,32 @@ class MailgunProvider implements EmailProviderInterface
         $limit = 100;
 
         do {
-            $result = $this->managementRequest('get', 'v3/routes', ['limit' => $limit, 'skip' => $skip], $config);
+            $result = $this->managementRequestOrFail('get', 'v3/routes', ['limit' => $limit, 'skip' => $skip], $config);
+
             $routes = $result['body']['items'] ?? [];
             $totalCount = $result['body']['total_count'] ?? 0;
             $allRoutes = array_merge($allRoutes, $routes);
             $skip += $limit;
         } while (count($allRoutes) < $totalCount && ! empty($routes));
 
-        // Filter routes that reference this exact domain (anchored on @domain to avoid subdomain matches)
+        // Filter routes that reference this domain in their expression or description
         $escapedDomain = preg_quote($domain, '/');
-        $filtered = array_values(array_filter($allRoutes, function ($route) use ($escapedDomain) {
+        $filtered = array_values(array_filter($allRoutes, function ($route) use ($domain, $escapedDomain) {
             $expr = $route['expression'] ?? '';
+            $desc = $route['description'] ?? '';
 
-            return (bool) preg_match('/@'.$escapedDomain.'[\'")\\s,]|@'.$escapedDomain.'$/', $expr);
+            // Match @domain in expression, anchored to avoid subdomain false positives
+            // Handles: match_recipient('.*@example.com'), match_recipient('user@example.com')
+            if (preg_match('/@' . $escapedDomain . '(?=[\'"\s\)>]|$)/', $expr)) {
+                return true;
+            }
+
+            // Match "for <domain>" in description (matches our configureDomainWebhook format)
+            if (preg_match('/\bfor\s+' . $escapedDomain . '\b/i', $desc)) {
+                return true;
+            }
+
+            return false;
         }));
 
         if (empty($filtered) && ! empty($allRoutes)) {
@@ -497,7 +512,7 @@ class MailgunProvider implements EmailProviderInterface
     public function getEvents(string $domain, array $filters = [], array $config = []): array
     {
         $params = array_filter(array_merge(['limit' => 25], $filters));
-        $result = $this->managementRequest('get', "v3/{$domain}/events", $params, $config);
+        $result = $this->managementRequestOrFail('get', "v3/{$domain}/events", $params, $config);
         return [
             'items'    => $result['body']['items'] ?? [],
             'nextPage' => $result['body']['paging']['next'] ?? null,
@@ -509,7 +524,7 @@ class MailgunProvider implements EmailProviderInterface
     public function listBounces(string $domain, int $limit = 25, ?string $page = null, array $config = []): array
     {
         $params = array_filter(['limit' => $limit, 'p' => $page]);
-        $result = $this->managementRequest('get', "v3/{$domain}/bounces", $params, $config);
+        $result = $this->managementRequestOrFail('get', "v3/{$domain}/bounces", $params, $config);
         return [
             'items'    => $result['body']['items'] ?? [],
             'nextPage' => $result['body']['paging']['next'] ?? null,
@@ -525,7 +540,7 @@ class MailgunProvider implements EmailProviderInterface
     public function listComplaints(string $domain, int $limit = 25, ?string $page = null, array $config = []): array
     {
         $params = array_filter(['limit' => $limit, 'p' => $page]);
-        $result = $this->managementRequest('get', "v3/{$domain}/complaints", $params, $config);
+        $result = $this->managementRequestOrFail('get', "v3/{$domain}/complaints", $params, $config);
         return [
             'items'    => $result['body']['items'] ?? [],
             'nextPage' => $result['body']['paging']['next'] ?? null,
@@ -541,7 +556,7 @@ class MailgunProvider implements EmailProviderInterface
     public function listUnsubscribes(string $domain, int $limit = 25, ?string $page = null, array $config = []): array
     {
         $params = array_filter(['limit' => $limit, 'p' => $page]);
-        $result = $this->managementRequest('get', "v3/{$domain}/unsubscribes", $params, $config);
+        $result = $this->managementRequestOrFail('get', "v3/{$domain}/unsubscribes", $params, $config);
         return [
             'items'    => $result['body']['items'] ?? [],
             'nextPage' => $result['body']['paging']['next'] ?? null,
@@ -608,7 +623,7 @@ class MailgunProvider implements EmailProviderInterface
 
     public function getTrackingSettings(string $domain, array $config = []): array
     {
-        $result = $this->managementRequest('get', "v3/domains/{$domain}/tracking", [], $config);
+        $result = $this->managementRequestOrFail('get', "v3/domains/{$domain}/tracking", [], $config);
         return $result['body']['tracking'] ?? [];
     }
 
@@ -634,7 +649,7 @@ class MailgunProvider implements EmailProviderInterface
      */
     public function getDomainStats(string $domain, array $events, string $duration = '30d', string $resolution = 'day', array $config = []): array
     {
-        $result = $this->managementRequest('get', "v3/{$domain}/stats/total", [
+        $result = $this->managementRequestOrFail('get', "v3/{$domain}/stats/total", [
             'event'      => $events,
             'duration'   => $duration,
             'resolution' => $resolution,

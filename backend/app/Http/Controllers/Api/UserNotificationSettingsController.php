@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\PushSubscription;
 use App\Models\SystemSetting;
 use App\Models\User;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 
 class UserNotificationSettingsController extends Controller
 {
+    use ApiResponseTrait;
     use NotificationChannelMetadata;
     private const GROUP = 'notifications';
 
@@ -47,7 +49,7 @@ class UserNotificationSettingsController extends Controller
             ];
         })->values();
 
-        return response()->json(['channels' => $channels]);
+        return $this->dataResponse(['channels' => $channels]);
     }
 
     /**
@@ -67,16 +69,12 @@ class UserNotificationSettingsController extends Controller
         $channelId = $validated['channel'];
 
         if (!NotificationOrchestrator::isKnownChannel($channelId)) {
-            return response()->json([
-                'message' => "Unknown notification channel: {$channelId}",
-            ], 422);
+            return $this->errorResponse("Unknown notification channel: {$channelId}", 422);
         }
 
         if (isset($validated['enabled']) && $validated['enabled']) {
             if (!$this->isChannelAvailableToUser($channelId)) {
-                return response()->json([
-                    'message' => 'This channel is not available. An administrator must enable it first.',
-                ], 403);
+                return $this->errorResponse('This channel is not available. An administrator must enable it first.', 403);
             }
         }
 
@@ -98,7 +96,7 @@ class UserNotificationSettingsController extends Controller
             }
         }
 
-        return response()->json(['message' => 'Notification settings updated']);
+        return $this->successResponse('Notification settings updated');
     }
 
     /**
@@ -132,7 +130,7 @@ class UserNotificationSettingsController extends Controller
 
         $user->setSetting(self::GROUP, 'webpush_enabled', true);
 
-        return response()->json(['message' => 'Subscription saved']);
+        return $this->successResponse('Subscription saved');
     }
 
     /**
@@ -154,7 +152,7 @@ class UserNotificationSettingsController extends Controller
             $user->setSetting(self::GROUP, 'webpush_enabled', false);
         }
 
-        return response()->json(['message' => 'Subscription removed']);
+        return $this->successResponse('Subscription removed');
     }
 
     /**
@@ -173,7 +171,7 @@ class UserNotificationSettingsController extends Controller
                 'last_used_at' => $sub->last_used_at?->toISOString(),
             ]);
 
-        return response()->json(['subscriptions' => $subscriptions]);
+        return $this->dataResponse(['subscriptions' => $subscriptions]);
     }
 
     /**
@@ -185,14 +183,14 @@ class UserNotificationSettingsController extends Controller
         $deleted = $user->pushSubscriptions()->where('id', $id)->delete();
 
         if ($deleted === 0) {
-            return response()->json(['message' => 'Subscription not found'], 404);
+            return $this->errorResponse('Subscription not found', 404);
         }
 
         if (!$user->pushSubscriptions()->exists()) {
             $user->setSetting(self::GROUP, 'webpush_enabled', false);
         }
 
-        return response()->json(['message' => 'Subscription removed']);
+        return $this->successResponse('Subscription removed');
     }
 
     /**
@@ -202,7 +200,7 @@ class UserNotificationSettingsController extends Controller
     {
         $prefs = $request->user()->getSetting(self::GROUP, 'type_preferences', []);
 
-        return response()->json(['preferences' => is_array($prefs) ? $prefs : []]);
+        return $this->dataResponse(['preferences' => is_array($prefs) ? $prefs : []]);
     }
 
     /**
@@ -225,12 +223,11 @@ class UserNotificationSettingsController extends Controller
                 $validated['enabled'],
             );
 
-            return response()->json([
-                'message' => 'Type preference updated',
+            return $this->successResponse('Type preference updated', [
                 'preferences' => $result['preferences'],
             ]);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->errorResponse($e->getMessage(), 422);
         }
     }
 

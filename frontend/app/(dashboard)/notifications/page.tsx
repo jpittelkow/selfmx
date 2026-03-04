@@ -18,14 +18,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CheckCheck, Trash2 } from "lucide-react";
-import type { Notification } from "@/lib/notifications";
+import type { AppNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { getAllCategories } from "@/lib/notification-types";
 
 const PER_PAGE = 20;
 
 interface PaginatedResponse {
-  data: Notification[];
+  data: AppNotification[];
   current_page: number;
   per_page: number;
   total: number;
@@ -44,7 +44,7 @@ export default function NotificationsPage() {
 
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [category, setCategory] = useState<string>("all");
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -278,7 +278,7 @@ export default function NotificationsPage() {
 }
 
 interface NotificationsContentProps {
-  notifications: Notification[];
+  notifications: AppNotification[];
   isLoading: boolean;
   onMarkRead: (ids: string[]) => void;
   selectedIds: Set<string>;

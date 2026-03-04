@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FilePathRequest;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\AuditService;
 use App\Services\StorageService;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +14,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FileManagerController extends Controller
 {
+    use ApiResponseTrait;
     public function __construct(
         private StorageService $storageService,
         private AuditService $auditService
@@ -26,7 +28,7 @@ class FileManagerController extends Controller
         $path = $request->input('path', '');
         $path = trim(str_replace('\\', '/', $path), '/');
         if ($path !== '' && ! $this->validatePath($path)) {
-            return response()->json(['message' => 'Invalid path.'], 422);
+            return $this->errorResponse('Invalid path.', 422);
         }
 
         $page = max(1, (int) $request->input('page', 1));
@@ -34,10 +36,10 @@ class FileManagerController extends Controller
 
         try {
             $result = $this->storageService->listFiles($path, $page, $perPage);
-            return response()->json($result);
+            return $this->dataResponse($result);
         } catch (\Throwable $e) {
             Log::error('File listing failed', ['path' => $path, 'exception' => $e]);
-            return response()->json(['message' => 'Failed to list files.'], 500);
+            return $this->errorResponse('Failed to list files.', 500);
         }
     }
 
@@ -49,10 +51,10 @@ class FileManagerController extends Controller
         $path = $request->getPath();
         $info = $this->storageService->getFileInfo($path);
         if ($info === null) {
-            return response()->json(['message' => 'Not found.'], 404);
+            return $this->errorResponse('Not found.', 404);
         }
         $info['previewUrl'] = $this->storageService->getPreviewUrl($path);
-        return response()->json($info);
+        return $this->dataResponse($info);
     }
 
     /**
@@ -63,7 +65,7 @@ class FileManagerController extends Controller
         $path = $request->input('path', '');
         $path = trim(str_replace('\\', '/', $path), '/');
         if ($path !== '' && ! $this->validatePath($path)) {
-            return response()->json(['message' => 'Invalid path.'], 422);
+            return $this->errorResponse('Invalid path.', 422);
         }
 
         $request->validate([
@@ -100,17 +102,17 @@ class FileManagerController extends Controller
         }
 
         if (empty($uploaded)) {
-            return response()->json([
-                'message' => count($errors) > 0 ? 'Upload failed.' : 'No files to upload.',
-                'errors' => $errors,
-            ], 422);
+            return $this->successResponse(
+                count($errors) > 0 ? 'Upload failed.' : 'No files to upload.',
+                ['errors' => $errors],
+                422
+            );
         }
 
-        return response()->json([
-            'message' => 'Files uploaded.',
+        return $this->createdResponse('Files uploaded.', [
             'uploaded' => $uploaded,
             'errors' => $errors,
-        ], 201);
+        ]);
     }
 
     /**
@@ -124,12 +126,12 @@ class FileManagerController extends Controller
             $this->auditService->log('file.downloaded', null, [], ['path' => $path]);
             return $response;
         } catch (\Illuminate\Contracts\Filesystem\FileNotFoundException $e) {
-            return response()->json(['message' => 'Not found.'], 404);
+            return $this->errorResponse('Not found.', 404);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Throwable $e) {
             Log::error('File download failed', ['path' => $path, 'exception' => $e]);
-            return response()->json(['message' => 'Download failed.'], 500);
+            return $this->errorResponse('Download failed.', 500);
         }
     }
 
@@ -142,10 +144,10 @@ class FileManagerController extends Controller
         try {
             $this->storageService->deleteFile($path);
             $this->auditService->log('file.deleted', null, [], ['path' => $path]);
-            return response()->json(['message' => 'Deleted.']);
+            return $this->deleteResponse('Deleted.');
         } catch (\Throwable $e) {
             Log::error('File deletion failed', ['path' => $path, 'exception' => $e]);
-            return response()->json(['message' => 'Delete failed.'], 500);
+            return $this->errorResponse('Delete failed.', 500);
         }
     }
 
@@ -160,17 +162,17 @@ class FileManagerController extends Controller
         ]);
         $newName = $validated['name'];
         if (str_contains($newName, '..')) {
-            return response()->json(['message' => 'Invalid name.'], 422);
+            return $this->errorResponse('Invalid name.', 422);
         }
         try {
             $this->storageService->renameFile($path, $newName);
             $parent = dirname($path);
             $newPath = ($parent === '.' || $parent === '') ? $newName : $parent . '/' . $newName;
             $this->auditService->log('file.renamed', null, ['path' => $path], ['path' => $newPath]);
-            return response()->json(['message' => 'Renamed.', 'path' => $newPath]);
+            return $this->successResponse('Renamed.', ['path' => $newPath]);
         } catch (\Throwable $e) {
             Log::error('File rename failed', ['path' => $path, 'newName' => $newName, 'exception' => $e]);
-            return response()->json(['message' => 'Rename failed.'], 500);
+            return $this->errorResponse('Rename failed.', 500);
         }
     }
 
@@ -185,17 +187,17 @@ class FileManagerController extends Controller
         ]);
         $destination = trim(str_replace('\\', '/', $validated['destination']), '/');
         if (! $this->validatePath($destination)) {
-            return response()->json(['message' => 'Invalid destination path.'], 422);
+            return $this->errorResponse('Invalid destination path.', 422);
         }
         try {
             $this->storageService->moveFile($path, $destination);
             $name = basename($path);
             $newPath = ($destination === '' || $destination === '.') ? $name : $destination . '/' . $name;
             $this->auditService->log('file.moved', null, ['path' => $path], ['path' => $newPath]);
-            return response()->json(['message' => 'Moved.', 'path' => $newPath]);
+            return $this->successResponse('Moved.', ['path' => $newPath]);
         } catch (\Throwable $e) {
             Log::error('File move failed', ['path' => $path, 'destination' => $destination, 'exception' => $e]);
-            return response()->json(['message' => 'Move failed.'], 500);
+            return $this->errorResponse('Move failed.', 500);
         }
     }
 

@@ -55,7 +55,7 @@ services:
       - BROADCAST_CONNECTION=reverb
       - REVERB_APP_ID=selfmx
       - REVERB_APP_KEY=selfmx-key
-      - REVERB_APP_SECRET=selfmx-secret
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-}
       - REVERB_HOST=127.0.0.1
       - REVERB_PORT=6001
       - REVERB_SCHEME=http
@@ -65,6 +65,8 @@ services:
       # NEXT_PUBLIC_REVERB_HOST and NEXT_PUBLIC_REVERB_PORT are intentionally omitted —
       # clients connect via window.location (hostname + port) through the Nginx /app proxy
       - NEXT_PUBLIC_REVERB_APP_KEY=selfmx-key
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/api/health"]

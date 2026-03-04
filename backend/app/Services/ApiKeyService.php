@@ -197,7 +197,7 @@ class ApiKeyService
         }
 
         if (!empty($filters['user'])) {
-            $search = str_replace(['%', '_'], ['\\%', '\\_'], $filters['user']);
+            $search = \App\Support\Str::escapeLike($filters['user']);
             $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");

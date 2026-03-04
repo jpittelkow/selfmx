@@ -152,10 +152,11 @@ class ContactService
                 'error' => $e->getMessage(),
             ]);
 
+            $escaped = \App\Support\Str::escapeLike($query);
             return Contact::where('user_id', $userId)
-                ->where(function ($q) use ($query) {
-                    $q->where('email_address', 'like', "{$query}%")
-                        ->orWhere('display_name', 'like', "%{$query}%");
+                ->where(function ($q) use ($escaped) {
+                    $q->where('email_address', 'like', "{$escaped}%")
+                        ->orWhere('display_name', 'like', "%{$escaped}%");
                 })
                 ->orderByDesc('email_count')
                 ->limit($limit)

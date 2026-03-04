@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -52,7 +53,7 @@ class EmailAIResult extends Model
     /**
      * Scope: filter by AI result type.
      */
-    public function scopeOfType($query, string $type)
+    public function scopeOfType(Builder $query, string $type): Builder
     {
         return $query->where('type', $type);
     }
@@ -60,7 +61,7 @@ class EmailAIResult extends Model
     /**
      * Scope: order by latest version first.
      */
-    public function scopeLatestVersion($query)
+    public function scopeLatestVersion(Builder $query): Builder
     {
         return $query->orderBy('version', 'desc');
     }

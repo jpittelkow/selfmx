@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -62,6 +62,9 @@ export default function UsersPage() {
   const [selectedGroup, setSelectedGroup] = useState<string>("");
   const { groups } = useGroups();
 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -69,8 +72,8 @@ export default function UsersPage() {
         page: currentPage.toString(),
         per_page: "15",
       });
-      if (search) {
-        params.append("search", search);
+      if (debouncedSearch) {
+        params.append("search", debouncedSearch);
       }
       if (selectedGroup) {
         params.append("group", selectedGroup);
@@ -86,15 +89,25 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, search, selectedGroup]);
+  }, [currentPage, debouncedSearch, selectedGroup]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   const handleSearch = (value: string) => {
     setSearch(value);
-    setCurrentPage(1);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setCurrentPage(1);
+    }, 300);
   };
 
   const handleGroupChange = (value: string) => {

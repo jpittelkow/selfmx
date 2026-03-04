@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\User;
+use App\Support\Str;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    use ApiResponseTrait;
+
     /**
      * Get dashboard stats for the stats widget.
      */
@@ -23,20 +27,10 @@ class DashboardController extends Controller
 
         $metrics = [
             ['label' => 'Total Users', 'value' => User::count()],
-            ['label' => 'Storage Used', 'value' => $this->formatBytes($storageUsed)],
+            ['label' => 'Storage Used', 'value' => Str::formatBytes($storageUsed)],
         ];
 
-        return response()->json(['metrics' => $metrics]);
+        return $this->dataResponse(['metrics' => $metrics]);
     }
 
-    private function formatBytes(int $bytes, int $precision = 2): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
-            $bytes /= 1024;
-        }
-
-        return round($bytes, $precision) . ' ' . $units[$i];
-    }
 }

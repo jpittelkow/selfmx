@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { sanitizeCss } from "@/lib/sanitize";
 import { applyThemeColors } from "@/lib/theme-colors";
 
 export interface AppConfigFeatures {
@@ -209,7 +210,7 @@ export function AppConfigProvider({ children }: { children: React.ReactNode }) {
           styleTag.id = 'custom-branding-css';
           document.head.appendChild(styleTag);
         }
-        styleTag.textContent = customCss;
+        styleTag.textContent = sanitizeCss(customCss);
       } else {
         // Remove style tag if custom CSS is cleared
         if (styleTag) {

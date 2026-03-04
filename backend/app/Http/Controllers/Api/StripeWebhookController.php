@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\Stripe\StripeWebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use Stripe\Exception\SignatureVerificationException;
 
 class StripeWebhookController extends Controller
 {
+    use ApiResponseTrait;
     public function __construct(
         private StripeWebhookService $webhookService,
     ) {}
@@ -23,7 +25,7 @@ class StripeWebhookController extends Controller
         if (empty($sigHeader)) {
             Log::warning('Stripe webhook received with no Stripe-Signature header');
 
-            return response()->json(['message' => 'Missing signature'], 400);
+            return $this->errorResponse('Missing signature', 400);
         }
 
         try {
@@ -33,23 +35,21 @@ class StripeWebhookController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json(['message' => 'Invalid signature'], 400);
+            return $this->errorResponse('Invalid signature', 400);
         } catch (\UnexpectedValueException $e) {
             Log::warning('Stripe webhook payload parsing failed', [
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json(['message' => 'Invalid payload'], 400);
+            return $this->errorResponse('Invalid payload', 400);
         }
 
         try {
             $result = $this->webhookService->handleEvent($event);
 
-            return response()->json([
-                'message' => $result['skipped'] ? 'skipped' : 'ok',
-            ], 200);
+            return $this->successResponse($result['skipped'] ? 'skipped' : 'ok');
         } catch (\Throwable $e) {
-            return response()->json(['message' => 'Handler error'], 500);
+            return $this->errorResponse('Handler error', 500);
         }
     }
 }

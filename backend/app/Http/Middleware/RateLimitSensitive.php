@@ -34,9 +34,14 @@ class RateLimitSensitive
             ]);
         }
 
-        RateLimiter::hit($key, $decaySeconds);
-
         $response = $next($request);
+
+        // Only count failed attempts (4xx/5xx) toward the rate limit.
+        // Never clear the counter on success — an attacker with one valid
+        // credential could otherwise reset the counter between brute-force runs.
+        if ($response->getStatusCode() >= 400) {
+            RateLimiter::hit($key, $decaySeconds);
+        }
 
         // Add rate limit headers to response
         return $response->withHeaders([

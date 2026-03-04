@@ -26,7 +26,7 @@ class EmailDomainController extends Controller
             ->with('catchallMailbox');
 
         if ($search = $request->query('search')) {
-            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $search);
+            $escaped = \App\Support\Str::escapeLike($search);
             $query->where('name', 'like', "%{$escaped}%");
         }
 

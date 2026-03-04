@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\AuditLog;
 use App\Services\AuditService;
 use App\Services\Backup\BackupService;
@@ -12,6 +13,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BackupController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private BackupService $backupService,
         private AuditService $auditService
@@ -43,7 +46,7 @@ class BackupController extends Controller
     {
         $backups = $this->backupService->listBackups();
 
-        return response()->json([
+        return $this->dataResponse([
             'backups' => $backups,
         ]);
     }
@@ -65,15 +68,11 @@ class BackupController extends Controller
                 'size' => $backup['size'] ?? null,
             ]);
 
-            return response()->json([
-                'message' => 'Backup created successfully',
+            return $this->createdResponse('Backup created successfully', [
                 'backup' => $backup,
-            ], 201);
+            ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to create backup',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to create backup', 500);
         }
     }
 
@@ -83,15 +82,11 @@ class BackupController extends Controller
     public function download(string $filename): StreamedResponse|JsonResponse
     {
         if (!$this->validateFilename($filename)) {
-            return response()->json([
-                'message' => 'Invalid backup filename',
-            ], 400);
+            return $this->errorResponse('Invalid backup filename', 400);
         }
 
         if (!$this->backupService->exists($filename)) {
-            return response()->json([
-                'message' => 'Backup not found',
-            ], 404);
+            return $this->errorResponse('Backup not found', 404);
         }
 
         $this->auditService->log('backup.downloaded', null, [], ['filename' => $filename]);
@@ -116,23 +111,17 @@ class BackupController extends Controller
             } else {
                 // Validate filename before restore
                 if (!$this->validateFilename($request->filename)) {
-                    return response()->json([
-                        'message' => 'Invalid backup filename',
-                    ], 400);
+                    return $this->errorResponse('Invalid backup filename', 400);
                 }
                 $result = $this->backupService->restoreFromFile($request->filename);
                 $this->auditService->log('backup.restored', null, [], ['filename' => $request->filename], null, null, AuditLog::SEVERITY_WARNING);
             }
 
-            return response()->json([
-                'message' => 'Backup restored successfully',
+            return $this->successResponse('Backup restored successfully', [
                 'details' => $result,
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to restore backup',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to restore backup', 500);
         }
     }
 
@@ -142,23 +131,17 @@ class BackupController extends Controller
     public function destroy(string $filename): JsonResponse
     {
         if (!$this->validateFilename($filename)) {
-            return response()->json([
-                'message' => 'Invalid backup filename',
-            ], 400);
+            return $this->errorResponse('Invalid backup filename', 400);
         }
 
         if (!$this->backupService->exists($filename)) {
-            return response()->json([
-                'message' => 'Backup not found',
-            ], 404);
+            return $this->errorResponse('Backup not found', 404);
         }
 
         $this->auditService->log('backup.deleted', null, [], ['filename' => $filename]);
 
         $this->backupService->delete($filename);
 
-        return response()->json([
-            'message' => 'Backup deleted successfully',
-        ]);
+        return $this->deleteResponse('Backup deleted successfully');
     }
 }

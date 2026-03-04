@@ -25,10 +25,13 @@ class UserGroup extends Model
     /**
      * The attributes that should be cast.
      */
-    protected $casts = [
-        'is_system' => 'boolean',
-        'is_default' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_system' => 'boolean',
+            'is_default' => 'boolean',
+        ];
+    }
 
     /**
      * Get the indexable data array for the model.

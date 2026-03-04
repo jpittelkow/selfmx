@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\LLMModelDiscoveryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class LLMModelController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private LLMModelDiscoveryService $discovery
     ) {}
@@ -33,12 +36,12 @@ class LLMModelController extends Controller
 
         try {
             $valid = $this->discovery->validateCredentials($validated['provider'], $credentials);
-            return response()->json([
+            return $this->dataResponse([
                 'valid' => $valid,
                 'error' => $valid ? null : 'No models returned. Check your API key or host.',
             ]);
         } catch (\Throwable $e) {
-            return response()->json([
+            return $this->dataResponse([
                 'valid' => false,
                 'error' => $this->sanitizeErrorMessage($e->getMessage()),
             ]);
@@ -65,17 +68,17 @@ class LLMModelController extends Controller
 
         try {
             $models = $this->discovery->discoverModels($validated['provider'], $credentials);
-            return response()->json([
+            return $this->dataResponse([
                 'models' => $models,
                 'provider' => $validated['provider'],
             ]);
         } catch (\InvalidArgumentException $e) {
-            return response()->json([
+            return $this->dataResponse([
                 'error' => 'Invalid request',
                 'message' => $e->getMessage(),
             ], 400);
         } catch (\Throwable $e) {
-            return response()->json([
+            return $this->dataResponse([
                 'error' => 'Failed to fetch models',
                 'message' => $this->sanitizeErrorMessage($e->getMessage()),
             ], 400);

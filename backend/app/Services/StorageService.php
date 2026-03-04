@@ -7,6 +7,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use App\Support\Str as AppStr;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Services\UsageTrackingService;
@@ -596,8 +597,8 @@ class StorageService
         ];
 
         $checks['status'] = $checks['writable'] && $checks['disk_used_percent'] < 90 ? 'healthy' : 'warning';
-        $checks['disk_free_formatted'] = $this->formatBytes($checks['disk_free_bytes']);
-        $checks['disk_total_formatted'] = $this->formatBytes($checks['disk_total_bytes']);
+        $checks['disk_free_formatted'] = AppStr::formatBytes($checks['disk_free_bytes']);
+        $checks['disk_total_formatted'] = AppStr::formatBytes($checks['disk_total_bytes']);
 
         return $checks;
     }
@@ -630,7 +631,7 @@ class StorageService
             $suggestions['cache'] = [
                 'count' => $cacheCount,
                 'size' => $cacheSize,
-                'size_formatted' => $this->formatBytes($cacheSize),
+                'size_formatted' => AppStr::formatBytes($cacheSize),
                 'description' => 'Framework cache files',
             ];
             $totalReclaimable += $cacheSize;
@@ -643,7 +644,7 @@ class StorageService
             $suggestions['temp'] = [
                 'count' => $tempCount,
                 'size' => $tempSize,
-                'size_formatted' => $this->formatBytes($tempSize),
+                'size_formatted' => AppStr::formatBytes($tempSize),
                 'description' => 'Temporary files older than 7 days',
             ];
             $totalReclaimable += $tempSize;
@@ -670,7 +671,7 @@ class StorageService
             $suggestions['old_backups'] = [
                 'count' => count($toRemove),
                 'size' => $oldBackupSize,
-                'size_formatted' => $this->formatBytes($oldBackupSize),
+                'size_formatted' => AppStr::formatBytes($oldBackupSize),
                 'description' => 'Backups beyond retention policy',
             ];
             $totalReclaimable += $oldBackupSize;
@@ -679,7 +680,7 @@ class StorageService
         return [
             'suggestions' => $suggestions,
             'total_reclaimable' => $totalReclaimable,
-            'total_reclaimable_formatted' => $this->formatBytes($totalReclaimable),
+            'total_reclaimable_formatted' => AppStr::formatBytes($totalReclaimable),
         ];
     }
 
@@ -779,7 +780,7 @@ class StorageService
             usort($filesWithMeta, fn ($a, $b) => $b['size'] <=> $a['size']);
             $topFiles = array_slice($filesWithMeta, 0, 10);
             foreach ($topFiles as &$f) {
-                $f['size_formatted'] = $this->formatBytes($f['size']);
+                $f['size_formatted'] = AppStr::formatBytes($f['size']);
                 $f['lastModifiedFormatted'] = date('Y-m-d H:i:s', $f['lastModified']);
             }
             $analytics['top_files'] = $topFiles;
@@ -787,7 +788,7 @@ class StorageService
             usort($filesWithMeta, fn ($a, $b) => $b['lastModified'] <=> $a['lastModified']);
             $recentFiles = array_slice($filesWithMeta, 0, 10);
             foreach ($recentFiles as &$f) {
-                $f['size_formatted'] = $this->formatBytes($f['size']);
+                $f['size_formatted'] = AppStr::formatBytes($f['size']);
                 $f['lastModifiedFormatted'] = date('Y-m-d H:i:s', $f['lastModified']);
             }
             $analytics['recent_files'] = $recentFiles;
@@ -827,7 +828,7 @@ class StorageService
                     $size = $this->getDirectorySize($fullPath);
                     $breakdown[$dir] = [
                         'size' => $size,
-                        'size_formatted' => $this->formatBytes($size),
+                        'size_formatted' => AppStr::formatBytes($size),
                     ];
                 }
             }
@@ -837,7 +838,7 @@ class StorageService
         }
 
         // Format size
-        $stats['total_size_formatted'] = $this->formatBytes($stats['total_size']);
+        $stats['total_size_formatted'] = AppStr::formatBytes($stats['total_size']);
 
         return $stats;
     }
@@ -936,17 +937,4 @@ class StorageService
         return [$count, $freed];
     }
 
-    /**
-     * Format bytes to human-readable format.
-     */
-    private function formatBytes(int $bytes, int $precision = 2): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
-            $bytes /= 1024;
-        }
-
-        return round($bytes, $precision) . ' ' . $units[$i];
-    }
 }

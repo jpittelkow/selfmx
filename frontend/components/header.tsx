@@ -11,10 +11,9 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HelpIcon } from "@/components/help/help-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AppBreadcrumbs } from "@/components/app-breadcrumbs";
+import { isMacPlatform } from "@/lib/browser-utils";
 
-const isMac =
-  typeof navigator !== "undefined" &&
-  /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+const isMac = isMacPlatform();
 
 export function Header() {
   const { setMobileMenuOpen } = useSidebar();

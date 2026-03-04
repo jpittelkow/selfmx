@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\AdminAuthorizationTrait;
 use App\Http\Traits\ApiResponseTrait;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
@@ -77,7 +78,7 @@ class ProfileController extends Controller
     /**
      * Delete user account.
      */
-    public function destroy(Request $request): JsonResponse
+    public function destroy(Request $request, UserService $userService): JsonResponse
     {
         $request->validate([
             'password' => ['required', 'current_password'],
@@ -89,13 +90,7 @@ class ProfileController extends Controller
             return $error;
         }
 
-        // Delete related data
-        $user->socialAccounts()->delete();
-        $user->settings()->delete();
-        $user->notifications()->delete();
-        $user->aiProviders()->delete();
-
-        $user->delete();
+        $userService->deleteUser($user);
 
         return $this->successResponse('Account deleted successfully');
     }

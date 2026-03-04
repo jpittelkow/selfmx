@@ -2,14 +2,14 @@
 
 import { Bell, Loader2 } from "lucide-react";
 import { NotificationItem } from "./notification-item";
-import type { Notification } from "@/lib/notifications";
+import type { AppNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 export interface NotificationListProps {
-  notifications: Notification[];
+  notifications: AppNotification[];
   isLoading?: boolean;
   onMarkRead?: (ids: string[]) => void;
-  onItemClick?: (n: Notification) => void;
+  onItemClick?: (n: AppNotification) => void;
   compact?: boolean;
   emptyMessage?: string;
 }

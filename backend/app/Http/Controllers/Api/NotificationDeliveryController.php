@@ -33,7 +33,8 @@ class NotificationDeliveryController extends Controller
             $query->where('status', $request->input('status'));
         }
         if ($request->filled('notification_type')) {
-            $query->where('notification_type', 'like', '%' . $request->input('notification_type') . '%');
+            $escaped = \App\Support\Str::escapeLike($request->input('notification_type'));
+            $query->where('notification_type', 'like', '%' . $escaped . '%');
         }
         if ($request->filled('date_from')) {
             $query->whereDate('attempted_at', '>=', $request->input('date_from'));

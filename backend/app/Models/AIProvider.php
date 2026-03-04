@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -64,7 +65,7 @@ class AIProvider extends Model
     /**
      * Scope to filter enabled providers.
      */
-    public function scopeEnabled($query)
+    public function scopeEnabled(Builder $query): Builder
     {
         return $query->where('is_enabled', true);
     }
@@ -72,7 +73,7 @@ class AIProvider extends Model
     /**
      * Scope to get the primary provider.
      */
-    public function scopePrimary($query)
+    public function scopePrimary(Builder $query): Builder
     {
         return $query->where('is_primary', true);
     }

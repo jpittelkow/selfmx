@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Notification } from "@/lib/notifications";
+import type { AppNotification } from "@/lib/notifications";
 import { getNotificationType, getDefaultActionUrl } from "@/lib/notification-types";
 import { activateWaitingServiceWorker } from "@/lib/service-worker";
 
@@ -21,9 +21,9 @@ function formatRelative(date: Date): string {
 }
 
 export interface NotificationItemProps {
-  notification: Notification;
+  notification: AppNotification;
   onMarkRead?: (id: string) => void;
-  onClick?: (notification: Notification) => void;
+  onClick?: (notification: AppNotification) => void;
   compact?: boolean;
   showMarkRead?: boolean;
 }

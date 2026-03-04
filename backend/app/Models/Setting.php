@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,7 +42,7 @@ class Setting extends Model
     /**
      * Scope to filter by group.
      */
-    public function scopeGroup($query, string $group)
+    public function scopeGroup(Builder $query, string $group): Builder
     {
         return $query->where('group', $group);
     }

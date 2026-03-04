@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\AuditService;
 use App\Services\Auth\TwoFactorService;
 use Illuminate\Http\JsonResponse;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 
 class TwoFactorController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private TwoFactorService $twoFactorService,
         private AuditService $auditService
@@ -23,7 +26,7 @@ class TwoFactorController extends Controller
     {
         $user = $request->user();
 
-        return response()->json([
+        return $this->dataResponse([
             'enabled' => $user->hasTwoFactorEnabled(),
             'confirmed' => $user->two_factor_confirmed_at !== null,
         ]);
@@ -37,15 +40,12 @@ class TwoFactorController extends Controller
         $user = $request->user();
 
         if ($user->hasTwoFactorEnabled()) {
-            return response()->json([
-                'message' => 'Two-factor authentication is already enabled',
-            ], 400);
+            return $this->errorResponse('Two-factor authentication is already enabled', 400);
         }
 
         $data = $this->twoFactorService->generateSecret($user);
 
-        return response()->json([
-            'message' => 'Two-factor authentication setup initiated',
+        return $this->successResponse('Two-factor authentication setup initiated', [
             'secret' => $data['secret'],
             'qr_code' => $data['qr_code'],
         ]);
@@ -63,29 +63,22 @@ class TwoFactorController extends Controller
         $user = $request->user();
 
         if ($user->hasTwoFactorEnabled()) {
-            return response()->json([
-                'message' => 'Two-factor authentication is already enabled',
-            ], 400);
+            return $this->errorResponse('Two-factor authentication is already enabled', 400);
         }
 
         if (!$user->two_factor_secret) {
-            return response()->json([
-                'message' => 'Please initiate 2FA setup first',
-            ], 400);
+            return $this->errorResponse('Please initiate 2FA setup first', 400);
         }
 
         if (!$this->twoFactorService->verifyCode($user, $request->code)) {
-            return response()->json([
-                'message' => 'Invalid verification code',
-            ], 400);
+            return $this->errorResponse('Invalid verification code', 400);
         }
 
         $recoveryCodes = $this->twoFactorService->confirmSetup($user);
 
         $this->auditService->logAuth('2fa_enabled', $user);
 
-        return response()->json([
-            'message' => 'Two-factor authentication enabled successfully',
+        return $this->successResponse('Two-factor authentication enabled successfully', [
             'recovery_codes' => $recoveryCodes,
         ]);
     }
@@ -102,18 +95,14 @@ class TwoFactorController extends Controller
         $user = $request->user();
 
         if (!$user->hasTwoFactorEnabled()) {
-            return response()->json([
-                'message' => 'Two-factor authentication is not enabled',
-            ], 400);
+            return $this->errorResponse('Two-factor authentication is not enabled', 400);
         }
 
         $this->twoFactorService->disable($user);
 
         $this->auditService->logAuth('2fa_disabled', $user);
 
-        return response()->json([
-            'message' => 'Two-factor authentication disabled',
-        ]);
+        return $this->successResponse('Two-factor authentication disabled');
     }
 
     /**
@@ -129,18 +118,14 @@ class TwoFactorController extends Controller
         $userId = $request->session()->get('2fa:user_id');
 
         if (!$userId) {
-            return response()->json([
-                'message' => 'No pending two-factor authentication',
-            ], 400);
+            return $this->errorResponse('No pending two-factor authentication', 400);
         }
 
         $user = \App\Models\User::find($userId);
 
         if (!$user) {
             $request->session()->forget('2fa:user_id');
-            return response()->json([
-                'message' => 'User not found',
-            ], 400);
+            return $this->errorResponse('User not found', 400);
         }
 
         try {
@@ -150,9 +135,7 @@ class TwoFactorController extends Controller
                 $request->boolean('is_recovery_code', false)
             );
         } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 400);
+            return $this->errorResponse($e->getMessage(), 400);
         }
 
         // Clear 2FA session, set verified flag, and login user
@@ -163,8 +146,7 @@ class TwoFactorController extends Controller
 
         $this->auditService->logAuth('login', $user);
 
-        return response()->json([
-            'message' => 'Two-factor authentication verified',
+        return $this->successResponse('Two-factor authentication verified', [
             'user' => $user,
         ]);
     }
@@ -181,12 +163,10 @@ class TwoFactorController extends Controller
         $user = $request->user();
 
         if (!$user->hasTwoFactorEnabled()) {
-            return response()->json([
-                'message' => 'Two-factor authentication is not enabled',
-            ], 400);
+            return $this->errorResponse('Two-factor authentication is not enabled', 400);
         }
 
-        return response()->json([
+        return $this->dataResponse([
             'recovery_codes' => $user->two_factor_recovery_codes,
         ]);
     }
@@ -203,15 +183,12 @@ class TwoFactorController extends Controller
         $user = $request->user();
 
         if (!$user->hasTwoFactorEnabled()) {
-            return response()->json([
-                'message' => 'Two-factor authentication is not enabled',
-            ], 400);
+            return $this->errorResponse('Two-factor authentication is not enabled', 400);
         }
 
         $recoveryCodes = $this->twoFactorService->regenerateRecoveryCodes($user);
 
-        return response()->json([
-            'message' => 'Recovery codes regenerated',
+        return $this->successResponse('Recovery codes regenerated', [
             'recovery_codes' => $recoveryCodes,
         ]);
     }

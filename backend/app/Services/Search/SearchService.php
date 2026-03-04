@@ -144,8 +144,9 @@ class SearchService
                 'error' => $e->getMessage(),
             ]);
 
-            return User::where('name', 'like', "%{$query}%")
-                ->orWhere('email', 'like', "%{$query}%")
+            $escaped = \App\Support\Str::escapeLike($query);
+            return User::where('name', 'like', "%{$escaped}%")
+                ->orWhere('email', 'like', "%{$escaped}%")
                 ->paginate($perPage, ['*'], 'page', $page);
         }
     }
@@ -175,8 +176,9 @@ class SearchService
             return $builder->paginate($perPage, 'page', $page);
         } catch (\Exception $e) {
             Log::warning('Search failed, falling back to database', ['query' => $query, 'error' => $e->getMessage()]);
-            $q = Notification::query()->where(function ($qb) use ($query) {
-                $qb->where('title', 'like', "%{$query}%")->orWhere('message', 'like', "%{$query}%");
+            $escaped = \App\Support\Str::escapeLike($query);
+            $q = Notification::query()->where(function ($qb) use ($escaped) {
+                $qb->where('title', 'like', "%{$escaped}%")->orWhere('message', 'like', "%{$escaped}%");
             });
             if ($scopeUserId !== null) {
                 $q->where('user_id', $scopeUserId);
@@ -202,9 +204,10 @@ class SearchService
             return EmailTemplate::search($query)->paginate($perPage, 'page', $page);
         } catch (\Exception $e) {
             Log::warning('Search failed, falling back to database', ['query' => $query, 'error' => $e->getMessage()]);
-            return EmailTemplate::where('name', 'like', "%{$query}%")
-                ->orWhere('subject', 'like', "%{$query}%")
-                ->orWhere('description', 'like', "%{$query}%")
+            $escaped = \App\Support\Str::escapeLike($query);
+            return EmailTemplate::where('name', 'like', "%{$escaped}%")
+                ->orWhere('subject', 'like', "%{$escaped}%")
+                ->orWhere('description', 'like', "%{$escaped}%")
                 ->orderBy('name')
                 ->paginate($perPage, ['*'], 'page', $page);
         }
@@ -228,10 +231,11 @@ class SearchService
         } catch (\Exception $e) {
             Log::warning('Search failed, falling back to database', ['query' => $query, 'error' => $e->getMessage()]);
 
-            return NotificationTemplate::where('type', 'like', "%{$query}%")
-                ->orWhere('channel_group', 'like', "%{$query}%")
-                ->orWhere('title', 'like', "%{$query}%")
-                ->orWhere('body', 'like', "%{$query}%")
+            $escaped = \App\Support\Str::escapeLike($query);
+            return NotificationTemplate::where('type', 'like', "%{$escaped}%")
+                ->orWhere('channel_group', 'like', "%{$escaped}%")
+                ->orWhere('title', 'like', "%{$escaped}%")
+                ->orWhere('body', 'like', "%{$escaped}%")
                 ->orderBy('type')
                 ->orderBy('channel_group')
                 ->paginate($perPage, ['*'], 'page', $page);
@@ -263,7 +267,8 @@ class SearchService
             return $builder->paginate($perPage, 'page', $page);
         } catch (\Exception $e) {
             Log::warning('Search failed, falling back to database', ['query' => $query, 'error' => $e->getMessage()]);
-            $q = ApiToken::query()->where('name', 'like', "%{$query}%");
+            $escaped = \App\Support\Str::escapeLike($query);
+            $q = ApiToken::query()->where('name', 'like', "%{$escaped}%");
             if ($scopeUserId !== null) {
                 $q->where('user_id', $scopeUserId);
             }
@@ -296,8 +301,9 @@ class SearchService
             return $builder->paginate($perPage, 'page', $page);
         } catch (\Exception $e) {
             Log::warning('Search failed, falling back to database', ['query' => $query, 'error' => $e->getMessage()]);
-            $q = AIProvider::query()->where(function ($qb) use ($query) {
-                $qb->where('provider', 'like', "%{$query}%")->orWhere('model', 'like', "%{$query}%");
+            $escaped = \App\Support\Str::escapeLike($query);
+            $q = AIProvider::query()->where(function ($qb) use ($escaped) {
+                $qb->where('provider', 'like', "%{$escaped}%")->orWhere('model', 'like', "%{$escaped}%");
             });
             if ($scopeUserId !== null) {
                 $q->where('user_id', $scopeUserId);
@@ -323,8 +329,9 @@ class SearchService
             return Webhook::search($query)->paginate($perPage, 'page', $page);
         } catch (\Exception $e) {
             Log::warning('Search failed, falling back to database', ['query' => $query, 'error' => $e->getMessage()]);
-            return Webhook::where('name', 'like', "%{$query}%")
-                ->orWhere('url', 'like', "%{$query}%")
+            $escaped = \App\Support\Str::escapeLike($query);
+            return Webhook::where('name', 'like', "%{$escaped}%")
+                ->orWhere('url', 'like', "%{$escaped}%")
                 ->orderBy('name')
                 ->paginate($perPage, ['*'], 'page', $page);
         }

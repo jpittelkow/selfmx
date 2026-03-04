@@ -43,7 +43,7 @@ describe('Authentication', function () {
             ]);
 
             $response->assertStatus(422)
-                ->assertJsonValidationErrors(['email']);
+                ->assertJson(['message' => 'Registration could not be completed. Please try again or contact support.']);
         });
     });
 

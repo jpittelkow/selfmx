@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\User;
 use App\Services\Notifications\NotificationOrchestrator;
 use App\Services\SettingService;
+use App\Support\Str;
 use Illuminate\Console\Command;
 
 class StorageAlertCommand extends Command
@@ -58,8 +59,8 @@ class StorageAlertCommand extends Command
         $variables = [
             'usage' => (string) $diskUsedPercent,
             'threshold' => (string) $threshold,
-            'free_formatted' => $this->formatBytes((int) $diskFree),
-            'total_formatted' => $this->formatBytes((int) $diskTotal),
+            'free_formatted' => Str::formatBytes((int) $diskFree),
+            'total_formatted' => Str::formatBytes((int) $diskTotal),
             'action_url' => '/configuration',
         ];
 
@@ -120,15 +121,4 @@ class StorageAlertCommand extends Command
         return self::SUCCESS;
     }
 
-    private function formatBytes(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
-        }
-
-        return round($bytes, 2) . ' ' . $units[$i];
-    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AuditLogController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private AuditService $auditService
     ) {}
@@ -23,7 +26,7 @@ class AuditLogController extends Controller
         $perPage = $request->input('per_page', config('app.pagination.audit_log'));
         $filters = $request->only(['user_id', 'action', 'severity', 'correlation_id', 'date_from', 'date_to']);
 
-        return response()->json(
+        return $this->dataResponse(
             $this->auditService->buildFilteredQuery($filters)->paginate($perPage)
         );
     }
@@ -84,6 +87,6 @@ class AuditLogController extends Controller
         $dateFrom = $request->input('date_from', now()->subDays(30)->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->format('Y-m-d'));
 
-        return response()->json($this->auditService->getStats($dateFrom, $dateTo));
+        return $this->dataResponse($this->auditService->getStats($dateFrom, $dateTo));
     }
 }

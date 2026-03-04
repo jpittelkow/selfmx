@@ -38,6 +38,12 @@ export function isAdminUser(user: User | null): boolean {
   return Boolean(user.is_admin);
 }
 
+export interface LoginResult {
+  requires_2fa?: boolean;
+  user?: User;
+  message?: string;
+}
+
 interface AuthState {
   user: User | null;
   isLoading: boolean;
@@ -45,7 +51,7 @@ interface AuthState {
   error: string | null;
   fetchUser: () => Promise<void>;
   initialize: () => Promise<void>;
-  login: (email: string, password: string, remember?: boolean) => Promise<any>;
+  login: (email: string, password: string, remember?: boolean) => Promise<LoginResult>;
   register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<void>;
   logout: () => Promise<void>;
   verify2FA: (code: string, remember?: boolean, isRecoveryCode?: boolean) => Promise<void>;

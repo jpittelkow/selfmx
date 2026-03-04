@@ -299,7 +299,7 @@ function PlatformView({
       publishable_key: "",
       webhook_secret: "",
       platform_account_id: "",
-      platform_client_id: "pk_live_51T3IOFLxjkep9LMmNOGaCUjcW2wJ94BADNXlgNPLS6zqpqsG0TKeg5WxDlboeWbKobd3I4sSsMGL7znxFLrG7gMF00hY5PRSme",
+      platform_client_id: "",
       application_fee_percent: 1.0,
       currency: "usd",
     },
@@ -317,7 +317,7 @@ function PlatformView({
         publishable_key: settings.publishable_key || "",
         webhook_secret: settings.webhook_secret || "",
         platform_account_id: settings.platform_account_id || "",
-        platform_client_id: settings.platform_client_id || "pk_live_51T3IOFLxjkep9LMmNOGaCUjcW2wJ94BADNXlgNPLS6zqpqsG0TKeg5WxDlboeWbKobd3I4sSsMGL7znxFLrG7gMF00hY5PRSme",
+        platform_client_id: settings.platform_client_id || "",
         application_fee_percent: settings.application_fee_percent ?? 1.0,
         currency: settings.currency || "usd",
       });

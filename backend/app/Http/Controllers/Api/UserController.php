@@ -12,6 +12,7 @@ use App\Services\EmailConfigService;
 use App\Services\GroupService;
 use App\Services\NovuService;
 use App\Services\PermissionService;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -41,9 +42,10 @@ class UserController extends Controller
         $query = User::query()->with('groups:id,name,slug');
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+            $escaped = \App\Support\Str::escapeLike($search);
+            $query->where(function ($q) use ($escaped) {
+                $q->where('name', 'like', "%{$escaped}%")
+                  ->orWhere('email', 'like', "%{$escaped}%");
             });
         }
 
@@ -141,7 +143,7 @@ class UserController extends Controller
     /**
      * Delete a user.
      */
-    public function destroy(User $user): JsonResponse
+    public function destroy(User $user, UserService $userService): JsonResponse
     {
         if ($error = $this->ensureNotLastAdmin($user, 'delete')) {
             return $error;
@@ -151,12 +153,7 @@ class UserController extends Controller
             return $this->errorResponse('Cannot delete your own account', 400);
         }
 
-        $this->auditService->log('user.deleted', $user, [
-            'name' => $user->name,
-            'email' => $user->email,
-        ], []);
-
-        $user->delete();
+        $userService->deleteUser($user);
 
         return $this->successResponse('User deleted successfully');
     }
@@ -228,9 +225,9 @@ class UserController extends Controller
 
         $enabling = (bool) $user->disabled_at;
         $oldDisabledAt = $user->disabled_at?->toISOString();
-        $user->update([
+        $user->forceFill([
             'disabled_at' => $enabling ? null : now(),
-        ]);
+        ])->save();
         $user->refresh();
 
         $this->auditService->log(

@@ -217,7 +217,7 @@ return [
         'publishable_key' => ['env' => 'STRIPE_PUBLISHABLE_KEY', 'default' => null, 'public' => true],
         'webhook_secret' => ['env' => 'STRIPE_WEBHOOK_SECRET', 'default' => null, 'encrypted' => true],
         'platform_account_id' => ['env' => 'STRIPE_PLATFORM_ACCOUNT_ID', 'default' => null],
-        'platform_client_id' => ['default' => 'pk_live_51T3IOFLxjkep9LMmNOGaCUjcW2wJ94BADNXlgNPLS6zqpqsG0TKeg5WxDlboeWbKobd3I4sSsMGL7znxFLrG7gMF00hY5PRSme'],
+        'platform_client_id' => ['env' => 'STRIPE_PLATFORM_CLIENT_ID', 'default' => ''],
         'application_fee_percent' => ['env' => 'STRIPE_APPLICATION_FEE_PERCENT', 'default' => 1.0],
         'currency' => ['env' => 'STRIPE_CURRENCY', 'default' => 'usd'],
         'mode' => ['env' => 'STRIPE_MODE', 'default' => 'test'],

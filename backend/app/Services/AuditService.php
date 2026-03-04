@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Events\AuditLogCreated;
 use App\Models\AuditLog;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -163,7 +162,8 @@ class AuditService
             $query->where('user_id', $filters['user_id']);
         }
         if (!empty($filters['action'])) {
-            $query->where('action', 'like', "%{$filters['action']}%");
+            $escaped = \App\Support\Str::escapeLike($filters['action']);
+            $query->where('action', 'like', "%{$escaped}%");
         }
         if (!empty($filters['severity'])) {
             $query->where('severity', $filters['severity']);
@@ -182,13 +182,14 @@ class AuditService
     }
 
     /**
-     * Get filtered audit logs for export.
+     * Get a lazy cursor of filtered audit logs for export (memory-efficient).
      *
      * @param array<string, mixed> $filters  Keys: user_id, action, severity, correlation_id, date_from, date_to
+     * @return \Illuminate\Support\LazyCollection
      */
-    public function queryForExport(array $filters): Collection
+    public function queryForExport(array $filters): \Illuminate\Support\LazyCollection
     {
-        return $this->buildFilteredQuery($filters)->get();
+        return $this->buildFilteredQuery($filters)->cursor();
     }
 
     /**

@@ -6,7 +6,7 @@ Development roadmaps and implementation history.
 
 Currently in progress. Complete these before starting new work.
 
-_(None — pick from Next Up)_
+- **[Code Review Remediation (Phases 4-5)](plans/code-review-remediation-roadmap.md)** - Phases 1-3 complete (security fixes, hardening, medium-priority improvements). Remaining: Phase 4 low-priority cleanup (~8 hours) and Phase 5 test coverage expansion (~12 hours).
 
 ## Next Up
 

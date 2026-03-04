@@ -8,6 +8,7 @@ use App\Services\Backup\Destinations\LocalDestination;
 use App\Services\Backup\Destinations\S3Destination;
 use App\Services\Backup\Destinations\SFTPDestination;
 use App\Services\Backup\Destinations\GoogleDriveDestination;
+use App\Support\Str;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -50,7 +51,7 @@ class ScheduledBackup extends Command
                 'include_settings' => config('backup.scheduled.include_settings', true),
             ]);
 
-            $this->info("Backup created: {$result['filename']} ({$this->formatBytes($result['size'])})");
+            $this->info("Backup created: {$result['filename']} (" . Str::formatBytes($result['size']) . ')');
 
             // Get the local backup path
             $localPath = Storage::disk(config('backup.disk', 'backups'))->path($result['filename']);
@@ -175,17 +176,4 @@ class ScheduledBackup extends Command
         }
     }
 
-    /**
-     * Format bytes to human readable format.
-     */
-    private function formatBytes(int $bytes): string
-    {
-        if ($bytes === 0) return '0 Bytes';
-        
-        $k = 1024;
-        $sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        $i = floor(log($bytes) / log($k));
-        
-        return round($bytes / pow($k, $i), 2) . ' ' . $sizes[$i];
-    }
 }

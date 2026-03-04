@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\ApiToken;
 use App\Services\ApiKeyService;
 use Carbon\Carbon;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class ApiKeyController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private ApiKeyService $apiKeyService
     ) {}
@@ -40,7 +43,7 @@ class ApiKeyController extends Controller
                 ];
             });
 
-        return response()->json(['keys' => $tokens]);
+        return $this->dataResponse(['keys' => $tokens]);
     }
 
     /**
@@ -60,11 +63,10 @@ class ApiKeyController extends Controller
                 isset($validated['expires_at']) ? Carbon::parse($validated['expires_at']) : null
             );
         } catch (\RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->errorResponse($e->getMessage(), 422);
         }
 
-        return response()->json([
-            'message' => 'API key created successfully',
+        return $this->createdResponse('API key created successfully', [
             'key' => $result['plaintext'],
             'api_key' => [
                 'id' => $result['token']->id,
@@ -73,7 +75,7 @@ class ApiKeyController extends Controller
                 'created_at' => $result['token']->created_at,
                 'expires_at' => $result['token']->expires_at,
             ],
-        ], 201);
+        ]);
     }
 
     /**
@@ -84,7 +86,7 @@ class ApiKeyController extends Controller
         $token = $this->resolveUserToken($request, $id);
 
         if (!$token) {
-            return response()->json(['message' => 'API key not found'], 404);
+            return $this->errorResponse('API key not found', 404);
         }
 
         $validated = $request->validate([
@@ -94,8 +96,7 @@ class ApiKeyController extends Controller
 
         $token->update($validated);
 
-        return response()->json([
-            'message' => 'API key updated successfully',
+        return $this->successResponse('API key updated successfully', [
             'api_key' => [
                 'id' => $token->id,
                 'name' => $token->name,
@@ -113,12 +114,12 @@ class ApiKeyController extends Controller
         $token = $this->resolveUserToken($request, $id);
 
         if (!$token) {
-            return response()->json(['message' => 'API key not found'], 404);
+            return $this->errorResponse('API key not found', 404);
         }
 
         $this->apiKeyService->revoke($token);
 
-        return response()->json(['message' => 'API key revoked successfully']);
+        return $this->deleteResponse('API key revoked successfully');
     }
 
     /**
@@ -129,17 +130,16 @@ class ApiKeyController extends Controller
         $token = $this->resolveUserToken($request, $id);
 
         if (!$token) {
-            return response()->json(['message' => 'API key not found'], 404);
+            return $this->errorResponse('API key not found', 404);
         }
 
         if ($token->isRevoked()) {
-            return response()->json(['message' => 'Cannot rotate a revoked key'], 422);
+            return $this->errorResponse('Cannot rotate a revoked key', 422);
         }
 
         $result = $this->apiKeyService->rotate($token);
 
-        return response()->json([
-            'message' => 'API key rotated successfully',
+        return $this->successResponse('API key rotated successfully', [
             'key' => $result['plaintext'],
             'api_key' => [
                 'id' => $result['token']->id,

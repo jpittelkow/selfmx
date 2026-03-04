@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -62,7 +63,7 @@ class AIRequestLog extends Model
     /**
      * Scope to filter successful requests.
      */
-    public function scopeSuccessful($query)
+    public function scopeSuccessful(Builder $query): Builder
     {
         return $query->where('success', true);
     }
@@ -70,7 +71,7 @@ class AIRequestLog extends Model
     /**
      * Scope to filter failed requests.
      */
-    public function scopeFailed($query)
+    public function scopeFailed(Builder $query): Builder
     {
         return $query->where('success', false);
     }
@@ -78,7 +79,7 @@ class AIRequestLog extends Model
     /**
      * Scope to filter by provider.
      */
-    public function scopeProvider($query, string $provider)
+    public function scopeProvider(Builder $query, string $provider): Builder
     {
         return $query->where('provider', $provider);
     }
@@ -86,7 +87,7 @@ class AIRequestLog extends Model
     /**
      * Scope to filter by mode.
      */
-    public function scopeMode($query, string $mode)
+    public function scopeMode(Builder $query, string $mode): Builder
     {
         return $query->where('mode', $mode);
     }

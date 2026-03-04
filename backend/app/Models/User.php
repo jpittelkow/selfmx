@@ -34,6 +34,9 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
 
     /**
      * The attributes that are mass assignable.
+     *
+     * Security-sensitive fields (disabled_at, two_factor_*) are excluded
+     * to prevent mass-assignment attacks. Use forceFill() in services.
      */
     protected $fillable = [
         'name',
@@ -41,11 +44,6 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
         'password',
         'avatar',
         'email_verified_at',
-        'disabled_at',
-        'two_factor_enabled',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
-        'two_factor_confirmed_at',
     ];
 
     protected $appends = ['is_admin'];

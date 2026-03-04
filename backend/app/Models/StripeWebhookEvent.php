@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class StripeWebhookEvent extends Model
@@ -23,17 +24,17 @@ class StripeWebhookEvent extends Model
         ];
     }
 
-    public function scopeByType($query, string $type)
+    public function scopeByType(Builder $query, string $type): Builder
     {
         return $query->where('event_type', $type);
     }
 
-    public function scopeProcessed($query)
+    public function scopeProcessed(Builder $query): Builder
     {
         return $query->where('status', 'processed');
     }
 
-    public function scopeFailed($query)
+    public function scopeFailed(Builder $query): Builder
     {
         return $query->where('status', 'failed');
     }

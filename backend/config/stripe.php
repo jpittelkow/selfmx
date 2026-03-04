@@ -18,7 +18,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'platform_account_id' => env('STRIPE_PLATFORM_ACCOUNT_ID'),
-    'platform_client_id' => 'pk_live_51T3IOFLxjkep9LMmNOGaCUjcW2wJ94BADNXlgNPLS6zqpqsG0TKeg5WxDlboeWbKobd3I4sSsMGL7znxFLrG7gMF00hY5PRSme',
+    'platform_client_id' => env('STRIPE_PLATFORM_CLIENT_ID', ''),
     'application_fee_percent' => (float) env('STRIPE_APPLICATION_FEE_PERCENT', 1.0),
     'currency' => env('STRIPE_CURRENCY', 'usd'),
     'mode' => env('STRIPE_MODE', 'test'),

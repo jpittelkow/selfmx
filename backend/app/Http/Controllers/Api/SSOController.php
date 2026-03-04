@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Services\AuditService;
 use App\Services\Auth\SSOService;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 
 class SSOController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private SSOService $ssoService,
         private AuditService $auditService
@@ -22,7 +25,7 @@ class SSOController extends Controller
      */
     public function providers(): JsonResponse
     {
-        return response()->json([
+        return $this->dataResponse([
             'providers' => $this->ssoService->getAvailableProviders(),
             'sso_enabled' => $this->ssoService->isEnabled(),
         ]);
@@ -34,9 +37,7 @@ class SSOController extends Controller
     public function redirect(string $provider): RedirectResponse|JsonResponse
     {
         if (!$this->ssoService->isValidProvider($provider)) {
-            return response()->json([
-                'message' => 'Invalid or disabled SSO provider',
-            ], 400);
+            return $this->errorResponse('Invalid or disabled SSO provider', 400);
         }
 
         return redirect($this->ssoService->getRedirectUrl($provider));
@@ -88,24 +89,20 @@ class SSOController extends Controller
     public function link(Request $request, string $provider): JsonResponse
     {
         if (!$this->ssoService->isValidProvider($provider)) {
-            return response()->json([
-                'message' => 'Invalid or disabled SSO provider',
-            ], 400);
+            return $this->errorResponse('Invalid or disabled SSO provider', 400);
         }
 
         $user = $request->user();
 
         // Check if already linked
         if ($user->socialAccounts()->where('provider', $provider)->exists()) {
-            return response()->json([
-                'message' => 'Provider already linked',
-            ], 400);
+            return $this->errorResponse('Provider already linked', 400);
         }
 
         // Return redirect URL for frontend to use
         $redirectUrl = $this->ssoService->getRedirectUrl($provider, 'link:' . $user->id);
 
-        return response()->json([
+        return $this->dataResponse([
             'redirect_url' => $redirectUrl,
         ]);
     }
@@ -118,13 +115,9 @@ class SSOController extends Controller
         try {
             $this->ssoService->unlinkProvider($request->user(), $provider);
 
-            return response()->json([
-                'message' => 'Provider unlinked successfully',
-            ]);
+            return $this->successResponse('Provider unlinked successfully');
         } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 400);
+            return $this->errorResponse($e->getMessage(), 400);
         }
     }
 
@@ -135,7 +128,7 @@ class SSOController extends Controller
     {
         $accounts = $this->ssoService->getLinkedAccounts($request->user());
 
-        return response()->json([
+        return $this->dataResponse([
             'accounts' => $accounts,
         ]);
     }

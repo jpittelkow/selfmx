@@ -56,11 +56,11 @@ ENV BROADCAST_CONNECTION=reverb
 # and set REVERB_APP_KEY=your-key at runtime. Runtime-only changes will NOT update the frontend.
 ENV REVERB_APP_ID=selfmx
 ENV REVERB_APP_KEY=selfmx-key
-ENV REVERB_APP_SECRET=selfmx-secret
+ENV REVERB_APP_SECRET=""
 ENV REVERB_HOST=127.0.0.1
 ENV REVERB_PORT=6001
 ENV REVERB_SCHEME=http
-ENV REVERB_SERVER_HOST=0.0.0.0
+ENV REVERB_SERVER_HOST=127.0.0.1
 ENV REVERB_SERVER_PORT=6001
 # Meilisearch defaults (can be overridden at runtime)
 ENV MEILI_ENV=production

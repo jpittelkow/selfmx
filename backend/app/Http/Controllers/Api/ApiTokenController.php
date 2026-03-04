@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\ApiToken;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ApiTokenController extends Controller
 {
+    use ApiResponseTrait;
+
     /**
      * Get user's API tokens.
      */
@@ -26,7 +29,7 @@ class ApiTokenController extends Controller
                 return $token->makeHidden(['token']);
             });
 
-        return response()->json([
+        return $this->dataResponse([
             'tokens' => $tokens,
         ]);
     }
@@ -52,11 +55,10 @@ class ApiTokenController extends Controller
         ]);
 
         // Return the plain text token only once
-        return response()->json([
-            'message' => 'API token created successfully',
+        return $this->createdResponse('API token created successfully', [
             'token' => $token, // Plain text token - only shown once
             'api_token' => $apiToken->makeHidden(['token']),
-        ], 201);
+        ]);
     }
 
     /**
@@ -66,15 +68,11 @@ class ApiTokenController extends Controller
     {
         // Ensure the token belongs to the user
         if ($token->user_id !== $request->user()->id) {
-            return response()->json([
-                'message' => 'Unauthorized',
-            ], 403);
+            return $this->errorResponse('Unauthorized', 403);
         }
 
         $token->delete();
 
-        return response()->json([
-            'message' => 'API token deleted successfully',
-        ]);
+        return $this->deleteResponse('API token deleted successfully');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use App\Models\SystemSetting;
 use App\Services\AuditService;
 use App\Services\StorageService;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class StorageSettingController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private StorageService $storageService,
     ) {}
@@ -22,7 +25,7 @@ class StorageSettingController extends Controller
     {
         $settings = SystemSetting::getGroup('storage');
 
-        return response()->json([
+        return $this->dataResponse([
             'settings' => $settings,
         ]);
     }
@@ -32,7 +35,7 @@ class StorageSettingController extends Controller
      */
     public function paths(): JsonResponse
     {
-        return response()->json([
+        return $this->dataResponse([
             'paths' => [
                 ['key' => 'app', 'path' => storage_path('app'), 'description' => 'Application files'],
                 ['key' => 'public', 'path' => storage_path('app/public'), 'description' => 'Publicly accessible files'],
@@ -50,11 +53,9 @@ class StorageSettingController extends Controller
     public function health(): JsonResponse
     {
         try {
-            return response()->json($this->storageService->getHealth());
+            return $this->dataResponse($this->storageService->getHealth());
         } catch (\Throwable $e) {
-            return response()->json([
-                'error' => 'Unable to get storage health: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Unable to get storage health: ' . $e->getMessage(), 500);
         }
     }
 
@@ -72,10 +73,10 @@ class StorageSettingController extends Controller
         $result = $this->storageService->testConnection($driver, $config);
 
         if ($result['success']) {
-            return response()->json(['success' => true]);
+            return $this->dataResponse(['success' => true]);
         }
 
-        return response()->json([
+        return $this->dataResponse([
             'success' => false,
             'error' => $result['error'] ?? 'Connection test failed',
         ], 422);
@@ -126,9 +127,7 @@ class StorageSettingController extends Controller
             SystemSetting::set($key, $value, 'storage', $user->id, false);
         }
 
-        return response()->json([
-            'message' => 'Storage settings updated successfully',
-        ]);
+        return $this->successResponse('Storage settings updated successfully');
     }
 
     /**
@@ -137,11 +136,9 @@ class StorageSettingController extends Controller
     public function cleanupSuggestions(): JsonResponse
     {
         try {
-            return response()->json($this->storageService->getCleanupSuggestions());
+            return $this->dataResponse($this->storageService->getCleanupSuggestions());
         } catch (\Throwable $e) {
-            return response()->json([
-                'error' => 'Unable to get cleanup suggestions: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Unable to get cleanup suggestions: ' . $e->getMessage(), 500);
         }
     }
 
@@ -163,19 +160,15 @@ class StorageSettingController extends Controller
                 'bytes_freed' => $result['bytes_freed'],
             ]);
 
-            return response()->json([
-                'message' => 'Cleanup completed.',
+            return $this->successResponse('Cleanup completed.', [
                 'files_removed' => $result['files_removed'],
                 'bytes_freed' => $result['bytes_freed'],
                 'bytes_freed_formatted' => $this->formatBytesForResponse($result['bytes_freed']),
             ]);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->errorResponse($e->getMessage(), 422);
         } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Cleanup failed.',
-                'error' => $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Cleanup failed.', 500);
         }
     }
 
@@ -185,11 +178,9 @@ class StorageSettingController extends Controller
     public function analytics(): JsonResponse
     {
         try {
-            return response()->json($this->storageService->getAnalytics());
+            return $this->dataResponse($this->storageService->getAnalytics());
         } catch (\Throwable $e) {
-            return response()->json([
-                'error' => 'Unable to retrieve storage analytics: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Unable to retrieve storage analytics: ' . $e->getMessage(), 500);
         }
     }
 
@@ -199,11 +190,9 @@ class StorageSettingController extends Controller
     public function stats(): JsonResponse
     {
         try {
-            return response()->json($this->storageService->getStats());
+            return $this->dataResponse($this->storageService->getStats());
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Unable to retrieve storage statistics: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Unable to retrieve storage statistics: ' . $e->getMessage(), 500);
         }
     }
 

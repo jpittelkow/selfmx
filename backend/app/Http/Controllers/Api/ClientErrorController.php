@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -10,6 +11,7 @@ use Illuminate\Support\Str;
 
 class ClientErrorController extends Controller
 {
+    use ApiResponseTrait;
     /**
      * Store a client-side error report. Logs to application log (not database).
      * Rate limited to prevent abuse.
@@ -48,6 +50,6 @@ class ClientErrorController extends Controller
             default => Log::error($message, $context),
         };
 
-        return response()->json(['message' => 'Error reported'], 200);
+        return $this->successResponse('Error reported');
     }
 }

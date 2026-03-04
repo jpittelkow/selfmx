@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -89,7 +90,7 @@ class Email extends Model
     /**
      * Scope: only inbound emails.
      */
-    public function scopeInbound($query)
+    public function scopeInbound(Builder $query): Builder
     {
         return $query->where('direction', 'inbound');
     }
@@ -97,7 +98,7 @@ class Email extends Model
     /**
      * Scope: only outbound emails.
      */
-    public function scopeOutbound($query)
+    public function scopeOutbound(Builder $query): Builder
     {
         return $query->where('direction', 'outbound');
     }
@@ -105,7 +106,7 @@ class Email extends Model
     /**
      * Scope: unread emails.
      */
-    public function scopeUnread($query)
+    public function scopeUnread(Builder $query): Builder
     {
         return $query->where('is_read', false);
     }
@@ -113,7 +114,7 @@ class Email extends Model
     /**
      * Scope: not trashed and not spam (normal inbox view).
      */
-    public function scopeInbox($query)
+    public function scopeInbox(Builder $query): Builder
     {
         return $query->where('is_trashed', false)
             ->where('is_spam', false)
