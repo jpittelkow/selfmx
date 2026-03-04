@@ -36,9 +36,11 @@ class EmailThreadController extends Controller
             $filterMailboxIds = $mailboxIds;
         }
 
-        // Only include threads with at least one visible (non-trashed, non-spam, non-draft) email
+        // Only include threads with at least one visible inbound email
+        // (sent-only threads belong in the sent view until a reply is received)
         $query = EmailThread::whereHas('emails', function ($q) use ($filterMailboxIds) {
             $q->whereIn('mailbox_id', $filterMailboxIds)
+                ->where('direction', 'inbound')
                 ->where('is_trashed', false)
                 ->where('is_spam', false)
                 ->where('is_draft', false);

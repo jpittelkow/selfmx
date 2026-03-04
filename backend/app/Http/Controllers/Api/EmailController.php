@@ -478,6 +478,58 @@ class EmailController extends Controller
             'limit' => 25,
         ], $domain->provider_config ?? []);
 
+        // Sync delivery_status from provider events if stale
+        $this->syncDeliveryStatusFromEvents($email, $events['items'] ?? []);
+
+        $events['delivery_status'] = $email->fresh()->delivery_status;
+
         return response()->json($events);
+    }
+
+    /**
+     * Sync email delivery_status from provider events when webhooks may have been missed.
+     */
+    private function syncDeliveryStatusFromEvents(Email $email, array $items): void
+    {
+        if (empty($items) || $email->delivery_status === 'delivered') {
+            return;
+        }
+
+        // Priority: delivered > bounced > failed > queued
+        $statusPriority = [
+            'delivered' => 4,
+            'bounced' => 3,
+            'failed' => 2,
+            'queued' => 1,
+            'sending' => 0,
+        ];
+
+        $statusMap = [
+            'delivered' => 'delivered',
+            'accepted' => 'queued',
+            'permanent_fail' => 'bounced',
+            'temporary_fail' => 'failed',
+            'failed' => 'failed',
+            'opened' => 'delivered',
+            'clicked' => 'delivered',
+            'complained' => 'delivered',
+            'unsubscribed' => 'delivered',
+        ];
+
+        $bestStatus = $email->delivery_status ?? 'sending';
+        $bestPriority = $statusPriority[$bestStatus] ?? 0;
+
+        foreach ($items as $item) {
+            $event = $item['event'] ?? '';
+            $mapped = $statusMap[$event] ?? null;
+            if ($mapped && ($statusPriority[$mapped] ?? 0) > $bestPriority) {
+                $bestStatus = $mapped;
+                $bestPriority = $statusPriority[$mapped] ?? 0;
+            }
+        }
+
+        if ($bestStatus !== $email->delivery_status) {
+            $email->update(['delivery_status' => $bestStatus]);
+        }
     }
 }

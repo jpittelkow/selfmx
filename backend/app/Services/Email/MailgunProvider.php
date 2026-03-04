@@ -265,7 +265,10 @@ class MailgunProvider implements EmailProviderInterface
      * @param  array   $config   Per-domain config overrides (api_key, region)
      * @return array{status: int, body: array, ok: bool}
      */
-    public function managementRequest(string $method, string $path, array $payload = [], array $config = []): array
+    /**
+     * @param  bool  $json  When true, send JSON body instead of form-encoded (needed for bulk imports).
+     */
+    public function managementRequest(string $method, string $path, array $payload = [], array $config = [], bool $json = false): array
     {
         $apiKey = $config['api_key'] ?? $this->getApiKey();
         $region = $config['region'] ?? $this->getRegion();
@@ -275,9 +278,11 @@ class MailgunProvider implements EmailProviderInterface
             $request = Http::withBasicAuth('api', $apiKey);
             $url = "{$host}/{$path}";
 
+            // Mailgun API expects form-encoded data for most POST/PUT endpoints,
+            // but bulk import endpoints require JSON.
             $response = match (strtolower($method)) {
-                'post'   => $request->post($url, $payload),
-                'put'    => $request->put($url, $payload),
+                'post'   => $json ? $request->post($url, $payload) : $request->asForm()->post($url, $payload),
+                'put'    => $json ? $request->put($url, $payload) : $request->asForm()->put($url, $payload),
                 'delete' => $request->delete($url, $payload),
                 default  => $request->get($url, $payload),
             };
@@ -295,15 +300,12 @@ class MailgunProvider implements EmailProviderInterface
 
     /**
      * Like managementRequest(), but throws MailgunApiException on failure.
-     * Use for mutating operations (create, update, delete) where failure must be surfaced.
-     *
-     * @return array{status: int, body: array, ok: bool}
      *
      * @throws MailgunApiException
      */
-    public function managementRequestOrFail(string $method, string $path, array $payload = [], array $config = []): array
+    public function managementRequestOrFail(string $method, string $path, array $payload = [], array $config = [], bool $json = false): array
     {
-        $result = $this->managementRequest($method, $path, $payload, $config);
+        $result = $this->managementRequest($method, $path, $payload, $config, $json);
 
         if (! $result['ok']) {
             $message = $result['body']['message'] ?? ('Mailgun API error: HTTP '.$result['status']);
@@ -325,13 +327,31 @@ class MailgunProvider implements EmailProviderInterface
 
     public function getDkimKey(string $domain, array $config = []): array
     {
-        $result = $this->managementRequestOrFail('get', "v4/domains/{$domain}/dkim", [], $config);
-        return $result['body'];
+        // v3/domains/{domain} returns domain info including sending_dns_records with DKIM details
+        $result = $this->managementRequestOrFail('get', "v3/domains/{$domain}", [], $config);
+        $body = $result['body'];
+
+        // Extract DKIM info from sending_dns_records
+        $dkimRecords = array_filter(
+            $body['sending_dns_records'] ?? [],
+            fn ($r) => ($r['record_type'] ?? '') === 'TXT' && str_contains($r['name'] ?? '', '._domainkey.')
+        );
+        $dkimRecord = reset($dkimRecords) ?: null;
+
+        return [
+            'selector' => $dkimRecord ? explode('._domainkey.', $dkimRecord['name'] ?? '')[0] : null,
+            'public_key' => $dkimRecord['value'] ?? null,
+            'valid' => $dkimRecord['valid'] ?? 'unknown',
+            'domain_info' => [
+                'state' => $body['domain']['state'] ?? null,
+                'created_at' => $body['domain']['created_at'] ?? null,
+            ],
+        ];
     }
 
     public function rotateDkimKey(string $domain, array $config = []): array
     {
-        $result = $this->managementRequestOrFail('post', "v4/domains/{$domain}/dkim", [], $config);
+        $result = $this->managementRequestOrFail('post', "v1/dkim-management/domains/{$domain}/rotate", [], $config);
         return $result['body'];
     }
 
@@ -347,7 +367,7 @@ class MailgunProvider implements EmailProviderInterface
     {
         $result = $this->managementRequestOrFail('post', "v3/domains/{$domain}/webhooks", [
             'id'  => $event,
-            'url' => [$url],
+            'url' => $url,
         ], $config);
         return $result['body'];
     }
@@ -355,7 +375,7 @@ class MailgunProvider implements EmailProviderInterface
     public function updateWebhook(string $domain, string $webhookId, string $url, array $config = []): array
     {
         $result = $this->managementRequestOrFail('put', "v3/domains/{$domain}/webhooks/{$webhookId}", [
-            'url' => [$url],
+            'url' => $url,
         ], $config);
         return $result['body'];
     }
@@ -448,21 +468,29 @@ class MailgunProvider implements EmailProviderInterface
             $skip += $limit;
         } while (count($allRoutes) < $totalCount && ! empty($routes));
 
-        // Filter routes that reference this domain in their expression or description
+        // Filter routes that reference this domain in their expression, description, or actions.
+        // Use a boundary pattern to avoid matching subdomains (e.g., "sub.example.com" when
+        // filtering for "example.com") while still matching @example.com, /example.com, etc.
         $escapedDomain = preg_quote($domain, '/');
-        $filtered = array_values(array_filter($allRoutes, function ($route) use ($domain, $escapedDomain) {
+        $domainPattern = '/(^|[@.\/\s\'"])' . $escapedDomain . '($|[\/\s\'"\)>])/i';
+
+        $filtered = array_values(array_filter($allRoutes, function ($route) use ($domainPattern) {
             $expr = $route['expression'] ?? '';
             $desc = $route['description'] ?? '';
 
-            // Match @domain in expression, anchored to avoid subdomain false positives
-            // Handles: match_recipient('.*@example.com'), match_recipient('user@example.com')
-            if (preg_match('/@' . $escapedDomain . '(?=[\'"\s\)>]|$)/', $expr)) {
+            if (preg_match($domainPattern, $expr)) {
                 return true;
             }
 
-            // Match "for <domain>" in description (matches our configureDomainWebhook format)
-            if (preg_match('/\bfor\s+' . $escapedDomain . '\b/i', $desc)) {
+            if (preg_match($domainPattern, $desc)) {
                 return true;
+            }
+
+            // Also check actions (e.g., forward URLs containing the domain)
+            foreach ($route['actions'] ?? [] as $action) {
+                if (preg_match($domainPattern, $action)) {
+                    return true;
+                }
             }
 
             return false;
@@ -603,19 +631,19 @@ class MailgunProvider implements EmailProviderInterface
      */
     public function importBounces(string $domain, array $entries, array $config = []): array
     {
-        $result = $this->managementRequestOrFail('post', "v3/{$domain}/bounces", $entries, $config);
+        $result = $this->managementRequestOrFail('post', "v3/{$domain}/bounces", $entries, $config, json: true);
         return $result['body'];
     }
 
     public function importComplaints(string $domain, array $entries, array $config = []): array
     {
-        $result = $this->managementRequestOrFail('post', "v3/{$domain}/complaints", $entries, $config);
+        $result = $this->managementRequestOrFail('post', "v3/{$domain}/complaints", $entries, $config, json: true);
         return $result['body'];
     }
 
     public function importUnsubscribes(string $domain, array $entries, array $config = []): array
     {
-        $result = $this->managementRequestOrFail('post', "v3/{$domain}/unsubscribes", $entries, $config);
+        $result = $this->managementRequestOrFail('post', "v3/{$domain}/unsubscribes", $entries, $config, json: true);
         return $result['body'];
     }
 

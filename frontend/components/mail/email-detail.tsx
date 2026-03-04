@@ -173,7 +173,7 @@ const eventColorMap: Record<string, string> = {
   accepted: "bg-muted text-muted-foreground",
 };
 
-function ProviderEventsPopover({ emailId }: { emailId: number }) {
+function ProviderEventsPopover({ emailId, onStatusSync }: { emailId: number; onStatusSync?: (status: string) => void }) {
   const [events, setEvents] = useState<ProviderEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
@@ -187,8 +187,13 @@ function ProviderEventsPopover({ emailId }: { emailId: number }) {
   const fetchEvents = () => {
     if (fetched) return;
     setIsLoading(true);
-    api.get<{ items: ProviderEvent[] }>(`/email/messages/${emailId}/provider-events`)
-      .then((res) => setEvents(res.data.items ?? []))
+    api.get<{ items: ProviderEvent[]; delivery_status?: string }>(`/email/messages/${emailId}/provider-events`)
+      .then((res) => {
+        setEvents(res.data.items ?? []);
+        if (res.data.delivery_status && onStatusSync) {
+          onStatusSync(res.data.delivery_status);
+        }
+      })
       .catch(() => {})
       .finally(() => { setIsLoading(false); setFetched(true); });
   };
@@ -258,6 +263,12 @@ function EmailMessage({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const isMobile = useIsMobile();
   const [forceLightMode, setForceLightMode] = useState(false);
+  const [deliveryStatus, setDeliveryStatus] = useState(email.delivery_status);
+
+  // Reset when email changes
+  useEffect(() => {
+    setDeliveryStatus(email.delivery_status);
+  }, [email.id, email.delivery_status]);
   const isDark = resolvedTheme === "dark" && !forceLightMode;
 
   const getIframeStyles = (dark: boolean) => `
@@ -351,8 +362,8 @@ function EmailMessage({
               )}
               {email.direction === "outbound" && (
                 <>
-                  <DeliveryStatusBadge status={email.delivery_status} />
-                  <ProviderEventsPopover emailId={email.id} />
+                  <DeliveryStatusBadge status={deliveryStatus} />
+                  <ProviderEventsPopover emailId={email.id} onStatusSync={setDeliveryStatus} />
                 </>
               )}
               {email.is_spam && email.spam_score != null && (

@@ -53,6 +53,13 @@ class MailgunManagementController extends Controller
         } catch (MailgunApiException $e) {
             $status = ($e->httpStatus >= 400 && $e->httpStatus < 600) ? $e->httpStatus : 502;
 
+            // Never pass Mailgun's 401/403 as our response — the frontend intercepts
+            // 401 as "session expired" and redirects to login. Map upstream auth
+            // errors to 502 (Bad Gateway) so the user sees a proper error toast instead.
+            if (in_array($status, [401, 403])) {
+                return $this->errorResponse('Mailgun API authentication failed — check your API key configuration. ('.$e->getMessage().')', 502);
+            }
+
             return $this->errorResponse($e->getMessage(), $status);
         }
     }
