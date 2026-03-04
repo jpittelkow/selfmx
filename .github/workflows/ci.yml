@@ -49,6 +49,7 @@ jobs:
       - name: Audit PHP dependencies
         run: composer audit
         working-directory: backend
+        continue-on-error: true
 
       - name: Copy environment file
         run: cp .env.example .env

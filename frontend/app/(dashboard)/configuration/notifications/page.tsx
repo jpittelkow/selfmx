@@ -488,7 +488,7 @@ function renderChannelFields(
     case "telegram":
       return (
         <div className="space-y-4">
-          <FormField id="telegram_bot_token" label="Bot token" error={errors.telegram_bot_token?.message}>
+          <FormField id="telegram_bot_token" label="Bot token" error={errors.telegram_bot_token?.message as string | undefined}>
             <Input id="telegram_bot_token" type="password" placeholder="Optional" {...register("telegram_bot_token")} className="min-h-[44px]" />
           </FormField>
         </div>
