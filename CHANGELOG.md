@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.5] - 2026-03-04
+
+### Fixed
+- Code review remediation - security hardening, input validation, and refactoring
 ## [0.2.4] - 2026-03-03
 
 ### Added
