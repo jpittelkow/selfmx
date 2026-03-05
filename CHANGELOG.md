@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.9] - 2026-03-04
+
+### Added
+- Mailbox forwarding with email forwarding service, API endpoints, and management UI
 ## [0.2.8] - 2026-03-04
 
 ### Fixed
