@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAppLogStream, type AppLogEntry } from "@/lib/use-app-log-stream";
-import { Download, Loader2, Radio, Trash2, Wifi, WifiOff } from "lucide-react";
+import { Download, Loader2, Radio, RefreshCw, Trash2, Wifi, WifiOff } from "lucide-react";
 import { HelpLink } from "@/components/help/help-link";
 
 const LEVEL_VARIANTS: Record<string, string> = {
@@ -47,6 +47,9 @@ export default function ApplicationLogsPage() {
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
+  const [historicalLogs, setHistoricalLogs] = useState<AppLogEntry[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFilters, setExportFilters] = useState({
     date_from: "",
@@ -59,7 +62,38 @@ export default function ApplicationLogsPage() {
 
   const { status, logs, clearLogs } = useAppLogStream(liveEnabled);
 
-  const filtered = logs.filter((log) => {
+  const fetchHistoricalLogs = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const response = await api.get("/app-logs/recent?limit=200");
+      const entries: AppLogEntry[] = (response.data.data || []).map(
+        (entry: { datetime: string; level: string; message: string; correlation_id?: string }, i: number) => ({
+          id: `hist-${i}`,
+          level: entry.level,
+          message: entry.message,
+          context: entry.correlation_id
+            ? { correlation_id: entry.correlation_id }
+            : {},
+          timestamp: entry.datetime || new Date().toISOString(),
+        })
+      );
+      setHistoricalLogs(entries);
+      setHistoryLoaded(true);
+    } catch {
+      toast.error("Failed to load historical logs");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistoricalLogs();
+  }, []);
+
+  // Merge historical + live logs, preferring live when streaming
+  const allLogs = liveEnabled && logs.length > 0 ? logs : historicalLogs;
+
+  const filtered = allLogs.filter((log) => {
     if (levelFilter !== "all" && log.level !== levelFilter) return false;
     if (
       search &&
@@ -132,7 +166,17 @@ export default function ApplicationLogsPage() {
                   : "Connecting…"}
             </span>
           )}
-          <Button variant="outline" size="sm" onClick={clearLogs}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchHistoricalLogs}
+            disabled={isLoadingHistory}
+            title="Reload logs from server"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingHistory ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => { clearLogs(); setHistoricalLogs([]); setHistoryLoaded(false); }}>
             <Trash2 className="mr-2 h-4 w-4" />
             Clear
           </Button>
@@ -273,7 +317,7 @@ export default function ApplicationLogsPage() {
         <CardHeader>
           <CardTitle>Filters</CardTitle>
           <CardDescription>
-            Level and search (client-side; applies to streamed logs only)
+            Level and search (client-side; applies to displayed logs)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -326,8 +370,7 @@ export default function ApplicationLogsPage() {
         <CardHeader>
           <CardTitle>Log output</CardTitle>
           <CardDescription>
-            {filtered.length} line{filtered.length !== 1 ? "s" : ""} (max 500
-            when live)
+            {filtered.length} line{filtered.length !== 1 ? "s" : ""}{liveEnabled ? " (max 500 when live)" : ""}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -335,15 +378,13 @@ export default function ApplicationLogsPage() {
             ref={scrollRef}
             className="rounded-md bg-zinc-950 text-zinc-100 font-mono text-xs overflow-auto max-h-[60vh] min-h-[200px] p-4"
           >
-            {!liveEnabled ? (
-              <p className="text-zinc-500">
-                Enable Live to stream application logs. Set LOG_BROADCAST_ENABLED=true,
-                add &quot;broadcast&quot; to LOG_STACK, and configure Reverb.
-              </p>
+            {isLoadingHistory && !historyLoaded ? (
+              <p className="text-zinc-500">Loading logs…</p>
             ) : filtered.length === 0 ? (
               <p className="text-zinc-500">
-                No logs yet. Trigger some activity (e.g. API calls) to see
-                output.
+                {liveEnabled
+                  ? "No logs yet. Trigger some activity (e.g. API calls) to see output."
+                  : "No logs found. Enable Live for real-time streaming, or check that log files exist."}
               </p>
             ) : (
               <div className="space-y-0.5">

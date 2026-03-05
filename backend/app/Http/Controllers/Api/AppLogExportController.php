@@ -14,6 +14,51 @@ class AppLogExportController extends Controller
     ) {}
 
     /**
+     * Return recent log entries as JSON for inline display.
+     * Query params: limit (default 200, max 500), level, correlation_id.
+     */
+    public function recent(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $limit = min((int) $request->input('limit', 200), 500);
+        $level = $request->input('level');
+        $correlationId = $request->input('correlation_id');
+
+        $files = $this->exportService->getLogFilesInRange(null, null);
+
+        // Read entries from all files, keep last $limit matching entries
+        $entries = [];
+        foreach ($files as $path) {
+            if (! is_readable($path)) {
+                continue;
+            }
+            $handle = fopen($path, 'r');
+            if ($handle === false) {
+                continue;
+            }
+            while (($line = fgets($handle)) !== false) {
+                $entry = $this->exportService->parseLine($line);
+                if ($entry === null) {
+                    continue;
+                }
+                if (! $this->exportService->passesFilters($entry, $level, $correlationId)) {
+                    continue;
+                }
+                $entries[] = $entry;
+                // Keep a rolling window to limit memory
+                if (count($entries) > $limit * 2) {
+                    $entries = array_slice($entries, -$limit);
+                }
+            }
+            fclose($handle);
+        }
+
+        // Return the last $limit entries (newest last)
+        $entries = array_slice($entries, -$limit);
+
+        return response()->json(['data' => array_values($entries)]);
+    }
+
+    /**
      * Export application log files as CSV or JSON.
      * Query params: date_from, date_to, level, correlation_id, format (csv|json, default csv).
      */

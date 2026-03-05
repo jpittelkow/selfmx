@@ -466,8 +466,9 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
         toast.success("Delivery webhooks configured for this domain.");
       }
       void fetchWebhooks();
-    } catch {
-      toast.error("Auto-configure failed");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Auto-configure failed");
     } finally {
       setIsConfiguring(false);
     }

@@ -285,6 +285,7 @@ class MailgunManagementController extends Controller
         $events = ['delivered', 'bounced', 'complained'];
         $results = [];
         $errors = [];
+        $lastHttpStatus = 0;
 
         foreach ($events as $event) {
             try {
@@ -302,24 +303,22 @@ class MailgunManagementController extends Controller
                         $results[$event] = $this->mailgun->updateWebhook($domain->name, $event, $eventsUrl, $config);
                     } catch (MailgunApiException $updateEx) {
                         $errors[$event] = $updateEx->getMessage();
+                        $lastHttpStatus = $updateEx->httpStatus;
                     }
                 } else {
                     $errors[$event] = $e->getMessage();
+                    $lastHttpStatus = $e->httpStatus;
                 }
             }
         }
 
         if (! empty($errors) && empty($results)) {
-            $firstError = reset($errors);
-            // Check if this is likely an auth error (message will mention auth/forbidden/unauthorized)
-            $isAuthError = str_contains(strtolower($firstError), 'forbidden')
-                || str_contains(strtolower($firstError), 'unauthorized')
-                || str_contains(strtolower($firstError), 'authentication')
-                || str_contains(strtolower($firstError), 'HTTP 401')
-                || str_contains(strtolower($firstError), 'HTTP 403');
-
-            $status = $isAuthError ? 502 : 422;
-            return $this->errorResponse('Failed to configure webhooks: '.implode('; ', $errors), $status);
+            // Map 401/403 to 502 so frontend doesn't interpret as session expired
+            $status = in_array($lastHttpStatus, [401, 403]) ? 502 : 422;
+            $prefix = in_array($lastHttpStatus, [401, 403])
+                ? 'Mailgun API key lacks permission — ensure you are using the account-level Private API key, not a domain sending key. '
+                : '';
+            return $this->errorResponse($prefix.'Failed to configure webhooks: '.implode('; ', $errors), $status);
         }
 
         if (! empty($results)) {

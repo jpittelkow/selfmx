@@ -329,6 +329,7 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
 
     // Application logs export (permission: logs.export)
     Route::prefix('app-logs')->group(function () {
+        Route::get('/recent', [AppLogExportController::class, 'recent'])->middleware('can:logs.export');
         Route::get('/export', [AppLogExportController::class, 'export'])->middleware('can:logs.export');
     });
 

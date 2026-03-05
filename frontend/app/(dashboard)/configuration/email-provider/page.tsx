@@ -332,6 +332,11 @@ export default function EmailProviderPage() {
                   }
                   placeholder="key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Use your <strong>account-level Private API key</strong> (not a domain sending key).
+                  Found in Mailgun dashboard under Settings &gt; API Security &gt; Private API key.
+                  Domain sending keys can only send mail and cannot manage webhooks, domains, or routes.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Region</Label>

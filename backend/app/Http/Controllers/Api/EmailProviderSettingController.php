@@ -34,8 +34,8 @@ class EmailProviderSettingController extends Controller
     {
         $validated = $request->validate([
             'email_hosting.default_provider' => ['sometimes', 'string', 'in:mailgun,ses,sendgrid,postmark'],
-            'email_hosting.spam_threshold' => ['sometimes', 'string'],
-            'email_hosting.max_attachment_size' => ['sometimes', 'string'],
+            'email_hosting.spam_threshold' => ['sometimes', 'numeric'],
+            'email_hosting.max_attachment_size' => ['sometimes', 'numeric'],
             'mailgun.api_key' => ['sometimes', 'nullable', 'string'],
             'mailgun.region' => ['sometimes', 'string', 'in:us,eu'],
             'mailgun.webhook_signing_key' => ['sometimes', 'nullable', 'string'],
@@ -49,6 +49,13 @@ class EmailProviderSettingController extends Controller
             'sendgrid.webhook_verification_key' => ['sometimes', 'nullable', 'string'],
             'postmark.server_token' => ['sometimes', 'nullable', 'string'],
         ]);
+
+        // Ensure numeric fields are stored as strings to match schema expectations
+        foreach (['spam_threshold', 'max_attachment_size'] as $field) {
+            if (isset($validated['email_hosting'][$field])) {
+                $validated['email_hosting'][$field] = (string) $validated['email_hosting'][$field];
+            }
+        }
 
         $userId = $request->user()->id;
 
