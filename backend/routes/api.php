@@ -624,6 +624,11 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::post('/{mailbox}/members', [MailboxController::class, 'addMember']);
         Route::put('/{mailbox}/members/{memberId}', [MailboxController::class, 'updateMember']);
         Route::delete('/{mailbox}/members/{memberId}', [MailboxController::class, 'removeMember']);
+
+        // Forwarding
+        Route::get('/{mailbox}/forward', [\App\Http\Controllers\Api\MailboxForwardController::class, 'show']);
+        Route::put('/{mailbox}/forward', [\App\Http\Controllers\Api\MailboxForwardController::class, 'upsert']);
+        Route::delete('/{mailbox}/forward', [\App\Http\Controllers\Api\MailboxForwardController::class, 'destroy']);
     });
 
     // Email unread counts (per-mailbox)

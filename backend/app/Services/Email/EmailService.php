@@ -468,6 +468,16 @@ class EmailService
             }
         }
 
+        // Check for mailbox-level forwarding (pass-through mode skips local storage)
+        $forwardingService = app(EmailForwardingService::class);
+        $activeForward = $forwardingService->getActiveForward($mailbox);
+
+        if ($activeForward && !$activeForward->keep_local_copy) {
+            $forwardingService->forwardParsed($parsed, $mailbox, $activeForward);
+            $this->logWebhook($provider, $parsed->providerEventId, 'inbound', $parsed, 'forwarded');
+            return null;
+        }
+
         try {
             $email = DB::transaction(function () use ($parsed, $mailbox, $provider) {
                 // Check spam (with user-specific allow/block lists)
@@ -517,6 +527,11 @@ class EmailService
 
             // Log the webhook
             $this->logWebhook($provider, $parsed->providerEventId, 'inbound', $parsed, 'processed');
+
+            // Forward email if mailbox has keep-copy forwarding configured
+            if ($activeForward && $activeForward->keep_local_copy) {
+                $forwardingService->forwardEmail($email, $activeForward);
+            }
 
             // Extract contacts from inbound email
             app(ContactService::class)->extractFromEmail($email);

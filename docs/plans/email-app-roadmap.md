@@ -349,3 +349,33 @@ The GraphQL schema (`backend/graphql/schema.graphql`) exposes:
 - [ ] Update OpenAPI spec or create separate GraphQL schema docs
 - [ ] Write Pest tests for all new queries and mutations (auth, scoping, pagination, edge cases)
 - [ ] Update GraphQL config page to show email-related usage stats
+
+## Phase 11: Mail Forwarding
+
+**Goal**: First-class mail forwarding — forward specific mailboxes or catchall mail to external email addresses, with per-forward choice of keeping a local copy or passing through.
+
+### Forwarding Configuration
+
+- [ ] `mailbox_forwards` table (user_id, mailbox_id, forward_to, keep_local_copy, is_active)
+- [ ] `MailboxForward` model with `Mailbox` and `User` relationships
+- [ ] `MailboxForwardController` API — GET/PUT/DELETE per mailbox (`/api/email/mailboxes/{mailbox}/forward`)
+
+### Forwarding Engine
+
+- [ ] `EmailForwardingService` — handles pass-through (no local storage) and keep-copy (store + forward) flows
+- [ ] Integrate into `EmailService::processInboundEmail` — check for active forward before/after DB transaction
+- [ ] Pass-through mode: forward via provider API, skip local email storage entirely
+- [ ] Keep-copy mode: store email locally, then forward after transaction commits
+- [ ] Transparent forwarding: preserve original From, add `X-Forwarded-To` header
+
+### Frontend
+
+- [ ] Forwarding section in Edit Mailbox dialog (toggle, forward-to address, keep local copy toggle)
+- [ ] Forwarding badge on mailbox table rows
+- [ ] Catchall forwarding: forward on wildcard/catchall mailbox applies to all unmatched domain mail
+
+### Testing
+
+- [ ] Unit tests for `EmailForwardingService`
+- [ ] Feature tests for both forwarding modes in `processInboundEmail`
+- [ ] API endpoint tests (CRUD, user scoping, validation)

@@ -290,6 +290,12 @@ class MailgunManagementController extends Controller
             try {
                 $results[$event] = $this->mailgun->createWebhook($domain->name, $event, $eventsUrl, $config);
             } catch (MailgunApiException $e) {
+                \Log::warning('Webhook autoconfigure create failed', [
+                    'event' => $event, 'domain' => $domain->name,
+                    'status' => $e->httpStatus, 'message' => $e->getMessage(),
+                    'body' => $e->responseBody,
+                ]);
+
                 // Only retry as update if Mailgun returned 400 (webhook already exists)
                 if ($e->httpStatus === 400) {
                     try {
@@ -304,7 +310,16 @@ class MailgunManagementController extends Controller
         }
 
         if (! empty($errors) && empty($results)) {
-            return $this->errorResponse('Failed to configure webhooks: '.implode('; ', $errors), 502);
+            $firstError = reset($errors);
+            // Check if this is likely an auth error (message will mention auth/forbidden/unauthorized)
+            $isAuthError = str_contains(strtolower($firstError), 'forbidden')
+                || str_contains(strtolower($firstError), 'unauthorized')
+                || str_contains(strtolower($firstError), 'authentication')
+                || str_contains(strtolower($firstError), 'HTTP 401')
+                || str_contains(strtolower($firstError), 'HTTP 403');
+
+            $status = $isAuthError ? 502 : 422;
+            return $this->errorResponse('Failed to configure webhooks: '.implode('; ', $errors), $status);
         }
 
         if (! empty($results)) {

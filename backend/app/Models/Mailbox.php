@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Mailbox extends Model
 {
@@ -36,6 +37,11 @@ class Mailbox extends Model
     public function emailDomain(): BelongsTo
     {
         return $this->belongsTo(EmailDomain::class);
+    }
+
+    public function forward(): HasOne
+    {
+        return $this->hasOne(MailboxForward::class);
     }
 
     public function emails(): HasMany

@@ -13,6 +13,7 @@ Currently in progress. Complete these before starting new work.
 Ready to start. These are unblocked and can begin immediately.
 
 - **[Cloudflare DNS Integration (Phase 8)](plans/cloudflare-phase8-roadmap.md)** - Automatically manage DNS records required by email providers using Cloudflare API. Sync status dashboard, one-click DNS fixes, intelligent SPF merging, automated drift detection, and extensible DNS provider pattern.
+- **Mail Forwarding (Phase 11)** - Forward specific mailboxes or catchall mail to external addresses. Per-forward choice of keeping a local copy or pass-through. See [email-app-roadmap.md](plans/email-app-roadmap.md#phase-11-mail-forwarding).
 ## Completed
 
 - **[Email Design Audit — Phases 1-3](plans/email-design-audit-roadmap.md)** - Webhook audit, reading experience, and compose experience all complete. Remaining phases (4-7: notifications, spam, navigation, polish) continue as future work.

@@ -40,7 +40,8 @@ import { Badge } from "@/components/ui/badge";
 import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Loader2, Pencil, Users, X, Globe, Mail as MailIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Trash2, Loader2, Pencil, Users, X, Globe, Mail as MailIcon, Forward } from "lucide-react";
 
 interface EmailDomain {
   id: number;
@@ -56,6 +57,13 @@ interface Mailbox {
   email_domain: EmailDomain;
   user_role?: string;
   created_at: string;
+}
+
+interface MailboxForward {
+  id: number;
+  forward_to: string;
+  keep_local_copy: boolean;
+  is_active: boolean;
 }
 
 interface MailboxMember {
@@ -90,6 +98,11 @@ export default function MailboxesPage() {
   const [searchResults, setSearchResults] = useState<Array<{ id: number; name: string; email?: string }>>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<number | null>(null);
+  const [forwardEnabled, setForwardEnabled] = useState(false);
+  const [forwardTo, setForwardTo] = useState("");
+  const [keepLocalCopy, setKeepLocalCopy] = useState(true);
+  const [forwardLoading, setForwardLoading] = useState(false);
+  const [mailboxForwards, setMailboxForwards] = useState<Record<number, MailboxForward | null>>({});
 
   const fetchData = useCallback(async () => {
     try {
@@ -99,6 +112,20 @@ export default function MailboxesPage() {
       ]);
       setMailboxes(mailboxRes.data.mailboxes);
       setDomains(domainRes.data.domains);
+
+      // Fetch forward status for each mailbox
+      const forwards: Record<number, MailboxForward | null> = {};
+      await Promise.all(
+        mailboxRes.data.mailboxes.map(async (mb) => {
+          try {
+            const res = await api.get<{ forward: MailboxForward | null }>(`/email/mailboxes/${mb.id}/forward`);
+            forwards[mb.id] = res.data.forward;
+          } catch {
+            forwards[mb.id] = null;
+          }
+        })
+      );
+      setMailboxForwards(forwards);
     } catch {
       toast.error("Failed to load mailboxes");
     } finally {
@@ -145,10 +172,24 @@ export default function MailboxesPage() {
     }
   };
 
-  const openEditDialog = (mailbox: Mailbox) => {
+  const openEditDialog = async (mailbox: Mailbox) => {
     setEditMailbox(mailbox);
     setEditDisplayName(mailbox.display_name || "");
     setEditSignature(mailbox.signature || "");
+    setForwardLoading(true);
+    try {
+      const res = await api.get<{ forward: MailboxForward | null }>(`/email/mailboxes/${mailbox.id}/forward`);
+      const fwd = res.data.forward;
+      setForwardEnabled(!!fwd && fwd.is_active);
+      setForwardTo(fwd?.forward_to || "");
+      setKeepLocalCopy(fwd?.keep_local_copy ?? true);
+    } catch {
+      setForwardEnabled(false);
+      setForwardTo("");
+      setKeepLocalCopy(true);
+    } finally {
+      setForwardLoading(false);
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -159,6 +200,20 @@ export default function MailboxesPage() {
         display_name: editDisplayName.trim() || null,
         signature: editSignature.trim() || null,
       });
+
+      // Save forwarding config
+      if (forwardEnabled && forwardTo.trim()) {
+        await api.put(`/email/mailboxes/${editMailbox.id}/forward`, {
+          forward_to: forwardTo.trim(),
+          keep_local_copy: keepLocalCopy,
+          is_active: true,
+        });
+        setMailboxForwards((prev) => ({ ...prev, [editMailbox.id]: { id: 0, forward_to: forwardTo.trim(), keep_local_copy: keepLocalCopy, is_active: true } }));
+      } else {
+        await api.delete(`/email/mailboxes/${editMailbox.id}/forward`);
+        setMailboxForwards((prev) => ({ ...prev, [editMailbox.id]: null }));
+      }
+
       toast.success("Mailbox updated");
       setEditMailbox(null);
       fetchData();
@@ -348,11 +403,17 @@ export default function MailboxesPage() {
                           )}
                         </TableCell>
                         <TableCell>{mailbox.display_name || "—"}</TableCell>
-                        <TableCell>
+                        <TableCell className="space-x-1">
                           {mailbox.is_active ? (
                             <Badge variant="default" className="bg-green-600">Active</Badge>
                           ) : (
                             <Badge variant="secondary">Inactive</Badge>
+                          )}
+                          {mailboxForwards[mailbox.id]?.is_active && (
+                            <Badge variant="outline" className="text-blue-600 border-blue-300">
+                              <Forward className="mr-1 h-3 w-3" />
+                              Forwarding
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -495,6 +556,45 @@ export default function MailboxesPage() {
               <p className="text-xs text-muted-foreground">
                 This signature will be automatically appended to emails sent from this mailbox.
               </p>
+            </div>
+
+            {/* Forwarding section */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="forward-toggle" className="font-medium">Enable Forwarding</Label>
+                <Switch
+                  id="forward-toggle"
+                  checked={forwardEnabled}
+                  onCheckedChange={setForwardEnabled}
+                  disabled={forwardLoading}
+                />
+              </div>
+              {forwardEnabled && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Forward to</Label>
+                    <Input
+                      type="email"
+                      placeholder="user@example.com"
+                      value={forwardTo}
+                      onChange={(e) => setForwardTo(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="keep-copy-toggle">Keep a local copy</Label>
+                      <p className="text-xs text-muted-foreground">
+                        When disabled, emails are forwarded without being stored locally.
+                      </p>
+                    </div>
+                    <Switch
+                      id="keep-copy-toggle"
+                      checked={keepLocalCopy}
+                      onCheckedChange={setKeepLocalCopy}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <DialogFooter>
