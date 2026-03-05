@@ -1,6 +1,6 @@
 {
   "name": "selfmx-frontend",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "private": true,
   "scripts": {
     "predev": "node scripts/patch-novu-exports.js",

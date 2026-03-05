@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.11] - 2026-03-04
+
+### Changed
+- Centralize settings masking and encryption in SettingService, fix webhook interface
 ## [0.2.10] - 2026-03-04
 
 ### Fixed
