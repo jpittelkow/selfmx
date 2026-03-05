@@ -21,13 +21,13 @@ describe('StripeSettingController', function () {
     describe('show', function () {
         it('returns settings with masked encrypted fields', function () {
             $this->settingService
-                ->method('getGroup')
+                ->method('getGroupMasked')
                 ->with('stripe')
                 ->willReturn([
                     'enabled' => true,
-                    'secret_key' => 'sk_test_real_key',
+                    'secret_key' => '********_key',
                     'publishable_key' => 'pk_test_123',
-                    'webhook_secret' => 'whsec_real_secret',
+                    'webhook_secret' => '********cret',
                     'platform_account_id' => 'acct_123',
                     'platform_client_id' => 'ca_123',
                     'application_fee_percent' => 1.0,
@@ -41,8 +41,8 @@ describe('StripeSettingController', function () {
             $data = $response->getData(true);
 
             expect($response->getStatusCode())->toBe(200);
-            expect($data['settings']['secret_key'])->toBe('••••••••');
-            expect($data['settings']['webhook_secret'])->toBe('••••••••');
+            expect($data['settings']['secret_key'])->toBe('********_key');
+            expect($data['settings']['webhook_secret'])->toBe('********cret');
             expect($data['settings']['publishable_key'])->toBe('pk_test_123');
             // Connect keys should be excluded
             expect(array_key_exists('connected_account_id', $data['settings']))->toBeFalse();
@@ -51,7 +51,7 @@ describe('StripeSettingController', function () {
 
         it('returns null for empty encrypted fields instead of mask', function () {
             $this->settingService
-                ->method('getGroup')
+                ->method('getGroupMasked')
                 ->with('stripe')
                 ->willReturn([
                     'enabled' => false,
@@ -80,8 +80,9 @@ describe('StripeSettingController', function () {
                 ->willReturn($oldSettings);
 
             $this->settingService
-                ->expects($this->exactly(2))
-                ->method('set');
+                ->expects($this->once())
+                ->method('setGroup')
+                ->with('stripe', $this->anything(), $this->anything());
 
             $this->auditService
                 ->expects($this->once())
@@ -98,16 +99,15 @@ describe('StripeSettingController', function () {
             expect($response->getStatusCode())->toBe(200);
         });
 
-        it('skips masked placeholder values', function () {
+        it('passes validated data to setGroup which handles masked skipping', function () {
             $this->settingService
                 ->method('getGroup')
                 ->willReturn(['secret_key' => 'sk_real']);
 
-            // Should only set currency, not the masked secret_key
+            // setGroup handles masked value skipping internally
             $this->settingService
                 ->expects($this->once())
-                ->method('set')
-                ->with('stripe', 'currency', 'eur', $this->anything());
+                ->method('setGroup');
 
             $request = Illuminate\Http\Request::create('/api/stripe/settings', 'PUT', [
                 'secret_key' => '••••••••',

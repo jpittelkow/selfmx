@@ -24,7 +24,7 @@ class EmailProviderSettingController extends Controller
     {
         $result = [];
         foreach (self::PROVIDER_GROUPS as $group) {
-            $result[$group] = $this->settingService->getGroup($group);
+            $result[$group] = $this->settingService->getGroupMasked($group);
         }
 
         return response()->json($result);
@@ -62,11 +62,7 @@ class EmailProviderSettingController extends Controller
         foreach (self::PROVIDER_GROUPS as $group) {
             if (isset($validated[$group])) {
                 $old = $this->settingService->getGroup($group);
-                foreach ($validated[$group] as $key => $value) {
-                    if ($value !== null) {
-                        $this->settingService->set($group, $key, $value, $userId);
-                    }
-                }
+                $this->settingService->setGroup($group, $validated[$group], $userId);
                 $this->auditService->logSettings($group, $old, $validated[$group], $userId);
             }
         }

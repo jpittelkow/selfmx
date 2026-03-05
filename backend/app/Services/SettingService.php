@@ -81,6 +81,51 @@ class SettingService
     }
 
     /**
+     * Get a group with encrypted values masked for API responses.
+     */
+    public function getGroupMasked(string $group): array
+    {
+        $values = $this->getGroup($group);
+        $schema = config('settings-schema', []);
+        $groupSchema = $schema[$group] ?? [];
+
+        foreach ($groupSchema as $key => $keySchema) {
+            if (!empty($keySchema['encrypted']) && isset($values[$key]) && $values[$key] !== '') {
+                $values[$key] = str_repeat('*', 8) . substr($values[$key], -4);
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * Check if a value looks like a masked placeholder (starts with 4+ asterisks or bullet chars).
+     */
+    public static function isMaskedValue(mixed $value): bool
+    {
+        return is_string($value) && (bool) preg_match('/^(\*{4,}|•{4,})/', $value);
+    }
+
+    /**
+     * Save validated settings for a group, skipping null and masked encrypted values.
+     */
+    public function setGroup(string $group, array $validated, ?int $userId = null): void
+    {
+        $schema = config('settings-schema', []);
+        $groupSchema = $schema[$group] ?? [];
+
+        foreach ($validated as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+            if (!empty($groupSchema[$key]['encrypted']) && self::isMaskedValue($value)) {
+                continue;
+            }
+            $this->set($group, $key, $value, $userId);
+        }
+    }
+
+    /**
      * Get all settings (for boot-time config injection). Cached.
      */
     public function all(): array
@@ -124,10 +169,20 @@ class SettingService
         foreach ($groupSchema as $key => $keySchema) {
             $envKey = $keySchema['env'] ?? null;
             $default = $keySchema['default'] ?? null;
+            $shouldDecrypt = !empty($keySchema['encrypted']);
 
             $record = $dbSettings->get($key);
             if ($record !== null) {
-                $resolved[$key] = $record->value;
+                $value = $record->value;
+                if ($shouldDecrypt && $value !== null && $value !== '') {
+                    try {
+                        $value = decrypt($value);
+                    } catch (\Exception $e) {
+                        // Value may not be encrypted (e.g. stored before encryption was enabled)
+                        \Log::warning("Failed to decrypt setting {$group}.{$key}", ['error' => $e->getMessage()]);
+                    }
+                }
+                $resolved[$key] = $value;
                 continue;
             }
 

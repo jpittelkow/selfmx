@@ -29,7 +29,7 @@ class SSOSettingController extends Controller
      */
     public function show(): JsonResponse
     {
-        $settings = $this->settingService->getGroup(self::GROUP);
+        $settings = $this->settingService->getGroupMasked(self::GROUP);
 
         return $this->dataResponse([
             'settings' => $settings,
@@ -76,9 +76,7 @@ class SSOSettingController extends Controller
 
         $this->ssoSettingService->enforceProviderRules($validated, $oldSettings);
 
-        foreach ($validated as $key => $value) {
-            $this->settingService->set(self::GROUP, $key, $value, $userId);
-        }
+        $this->settingService->setGroup(self::GROUP, $validated, $userId);
         $this->auditService->logSettings(self::GROUP, $oldSettings, $validated, $userId);
 
         return $this->successResponse('SSO settings updated successfully');

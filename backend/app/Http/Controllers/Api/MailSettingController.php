@@ -72,7 +72,7 @@ class MailSettingController extends Controller
      */
     public function show(): JsonResponse
     {
-        $settings = $this->settingService->getGroup(self::GROUP);
+        $settings = $this->settingService->getGroupMasked(self::GROUP);
         $mapped = [];
         foreach (self::SCHEMA_TO_FRONTEND as $schemaKey => $frontendKey) {
             if (array_key_exists($schemaKey, $settings)) {
@@ -95,10 +95,13 @@ class MailSettingController extends Controller
         $userId = $request->user()->id;
         $oldSettings = $this->settingService->getGroup(self::GROUP);
 
+        // Remap frontend keys to schema keys, then save via setGroup (skips masked values)
+        $schemaValidated = [];
         foreach ($validated as $frontendKey => $value) {
             $schemaKey = self::FRONTEND_TO_SCHEMA[$frontendKey] ?? $frontendKey;
-            $this->settingService->set(self::GROUP, $schemaKey, $value, $userId);
+            $schemaValidated[$schemaKey] = $value;
         }
+        $this->settingService->setGroup(self::GROUP, $schemaValidated, $userId);
 
         $newSettings = [];
         foreach ($validated as $frontendKey => $value) {

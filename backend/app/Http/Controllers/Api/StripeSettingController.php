@@ -19,11 +19,6 @@ class StripeSettingController extends Controller
     /** Keys owned by StripeConnectController — excluded from settings responses. */
     private const CONNECT_KEYS = ['connected_account_id', 'connect_onboarding_state'];
 
-    /** Encrypted keys that must be masked in responses. */
-    private const MASKED_KEYS = ['secret_key', 'webhook_secret'];
-
-    private const MASK = '••••••••';
-
     public function __construct(
         private StripeService $stripeService,
         private SettingService $settingService,
@@ -35,18 +30,11 @@ class StripeSettingController extends Controller
      */
     public function show(): JsonResponse
     {
-        $settings = $this->settingService->getGroup(self::GROUP);
+        $settings = $this->settingService->getGroupMasked(self::GROUP);
 
         // Exclude Connect-owned keys
         foreach (self::CONNECT_KEYS as $key) {
             unset($settings[$key]);
-        }
-
-        // Mask encrypted fields
-        foreach (self::MASKED_KEYS as $key) {
-            if (! empty($settings[$key] ?? '')) {
-                $settings[$key] = self::MASK;
-            }
         }
 
         return $this->dataResponse(['settings' => $settings]);
@@ -70,19 +58,12 @@ class StripeSettingController extends Controller
             'deployment_role' => ['sometimes', 'string', 'in:platform,fork'],
         ]);
 
-        // Skip masked placeholders (user did not change the encrypted field)
-        foreach (self::MASKED_KEYS as $key) {
-            if (isset($validated[$key]) && $validated[$key] === self::MASK) {
-                unset($validated[$key]);
-            }
-        }
-
         $userId = $request->user()->id;
         $oldSettings = $this->settingService->getGroup(self::GROUP);
 
-        foreach ($validated as $key => $value) {
-            $this->settingService->set(self::GROUP, $key, $value === '' ? null : $value, $userId);
-        }
+        // Normalize empty strings to null before saving
+        $normalized = array_map(fn ($v) => $v === '' ? null : $v, $validated);
+        $this->settingService->setGroup(self::GROUP, $normalized, $userId);
 
         $this->auditService->logSettings(self::GROUP, $oldSettings, $validated, $userId);
 

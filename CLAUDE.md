@@ -81,6 +81,7 @@ docker exec selfmx-dev bash -c "cd /var/www/html/frontend && npx shadcn@latest a
 
 ## Gotchas
 
+- **Bug tracking** - When you encounter something that looks like it could be a bigger bug (unexpected behavior, edge cases, error patterns), log it in [docs/plans/bug-tracker.md](docs/plans/bug-tracker.md). Always do this proactively — don't wait to be asked
 - **Service layer** - Business logic in `Services/`, not controllers
 - **User scoping** - Most tables have `user_id`. Always filter by `$request->user()->id`
 - **User password** - User model uses `hashed` cast. Pass plaintext; never use `Hash::make()` in controllers

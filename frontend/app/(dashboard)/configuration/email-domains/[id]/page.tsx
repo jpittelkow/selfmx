@@ -98,8 +98,7 @@ interface DkimInfo {
 }
 
 interface Webhook {
-  id?: string;
-  url?: string | string[];
+  urls?: string[];
 }
 
 interface Route {
@@ -476,7 +475,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
 
   const openEdit = (event: string) => {
     const existing = webhooks[event];
-    const url = Array.isArray(existing?.url) ? existing.url[0] : (existing?.url ?? "");
+    const url = existing?.urls?.[0] ?? "";
     setEditEvent(event);
     setEditUrl(url);
   };
@@ -486,7 +485,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
     setIsSaving(true);
     try {
       const existing = webhooks[editEvent];
-      if (existing?.id) {
+      if (existing?.urls?.length) {
         await api.put(`/email/domains/${domain.id}/mailgun/webhooks/${editEvent}`, { url: editUrl });
       } else {
         await api.post(`/email/domains/${domain.id}/mailgun/webhooks`, { event: editEvent, url: editUrl });
@@ -546,7 +545,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
       <div className="rounded-md border divide-y text-sm">
         {WEBHOOK_EVENTS.map((event) => {
           const hook = webhooks[event];
-          const url = hook ? (Array.isArray(hook.url) ? hook.url[0] : hook.url) : null;
+          const url = hook?.urls?.[0] ?? null;
           return (
             <div key={event} className="flex items-center justify-between gap-4 px-4 py-3">
               <div className="flex items-center gap-3 min-w-0">

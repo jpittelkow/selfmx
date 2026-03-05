@@ -29,11 +29,7 @@ class NovuSettingController extends Controller
      */
     public function show(): JsonResponse
     {
-        $settings = $this->settingService->getGroup(self::GROUP);
-        $masked = $settings;
-        if (! empty($settings['api_key'] ?? '')) {
-            $masked['api_key'] = '••••••••';
-        }
+        $masked = $this->settingService->getGroupMasked(self::GROUP);
         $masked['workflow_map'] = config('novu.workflow_map', []);
 
         return $this->dataResponse(['settings' => $masked]);
@@ -46,15 +42,10 @@ class NovuSettingController extends Controller
     {
         $validated = $request->validated();
 
-        // Skip api_key if it's the masked placeholder (user didn't change it)
-        if (isset($validated['api_key']) && $validated['api_key'] === '••••••••') {
-            unset($validated['api_key']);
-        }
-
         $userId = $request->user()->id;
-        foreach ($validated as $key => $value) {
-            $this->settingService->set(self::GROUP, $key, $value === '' ? null : $value, $userId);
-        }
+        // Normalize empty strings to null before saving
+        $normalized = array_map(fn ($v) => $v === '' ? null : $v, $validated);
+        $this->settingService->setGroup(self::GROUP, $normalized, $userId);
 
         $this->settingService->clearCache();
         \Illuminate\Support\Facades\Cache::forget('system_settings_public');

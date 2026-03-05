@@ -2,6 +2,10 @@
 
 Development roadmaps and implementation history.
 
+## Always Active
+
+- **[Bug Tracker](plans/bug-tracker.md)** - Suspected bugs and issues to investigate. Claude logs items here whenever something looks like it could be a bigger bug. Review periodically.
+
 ## Active Development
 
 Currently in progress. Complete these before starting new work.
