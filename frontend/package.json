@@ -14,7 +14,7 @@
     "generate-icons": "node ../scripts/generate-pwa-icons.mjs"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.3.4",
+    "@hookform/resolvers": "^5.2.2",
     "@next/swc-linux-x64-gnu": "^16.1.6",
     "@novu/react": "^3.12.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
