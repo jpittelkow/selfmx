@@ -198,7 +198,7 @@ class MailgunManagementController extends Controller
         return $this->wrapMailgunCall(function () use ($request, $domainId) {
             $domain = $this->resolveDomain($request, $domainId);
             $validated = $request->validate([
-                'event' => ['required', 'string', 'in:delivered,opened,clicked,bounced,complained,unsubscribed,stored'],
+                'event' => ['required', 'string', 'in:delivered,opened,clicked,permanent_fail,temporary_fail,complained,unsubscribed,stored'],
                 'url'   => ['required', 'url'],
             ]);
 
@@ -272,7 +272,7 @@ class MailgunManagementController extends Controller
 
     /**
      * Auto-configure all selfmx delivery webhooks for this domain.
-     * Sets delivered, bounced, complained to the selfmx events endpoint.
+     * Sets delivered, permanent_fail, complained, stored to the selfmx events endpoint.
      * Uses upsert: tries to create, falls back to update if already exists.
      */
     public function autoConfigureWebhooks(Request $request, int $domainId): JsonResponse
@@ -282,7 +282,7 @@ class MailgunManagementController extends Controller
         $eventsUrl = "{$appUrl}/api/email/webhook/mailgun/events";
         $config = $this->domainConfig($domain);
 
-        $events = ['delivered', 'bounced', 'complained'];
+        $events = ['delivered', 'permanent_fail', 'complained', 'stored'];
         $results = [];
         $errors = [];
         $lastHttpStatus = 0;

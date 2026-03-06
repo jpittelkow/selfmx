@@ -172,6 +172,7 @@ class MailgunProvider implements EmailProviderInterface
 
         try {
             $response = Http::withBasicAuth('api', $apiKey)
+                ->asForm()
                 ->post("{$baseUrl}/domains", [
                     'name' => $domain,
                 ]);
@@ -677,11 +678,14 @@ class MailgunProvider implements EmailProviderInterface
      */
     public function getDomainStats(string $domain, array $events, string $duration = '30d', string $resolution = 'day', array $config = []): array
     {
-        $result = $this->managementRequestOrFail('get', "v3/{$domain}/stats/total", [
-            'event'      => $events,
-            'duration'   => $duration,
-            'resolution' => $resolution,
-        ], $config);
+        // Mailgun expects repeated "event" params (event=accepted&event=delivered),
+        // not PHP-style array encoding (event[0]=accepted). Build query string manually.
+        $queryParts = array_map(fn ($e) => 'event=' . urlencode($e), $events);
+        $queryParts[] = 'duration=' . urlencode($duration);
+        $queryParts[] = 'resolution=' . urlencode($resolution);
+        $queryString = implode('&', $queryParts);
+
+        $result = $this->managementRequestOrFail('get', "v3/{$domain}/stats/total?{$queryString}", [], $config);
         return [
             'stats' => $result['body']['stats'] ?? [],
             'start' => $result['body']['start'] ?? null,
@@ -821,6 +825,36 @@ class MailgunProvider implements EmailProviderInterface
                     'purpose' => str_contains($key, 'sending') ? 'sending' : 'receiving',
                 ];
             }
+        }
+
+        // Include DMARC record if present in the Mailgun response
+        foreach ($data['dmarc_dns_records'] ?? [] as $record) {
+            $records[] = [
+                'type' => $record['record_type'] ?? $record['type'] ?? 'TXT',
+                'name' => $record['name'] ?? '',
+                'value' => $record['value'] ?? '',
+                'valid' => $record['valid'] ?? 'unknown',
+                'purpose' => 'dmarc',
+            ];
+        }
+
+        // If no DMARC record was returned by the provider, add a recommended one
+        $domainName = $data['domain']['name'] ?? '';
+        $hasDmarc = false;
+        foreach ($records as $r) {
+            if (str_contains($r['name'], '_dmarc.')) {
+                $hasDmarc = true;
+                break;
+            }
+        }
+        if ($domainName && ! $hasDmarc) {
+            $records[] = [
+                'type' => 'TXT',
+                'name' => "_dmarc.{$domainName}",
+                'value' => 'v=DMARC1; p=quarantine; pct=100',
+                'valid' => 'unknown',
+                'purpose' => 'dmarc',
+            ];
         }
 
         return $records;

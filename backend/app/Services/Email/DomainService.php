@@ -58,10 +58,10 @@ class DomainService
             $warnings[] = "Inbound webhook setup failed: {$e->getMessage()}";
         }
 
-        // Register delivery event webhooks (delivered, bounced, complained)
+        // Register delivery event webhooks + stored (inbound)
         if ($emailProvider instanceof MailgunProvider) {
             $eventsUrl = url("/api/email/webhook/{$provider}/events");
-            foreach (['delivered', 'bounced', 'complained'] as $event) {
+            foreach (['delivered', 'permanent_fail', 'complained', 'stored'] as $event) {
                 try {
                     $emailProvider->createWebhook($domainName, $event, $eventsUrl, $providerConfig);
                 } catch (\Exception $e) {

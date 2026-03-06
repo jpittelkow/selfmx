@@ -429,7 +429,7 @@ function DkimTab({ domain }: { domain: EmailDomain }) {
 
 // ─── Tab: Webhooks ────────────────────────────────────────────────────────────
 
-const WEBHOOK_EVENTS = ["delivered", "opened", "clicked", "bounced", "complained", "unsubscribed", "stored"] as const;
+const WEBHOOK_EVENTS = ["delivered", "opened", "clicked", "permanent_fail", "temporary_fail", "complained", "unsubscribed", "stored"] as const;
 
 function WebhooksTab({ domain }: { domain: EmailDomain }) {
   const [webhooks, setWebhooks] = useState<Record<string, Webhook>>({});
@@ -534,7 +534,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Configure which Mailgun events notify selfmx. Delivery events (delivered, bounced, complained) are required for status tracking.
+          Configure which Mailgun events notify selfmx. Delivery events (delivered, permanent_fail, complained) are required for status tracking.
         </p>
         <Button variant="outline" size="sm" onClick={autoConfigure} disabled={isConfiguring}>
           {isConfiguring ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-2 h-3 w-3" />}

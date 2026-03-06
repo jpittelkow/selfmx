@@ -43,7 +43,7 @@ if (config('backup.schedule.enabled')) {
 }
 
 // Queue worker monitoring
-Schedule::command('queue:monitor')
+Schedule::command('queue:monitor', ['default'])
     ->everyFiveMinutes()
     ->withoutOverlapping();
 
