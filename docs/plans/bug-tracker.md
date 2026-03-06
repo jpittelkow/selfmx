@@ -29,4 +29,7 @@ _None yet._
 
 ## Fixed
 
-_None yet._
+### Ambiguous `id` column in UserController::updateGroups on SQLite
+- **Observed**: 2026-03-05
+- **Fixed**: 2026-03-05
+- **Fix**: Changed `pluck('id')` to `pluck('user_groups.id')` in `UserController.php:290` to qualify the column name in the join query.

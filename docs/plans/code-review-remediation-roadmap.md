@@ -3,7 +3,7 @@
 Comprehensive remediation plan adapted from a full-repository code review covering backend (Laravel), frontend (Next.js), and infrastructure/security. Findings organized into 5 phases by severity and effort.
 
 **Priority**: HIGH
-**Status**: Phases 1-4 Complete — Phase 5 Next
+**Status**: All Phases Complete
 **Created**: 2026-03-04
 **Estimated Total Effort**: ~35-40 hours
 
@@ -60,17 +60,17 @@ Comprehensive remediation plan adapted from a full-repository code review coveri
 - [x] Configure log rotation for supervisor queue/scheduler (10MB max, 3 backups)
 - [x] Gate `console.error` in production service worker (localhost-only)
 
-### Phase 5: Test Coverage Expansion (Ongoing — ~12 hours)
-- [ ] Add frontend tests for `sanitizeCss` function
-- [ ] Add frontend tests for auth store (2FA and error paths)
-- [ ] Add frontend tests for form validation schemas (Zod)
-- [ ] Add backend tests for `UserController` (CRUD, toggle admin, disable)
-- [ ] Add backend tests for `WebhookController` (CRUD, SSRF, delivery)
-- [ ] Add backend tests for `SettingController` (arbitrary key rejection)
-- [ ] Add backend tests for `FileManagerController` (path traversal)
-- [ ] Add backend tests for `JobController` (option validation)
-- [ ] Add backend tests for `MailSettingController`
-- [ ] Set up Dependabot for composer and npm dependencies
+### Phase 5: Test Coverage Expansion (Ongoing — ~12 hours) ✅
+- [x] Add frontend tests for `sanitizeCss` function
+- [x] Add frontend tests for auth store (2FA and error paths)
+- [ ] ~~Add frontend tests for form validation schemas (Zod)~~ (deferred — schemas are inline in page components, extraction too invasive)
+- [x] Add backend tests for `UserController` (CRUD, toggle admin, disable)
+- [x] Add backend tests for `WebhookController` (CRUD, SSRF, delivery)
+- [x] Add backend tests for `SettingController` (arbitrary key rejection)
+- [x] Add backend tests for `FileManagerController` (path traversal)
+- [x] Add backend tests for `JobController` (option validation)
+- [x] Add backend tests for `MailSettingController`
+- [x] Set up Dependabot for composer and npm dependencies
 
 ---
 

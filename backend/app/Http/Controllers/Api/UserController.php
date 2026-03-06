@@ -287,7 +287,7 @@ class UserController extends Controller
             }
         }
 
-        $oldGroupIds = $user->groups()->pluck('id')->all();
+        $oldGroupIds = $user->groups()->pluck('user_groups.id')->all();
         $user->groups()->sync($validated['group_ids']);
         $user->load('groups:id,name,slug');
 

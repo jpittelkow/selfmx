@@ -10,7 +10,7 @@ Development roadmaps and implementation history.
 
 Currently in progress. Complete these before starting new work.
 
-- **[Code Review Remediation (Phases 4-5)](plans/code-review-remediation-roadmap.md)** - Phases 1-3 complete (security fixes, hardening, medium-priority improvements). Remaining: Phase 4 low-priority cleanup (~8 hours) and Phase 5 test coverage expansion (~12 hours).
+_None — ready for next item._
 
 ## Next Up
 
@@ -20,6 +20,7 @@ Ready to start. These are unblocked and can begin immediately.
 - **Mail Forwarding (Phase 11)** - Forward specific mailboxes or catchall mail to external addresses. Per-forward choice of keeping a local copy or pass-through. See [email-app-roadmap.md](plans/email-app-roadmap.md#phase-11-mail-forwarding).
 ## Completed
 
+- **[Code Review Remediation (Phases 1-5)](plans/code-review-remediation-roadmap.md)** - All phases complete: security fixes, hardening, cleanup, and test coverage expansion. Found and fixed SQLite ambiguous column bug in `UserController::updateGroups`. Zod schema tests deferred (inline in components).
 - **[Email Design Audit — Phases 1-3](plans/email-design-audit-roadmap.md)** - Webhook audit, reading experience, and compose experience all complete. Remaining phases (4-7: notifications, spam, navigation, polish) continue as future work.
 - **[Mailgun Deep Integration (Phase 7)](plans/mailgun-phase7-roadmap.md)** - Domain detail page with 8 tabs, domain search/filtering, provider health badge, webhook testing, DKIM auto-rotation UI with history, bulk suppression import/export (CSV), event-to-email linking popover, compose-time suppression warnings, and full test coverage. Nice-to-haves deferred to Phase 7.5.
 - **[User Mail Settings — Sidebar Section & Per-User Spam](plans/user-mail-settings-roadmap.md)** - Mail Settings section at `/mail/settings/` with rules, per-user spam filter, and email import pages. Sidebar nav group added.
