@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.16] - 2026-03-09
+
+### Added
+- Provider account domain listing and auto-import from Mailgun
 ## [0.2.13] - 2026-03-05
 
 ### Fixed
