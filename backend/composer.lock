@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b68e3460ad1c17f76bc1d44012cb2d4a",
+    "content-hash": "17a79a3922685702c2a7d01e6bef3d81",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -214,25 +214,25 @@
         },
         {
             "name": "brick/date-time",
-            "version": "0.7.1",
+            "version": "0.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/brick/date-time.git",
-                "reference": "e3b7f9b4120664a2ac00774c3e279dab70f7b5cc"
+                "reference": "ecf8e67a27eb2e5799532c25a30172f81118794a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/brick/date-time/zipball/e3b7f9b4120664a2ac00774c3e279dab70f7b5cc",
-                "reference": "e3b7f9b4120664a2ac00774c3e279dab70f7b5cc",
+                "url": "https://api.github.com/repos/brick/date-time/zipball/ecf8e67a27eb2e5799532c25a30172f81118794a",
+                "reference": "ecf8e67a27eb2e5799532c25a30172f81118794a",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.1"
+                "php": "^8.2"
             },
             "require-dev": {
                 "guzzlehttp/guzzle": "^7.0",
                 "php-coveralls/php-coveralls": "^2.2",
-                "phpunit/phpunit": "^10.5"
+                "phpunit/phpunit": "^11.0"
             },
             "suggest": {
                 "ext-timezonedb": "This PECL extension provides up-to-date timezone information"
@@ -274,7 +274,7 @@
             ],
             "support": {
                 "issues": "https://github.com/brick/date-time/issues",
-                "source": "https://github.com/brick/date-time/tree/0.7.1"
+                "source": "https://github.com/brick/date-time/tree/0.9.0"
             },
             "funding": [
                 {
@@ -282,29 +282,29 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-08-29T07:20:06+00:00"
+            "time": "2026-01-03T16:33:27+00:00"
         },
         {
             "name": "brick/math",
-            "version": "0.12.3",
+            "version": "0.14.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/brick/math.git",
-                "reference": "866551da34e9a618e64a819ee1e01c20d8a588ba"
+                "reference": "63422359a44b7f06cae63c3b429b59e8efcc0629"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/brick/math/zipball/866551da34e9a618e64a819ee1e01c20d8a588ba",
-                "reference": "866551da34e9a618e64a819ee1e01c20d8a588ba",
+                "url": "https://api.github.com/repos/brick/math/zipball/63422359a44b7f06cae63c3b429b59e8efcc0629",
+                "reference": "63422359a44b7f06cae63c3b429b59e8efcc0629",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.1"
+                "php": "^8.2"
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.2",
-                "phpunit/phpunit": "^10.1",
-                "vimeo/psalm": "6.8.8"
+                "phpstan/phpstan": "2.1.22",
+                "phpunit/phpunit": "^11.5"
             },
             "type": "library",
             "autoload": {
@@ -334,7 +334,7 @@
             ],
             "support": {
                 "issues": "https://github.com/brick/math/issues",
-                "source": "https://github.com/brick/math/tree/0.12.3"
+                "source": "https://github.com/brick/math/tree/0.14.8"
             },
             "funding": [
                 {
@@ -342,7 +342,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-02-28T13:11:00+00:00"
+            "time": "2026-02-10T14:33:43+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -4617,31 +4617,31 @@
         },
         {
             "name": "novuhq/novu",
-            "version": "v1.3.0",
+            "version": "v3.14.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/novuhq/php-novu.git",
-                "reference": "ea18102e7736729754587621903f5df9db73a734"
+                "reference": "1c8cb442bd65469e0414e64f08eba38b28991f7b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/novuhq/php-novu/zipball/ea18102e7736729754587621903f5df9db73a734",
-                "reference": "ea18102e7736729754587621903f5df9db73a734",
+                "url": "https://api.github.com/repos/novuhq/php-novu/zipball/1c8cb442bd65469e0414e64f08eba38b28991f7b",
+                "reference": "1c8cb442bd65469e0414e64f08eba38b28991f7b",
                 "shasum": ""
             },
             "require": {
-                "brick/date-time": "^0.7.0",
-                "brick/math": "^0.12.1",
-                "galbar/jsonpath": "^3.0",
+                "brick/date-time": ">=0.7.0",
+                "brick/math": ">=0.12.1",
+                "galbar/jsonpath": ">=3.0",
                 "guzzlehttp/guzzle": "^7.0",
-                "php": "^8.2",
-                "phpdocumentor/type-resolver": "^1.8",
+                "php": ">=8.2",
+                "phpdocumentor/type-resolver": ">=1.8",
                 "speakeasy/serializer": "^4.0.3"
             },
             "require-dev": {
-                "laravel/pint": "^1.21.2",
-                "phpstan/phpstan": "^2.1.0",
-                "phpunit/phpunit": "^10",
+                "laravel/pint": ">=1.21.2",
+                "phpstan/phpstan": ">=2.1.0",
+                "phpunit/phpunit": ">=10",
                 "roave/security-advisories": "dev-latest"
             },
             "type": "library",
@@ -4656,9 +4656,9 @@
             ],
             "support": {
                 "issues": "https://github.com/novuhq/php-novu/issues",
-                "source": "https://github.com/novuhq/php-novu/tree/v1.3.0"
+                "source": "https://github.com/novuhq/php-novu/tree/v3.14.0"
             },
-            "time": "2025-07-01T16:53:18+00:00"
+            "time": "2026-02-24T10:10:04+00:00"
         },
         {
             "name": "nunomaduro/termwind",
@@ -14262,5 +14262,5 @@
     "platform-overrides": {
         "php": "8.3"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
