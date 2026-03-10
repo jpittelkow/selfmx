@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.19] - 2026-03-10
+
+### Fixed
+- SES webhook autoconfigure with SNS integration, delivery event tracking, 2FA password confirmation, and docs
 ## [0.2.18] - 2026-03-10
 
 ### Fixed
