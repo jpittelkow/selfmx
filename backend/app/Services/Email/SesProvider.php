@@ -517,9 +517,11 @@ class SesProvider implements
      */
     public function createWebhook(string $domain, string $event, string $url, array $config = []): array
     {
+        $setName = $this->configSetName($domain);
+
         // Ensure configuration set exists
         $this->managementRequest('post', 'email/configuration-sets', [
-            'ConfigurationSetName' => $domain,
+            'ConfigurationSetName' => $setName,
         ], $config);
 
         $eventTypes = array_map('trim', explode(',', strtoupper($event)));
@@ -527,7 +529,7 @@ class SesProvider implements
 
         $result = $this->managementRequestOrFail(
             'post',
-            "email/configuration-sets/{$domain}/event-destinations",
+            "email/configuration-sets/{$setName}/event-destinations",
             [
                 'EventDestinationName' => $destName,
                 'EventDestination'     => [
@@ -540,8 +542,8 @@ class SesProvider implements
         );
 
         return [
-            'id'                 => "{$domain}::{$destName}",
-            'configuration_set' => $domain,
+            'id'                 => "{$setName}::{$destName}",
+            'configuration_set' => $setName,
             'destination_name'  => $destName,
             'matching_event_types' => $eventTypes,
             'sns_topic_arn'     => $url,
@@ -981,7 +983,17 @@ class SesProvider implements
             return [$setName, $destName];
         }
         // Fallback: treat $domain as the configuration set and $webhookId as the destination name
-        return [$domain, $webhookId];
+        return [$this->configSetName($domain), $webhookId];
+    }
+
+    /**
+     * Convert a domain name to a valid SES configuration set name.
+     *
+     * SES only allows alphanumeric ASCII characters, hyphens, and underscores.
+     */
+    private function configSetName(string $domain): string
+    {
+        return str_replace('.', '-', $domain);
     }
 
     /**
