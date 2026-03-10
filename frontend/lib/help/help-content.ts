@@ -1037,25 +1037,41 @@ The built-in notification system and templates are used instead. You can switch 
       {
         id: "email-provider-setup",
         title: "Email Provider Setup",
-        tags: ["email", "provider", "mailgun", "api", "webhook", "hosting"],
+        tags: ["email", "provider", "mailgun", "ses", "aws", "sns", "api", "webhook", "hosting"],
         content: `# Email Provider Setup
 
-selfmx uses email providers (like Mailgun) to handle sending and receiving email for your domains.
+selfmx uses email providers to handle sending and receiving email for your domains. Multiple providers are supported — configure them under **Configuration** → **Email Accounts**.
 
 ## Configuring Mailgun
 
-1. Go to **Configuration** → **Email Provider**
+1. Go to **Configuration** → **Email Accounts** → **Add Account**
 2. Enter your **Mailgun API Key** (from your Mailgun dashboard)
 3. Select the **Region** (US or EU)
 4. Enter the **Webhook Signing Key** for inbound email verification
-5. Set the **Spam Threshold** (default: 5.0 — lower is stricter)
-6. Set the **Max Attachment Size** in MB (default: 25)
+
+## Configuring AWS SES
+
+1. Create an IAM user with **AmazonSESFullAccess** and **AmazonSNSFullAccess** policies
+2. Go to **Configuration** → **Email Accounts** → **Add Account** and select **AWS SES**
+3. Enter the **Access Key ID** and **Secret Access Key**
+4. Select the **AWS region** where your domain is verified
+5. After adding a domain, use **Auto-configure Webhooks** to set up delivery tracking
+
+### How SES Webhooks Work
+
+SES uses SNS (Simple Notification Service) as an intermediary for delivery events. When you auto-configure webhooks, selfmx automatically:
+- Creates an SES **Configuration Set** for your domain
+- Creates an **SNS Topic** for delivery events
+- Subscribes your selfmx events endpoint to the SNS topic
+- Confirms the SNS subscription automatically
+
+The IAM user needs both SES and SNS permissions for this to work.
 
 ## How It Works
 
-- **Inbound email**: Mailgun receives email for your domains and forwards it to selfmx via webhook
-- **Outbound email**: selfmx sends email through Mailgun's API
-- **Spam filtering**: Mailgun provides a spam score; emails above the threshold are flagged`,
+- **Inbound email**: Your provider receives email for your domains and forwards it to selfmx via webhook
+- **Outbound email**: selfmx sends email through the provider's API
+- **Delivery tracking**: Bounce, complaint, and delivery events are received via webhooks and update email status in real time`,
       },
       {
         id: "email-domain-management",

@@ -7,7 +7,6 @@ use App\Http\Controllers\Api\SSOController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SettingController;
-// NotificationSettingsController deprecated - routes now use UserNotificationSettingsController
 use App\Http\Controllers\Api\NotificationChannelConfigController;
 use App\Http\Controllers\Api\SystemSettingController;
 use App\Http\Controllers\Api\UserController;
@@ -186,6 +185,8 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::get('/', [ProfileController::class, 'show']);
         Route::put('/', [ProfileController::class, 'update']);
         Route::put('/password', [ProfileController::class, 'updatePassword']);
+        Route::post('/avatar', [ProfileController::class, 'uploadAvatar']);
+        Route::delete('/avatar', [ProfileController::class, 'deleteAvatar']);
         Route::delete('/', [ProfileController::class, 'destroy']);
     });
 
@@ -287,6 +288,7 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::post('/create', [BackupController::class, 'create'])->middleware('can:backups.create');
         Route::get('/download/{filename}', [BackupController::class, 'download'])->middleware('can:backups.view');
         Route::post('/restore', [BackupController::class, 'restore'])->middleware('can:backups.restore');
+        Route::post('/upload', [BackupController::class, 'upload'])->middleware('can:backups.create');
         Route::delete('/{filename}', [BackupController::class, 'destroy'])->middleware('can:backups.delete');
     });
 

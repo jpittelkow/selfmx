@@ -156,10 +156,6 @@ class TwoFactorController extends Controller
      */
     public function recoveryCodes(Request $request): JsonResponse
     {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
 
         if (!$user->hasTwoFactorEnabled()) {
@@ -176,10 +172,6 @@ class TwoFactorController extends Controller
      */
     public function regenerateRecoveryCodes(Request $request): JsonResponse
     {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
 
         if (!$user->hasTwoFactorEnabled()) {

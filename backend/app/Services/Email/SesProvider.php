@@ -161,9 +161,12 @@ class SesProvider implements
         try {
             $endpoint = "https://email.{$region}.amazonaws.com";
 
+            $configSetName = $this->configSetName($domain->name);
+
             $params = [
                 'Action' => 'SendEmail',
                 'Source' => $from,
+                'ConfigurationSetName' => $configSetName,
                 'Message.Subject.Data' => $subject,
                 'Message.Subject.Charset' => 'UTF-8',
                 'Message.Body.Html.Data' => $html,
@@ -205,6 +208,18 @@ class SesProvider implements
     public function parseDeliveryEvent(Request $request): array
     {
         $body = json_decode($request->getContent(), true);
+
+        // Handle SNS subscription confirmation on the events endpoint
+        if (($body['Type'] ?? '') === 'SubscriptionConfirmation') {
+            Http::get($body['SubscribeURL']);
+            Log::info('SNS subscription confirmed for SES events endpoint', ['TopicArn' => $body['TopicArn'] ?? '']);
+            return [
+                'event_type' => 'subscription_confirmed',
+                'provider_message_id' => null,
+                'recipient' => null,
+            ];
+        }
+
         $message = json_decode($body['Message'] ?? '{}', true);
         $eventType = $message['eventType'] ?? $message['notificationType'] ?? '';
 
@@ -217,12 +232,30 @@ class SesProvider implements
         };
 
         $mail = $message['mail'] ?? [];
+        $recipients = $mail['destination'] ?? [];
+        $bounce = $message['bounce'] ?? [];
+        $complaint = $message['complaint'] ?? [];
+
+        // Extract recipient from event-specific data
+        $recipient = $recipients[0] ?? null;
+        if ($bounce) {
+            $recipient = $bounce['bouncedRecipients'][0]['emailAddress'] ?? $recipient;
+        } elseif ($complaint) {
+            $recipient = $complaint['complainedRecipients'][0]['emailAddress'] ?? $recipient;
+        }
+
+        // Extract error message for bounces
+        $errorMessage = null;
+        if ($bounce) {
+            $errorMessage = $bounce['bouncedRecipients'][0]['diagnosticCode'] ?? ($bounce['bounceType'] ?? null);
+        }
 
         return [
-            'status' => $status,
+            'event_type' => $status,
             'provider_message_id' => $mail['messageId'] ?? null,
             'timestamp' => $mail['timestamp'] ?? now()->toIso8601String(),
-            'details' => $message,
+            'recipient' => $recipient,
+            'error_message' => $errorMessage,
         ];
     }
 
@@ -524,8 +557,15 @@ class SesProvider implements
             'ConfigurationSetName' => $setName,
         ], $config);
 
-        $eventTypes = array_map('trim', explode(',', strtoupper($event)));
+        // Map generic event names to SES event types
+        $eventTypes = $this->mapEventTypes($event);
         $destName   = 'dest-' . substr(md5($url . $event), 0, 8);
+
+        // If URL is not an SNS ARN, auto-create an SNS topic + HTTP subscription
+        $topicArn = $url;
+        if (! str_starts_with($url, 'arn:aws:sns:')) {
+            $topicArn = $this->ensureSnsTopic($setName, $destName, $url, $config);
+        }
 
         $result = $this->managementRequestOrFail(
             'post',
@@ -535,7 +575,7 @@ class SesProvider implements
                 'EventDestination'     => [
                     'Enabled'             => true,
                     'MatchingEventTypes'  => $eventTypes,
-                    'SnsDestination'      => ['TopicArn' => $url],
+                    'SnsDestination'      => ['TopicArn' => $topicArn],
                 ],
             ],
             $config,
@@ -546,7 +586,7 @@ class SesProvider implements
             'configuration_set' => $setName,
             'destination_name'  => $destName,
             'matching_event_types' => $eventTypes,
-            'sns_topic_arn'     => $url,
+            'sns_topic_arn'     => $topicArn,
         ];
     }
 
@@ -559,6 +599,12 @@ class SesProvider implements
     public function updateWebhook(string $domain, string $webhookId, string $url, array $config = []): array
     {
         [$setName, $destName] = $this->parseWebhookId($webhookId, $domain);
+
+        // If URL is not an SNS ARN, auto-create/reuse SNS topic
+        $topicArn = $url;
+        if (! str_starts_with($url, 'arn:aws:sns:')) {
+            $topicArn = $this->ensureSnsTopic($setName, $destName, $url, $config);
+        }
 
         // Fetch existing destination to preserve event types
         $existing  = $this->managementRequest('get', "email/configuration-sets/{$setName}/event-destinations", [], $config);
@@ -577,7 +623,7 @@ class SesProvider implements
                 'EventDestination' => [
                     'Enabled'            => true,
                     'MatchingEventTypes' => $eventTypes ?: ['SEND', 'DELIVERY', 'BOUNCE', 'COMPLAINT'],
-                    'SnsDestination'     => ['TopicArn' => $url],
+                    'SnsDestination'     => ['TopicArn' => $topicArn],
                 ],
             ],
             $config,
@@ -587,7 +633,7 @@ class SesProvider implements
             'id'                 => $webhookId,
             'configuration_set' => $setName,
             'destination_name'  => $destName,
-            'sns_topic_arn'     => $url,
+            'sns_topic_arn'     => $topicArn,
         ];
     }
 
@@ -994,6 +1040,131 @@ class SesProvider implements
     private function configSetName(string $domain): string
     {
         return str_replace('.', '-', $domain);
+    }
+
+    /**
+     * Map generic webhook event names to SES event types.
+     *
+     * Accepts SES-native names (SEND, DELIVERY, etc.) or generic names
+     * used by the autoconfigure flow (delivered, permanent_fail, etc.).
+     */
+    private function mapEventTypes(string $event): array
+    {
+        $map = [
+            'delivered'      => 'DELIVERY',
+            'permanent_fail' => 'BOUNCE',
+            'complained'     => 'COMPLAINT',
+            'stored'         => 'SEND',
+            'opened'         => 'OPEN',
+            'clicked'        => 'CLICK',
+        ];
+
+        $types = array_map('trim', explode(',', $event));
+        $mapped = [];
+        foreach ($types as $t) {
+            $key = strtolower($t);
+            $mapped[] = $map[$key] ?? strtoupper($t);
+        }
+
+        return array_unique($mapped);
+    }
+
+    /**
+     * Ensure an SNS topic exists and has an HTTP(S) subscription for the given URL.
+     *
+     * Returns the topic ARN.
+     *
+     * @throws SesApiException
+     */
+    private function ensureSnsTopic(string $setName, string $destName, string $httpUrl, array $config = []): string
+    {
+        $topicName = "selfmx-{$setName}-{$destName}";
+        $creds     = $this->resolveCredentials($config);
+
+        // CreateTopic is idempotent — returns existing ARN if topic already exists
+        $createResult = $this->snsRequest('CreateTopic', ['Name' => $topicName], $creds);
+        $topicArn     = $createResult['CreateTopicResponse']['CreateTopicResult']['TopicArn'] ?? null;
+
+        if (! $topicArn) {
+            throw new SesApiException(
+                'Failed to create SNS topic for SES webhook — check that your IAM credentials have sns:CreateTopic permission.',
+                0,
+                $createResult,
+            );
+        }
+
+        // Subscribe the HTTP(S) endpoint (idempotent for same topic + endpoint)
+        $protocol = str_starts_with($httpUrl, 'https') ? 'https' : 'http';
+        $subResult = $this->snsRequest('Subscribe', [
+            'TopicArn' => $topicArn,
+            'Protocol' => $protocol,
+            'Endpoint' => $httpUrl,
+        ], $creds);
+
+        $subArn = $subResult['SubscribeResponse']['SubscribeResult']['SubscriptionArn'] ?? null;
+        if (! $subArn) {
+            Log::warning('SNS Subscribe did not return SubscriptionArn — subscription may be pending confirmation', [
+                'topic' => $topicArn, 'endpoint' => $httpUrl,
+            ]);
+        }
+
+        return $topicArn;
+    }
+
+    /**
+     * Make an AWS SNS API request (query-style API).
+     */
+    private function snsRequest(string $action, array $params, array $creds): array
+    {
+        $region = $creds['region'];
+        $host   = "https://sns.{$region}.amazonaws.com";
+
+        $params['Action']  = $action;
+        $params['Version'] = '2010-03-31';
+
+        $body = http_build_query($params);
+
+        $date      = gmdate('Ymd\THis\Z');
+        $dateStamp = gmdate('Ymd');
+        $service   = 'sns';
+        $hostHeader = "sns.{$region}.amazonaws.com";
+
+        $payloadHash = hash('sha256', $body);
+        $canonicalHeaders = "content-type:application/x-www-form-urlencoded\nhost:{$hostHeader}\nx-amz-date:{$date}\n";
+        $signedHeaders    = 'content-type;host;x-amz-date';
+
+        $canonicalRequest = implode("\n", [
+            'POST', '/', '', $canonicalHeaders, $signedHeaders, $payloadHash,
+        ]);
+
+        $credentialScope = "{$dateStamp}/{$region}/{$service}/aws4_request";
+        $stringToSign    = "AWS4-HMAC-SHA256\n{$date}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
+
+        $signingKey = hash_hmac('sha256', 'aws4_request',
+            hash_hmac('sha256', $service,
+                hash_hmac('sha256', $region,
+                    hash_hmac('sha256', $dateStamp, 'AWS4' . $creds['secret_key'], true), true), true), true);
+
+        $signature = hash_hmac('sha256', $stringToSign, $signingKey);
+
+        $headers = [
+            'Host'          => $hostHeader,
+            'X-Amz-Date'    => $date,
+            'Content-Type'  => 'application/x-www-form-urlencoded',
+            'Authorization' => "AWS4-HMAC-SHA256 Credential={$creds['access_key']}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}",
+        ];
+
+        try {
+            $response = Http::withHeaders($headers)
+                ->withBody($body, 'application/x-www-form-urlencoded')
+                ->post($host);
+
+            $xml = simplexml_load_string($response->body());
+            return json_decode(json_encode($xml), true) ?: [];
+        } catch (\Exception $e) {
+            Log::error('SNS request failed', ['action' => $action, 'error' => $e->getMessage()]);
+            return [];
+        }
     }
 
     /**

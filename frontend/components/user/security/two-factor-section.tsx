@@ -44,6 +44,8 @@ export function TwoFactorSection() {
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
+  const [showDisableDialog, setShowDisableDialog] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = (text: string) => {
@@ -102,11 +104,13 @@ export function TwoFactorSection() {
 
   const handleDisable2FA = async () => {
     try {
-      await api.post("/auth/2fa/disable");
+      await api.post("/auth/2fa/disable", { password: disablePassword });
+      setShowDisableDialog(false);
+      setDisablePassword("");
       fetchStatus();
       toast.success("Two-factor authentication disabled");
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Failed to disable 2FA"));
+      toast.error(getErrorMessage(error, "Incorrect password"));
     }
   };
 
@@ -178,7 +182,7 @@ export function TwoFactorSection() {
                   if (checked) {
                     handleEnable2FA();
                   } else {
-                    handleDisable2FA();
+                    setShowDisableDialog(true);
                   }
                 }}
               />
@@ -246,6 +250,52 @@ export function TwoFactorSection() {
               Cancel
             </Button>
             <Button onClick={handleConfirm2FA}>Verify & Enable</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Disable 2FA Confirmation Dialog */}
+      <Dialog open={showDisableDialog} onOpenChange={(open) => {
+        setShowDisableDialog(open);
+        if (!open) setDisablePassword("");
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Disable Two-Factor Authentication</DialogTitle>
+            <DialogDescription>
+              Enter your password to confirm disabling 2FA. This will remove the
+              extra layer of security from your account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="disable_password">Password</Label>
+              <Input
+                id="disable_password"
+                type="password"
+                value={disablePassword}
+                onChange={(e) => setDisablePassword(e.target.value)}
+                placeholder="Enter your password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && disablePassword) handleDisable2FA();
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowDisableDialog(false);
+              setDisablePassword("");
+            }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDisable2FA}
+              disabled={!disablePassword}
+            >
+              Disable 2FA
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

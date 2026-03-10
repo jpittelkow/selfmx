@@ -31,16 +31,17 @@ const SETUP_GUIDES: Record<string, SetupGuide> = {
     steps: [
       "Go to the AWS Console → IAM → Users",
       "Create a new user (or use an existing one)",
-      "Attach the AmazonSESFullAccess policy",
+      "Attach the AmazonSESFullAccess and AmazonSNSFullAccess policies (SNS is needed for delivery event webhooks)",
       'Go to Security credentials → Create access key',
       "Copy the Access Key ID and Secret Access Key",
       "Select the AWS region where your domain is verified in SES",
+      "Use Auto-configure Webhooks to set up delivery tracking — selfmx will create the SNS topic and SES configuration set automatically",
     ],
     url: "https://console.aws.amazon.com/ses/",
     urlLabel: "AWS SES Console",
     tips: [
       "New SES accounts start in sandbox mode — you must request production access to send to unverified addresses",
-      "Configuration Set is optional but recommended for event tracking",
+      "selfmx auto-creates an SNS topic and subscribes your events endpoint when you configure webhooks — no manual SNS setup needed",
     ],
   },
   postmark: {

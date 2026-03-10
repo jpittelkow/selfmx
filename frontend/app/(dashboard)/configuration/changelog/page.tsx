@@ -191,16 +191,13 @@ function VersionEntry({
                       {config.label}
                     </Badge>
                   </div>
-                  <ul className="space-y-1 ml-1">
+                  <ul className="space-y-1 ml-4 list-disc">
                     {items.map((item, idx) => (
                       <li
                         key={idx}
-                        className="text-sm text-foreground flex items-start gap-2"
+                        className="text-sm text-foreground text-muted-foreground"
                       >
-                        <span className="text-muted-foreground mt-1.5 flex-shrink-0">
-                          &bull;
-                        </span>
-                        <span>{item}</span>
+                        <span className="text-foreground">{item}</span>
                       </li>
                     ))}
                   </ul>

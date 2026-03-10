@@ -20,6 +20,7 @@ Ready to start. These are unblocked and can begin immediately.
 
 ## Completed
 
+- **[Sourdough Port: v0.10.1 → v0.10.3](plans/sourdough-v0.10.1-v0.10.3-port-roadmap.md)** - v0.9.0 backfill (DeprecateRoute middleware, FileHelper/QueryHelper, 5 test suites), v0.10.1 decomposition (notification tabs, AI provider dialog), v0.10.2 (backup upload, 2FA fixes, LLM credential fallback, bug fixes), v0.10.3 (notification permission flow). 4 phases, all complete. Dashboard redesign and changelog export skipped as not needed.
 - **[Sourdough Port: v0.9.2 → v0.10.0](plans/sourdough-port-roadmap.md)** - Backend changes (avatar upload, user sorting, usage tracking), ADR corrections, API README expansion (+220 lines), AI pattern/anti-pattern docs, audit journals. All phases complete.
 - **[Design Review: Sourdough Frontend Port](plans/design-review-roadmap.md)** - 8 workstreams across ~48 frontend files: component extraction (AI -1323 lines, SSO -529 lines), design system polish, help center enhancements, user management (DataTable, bulk actions, avatar upload), notification UI, tabbed preferences, and cross-cutting polish. All workstreams complete.
 - **[Mail Forwarding (Phase 11)](plans/email-app-roadmap.md#phase-11-mail-forwarding)** - First-class mail forwarding with pass-through (no-copy) and keep-copy modes. Forwarding configuration (API + frontend), service layer tests, and provider-direct sending (bypasses full send pipeline). 20 tests, all passing.

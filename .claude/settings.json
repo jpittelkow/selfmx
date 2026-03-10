@@ -22,7 +22,13 @@
       "Bash(node \"C:/Users/jpitt_6932a9v/code/selfmx/figlet_selfmx2.js\")",
       "Bash(ls -la \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(auth\\)/\")",
       "Bash(find \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(auth\\)\" -type f -name \"*.tsx\")",
-      "Bash(grep -n \"offline-badge\\\\|offline-indicator\" /c/Users/jpitt_6932a9v/code/selfmx/frontend/components/*.tsx)"
+      "Bash(grep -n \"offline-badge\\\\|offline-indicator\" /c/Users/jpitt_6932a9v/code/selfmx/frontend/components/*.tsx)",
+      "Bash(ls /c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/)",
+      "Bash(ls /c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/)",
+      "Bash(grep -l \"NotificationSettingsController\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Http/Controllers/Api/*.php)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(xargs grep -l \"z\\\\.object\\\\|z\\\\.string\\\\|zod\\\\|validation\")",
+      "Bash(grep -r \"Request\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Http/Traits/*.php)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jpitt_6932a9v\\code\\selfmx\\frontend\\components"

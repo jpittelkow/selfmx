@@ -9,6 +9,7 @@ use App\Services\AuditService;
 use App\Services\Backup\BackupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BackupController extends Controller
@@ -122,6 +123,39 @@ class BackupController extends Controller
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to restore backup', 500);
+        }
+    }
+
+    /**
+     * Upload a backup file without triggering a restore.
+     */
+    public function upload(Request $request): JsonResponse
+    {
+        $request->validate([
+            'backup' => ['required', 'file', 'max:100000', 'mimes:zip'],
+        ]);
+
+        try {
+            $file = $request->file('backup');
+            $disk = config('backup.disk', 'backups');
+
+            // Sanitize the original filename: keep only safe characters
+            $originalName = $file->getClientOriginalName();
+            $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($originalName, PATHINFO_FILENAME));
+            $filename = $filename . '.zip';
+
+            Storage::disk($disk)->putFileAs('', $file, $filename);
+
+            $this->auditService->log('backup.uploaded', null, [], [
+                'filename' => $filename,
+                'size' => $file->getSize(),
+            ]);
+
+            return $this->successResponse('Backup uploaded successfully', [
+                'filename' => $filename,
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to upload backup', 500);
         }
     }
 
