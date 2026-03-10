@@ -627,6 +627,35 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::get('/stats', [ProviderManagementController::class, 'getStats']);
     });
 
+    // Deprecated /mailgun/ aliases — kept for backward compatibility
+    Route::prefix('email/domains/{domainId}/mailgun')->whereNumber('domainId')->group(function () {
+        Route::get('/capabilities', [ProviderManagementController::class, 'getCapabilities']);
+        Route::get('/dkim', [ProviderManagementController::class, 'getDkim']);
+        Route::post('/dkim/rotate', [ProviderManagementController::class, 'rotateDkim']);
+        Route::get('/dkim/rotation-history', [ProviderManagementController::class, 'getDkimRotationHistory']);
+        Route::get('/webhooks', [ProviderManagementController::class, 'listWebhooks']);
+        Route::post('/webhooks', [ProviderManagementController::class, 'createWebhook']);
+        Route::post('/webhooks/auto-configure', [ProviderManagementController::class, 'autoConfigureWebhooks']);
+        Route::post('/webhooks/{webhookId}/test', [ProviderManagementController::class, 'testWebhook']);
+        Route::put('/webhooks/{webhookId}', [ProviderManagementController::class, 'updateWebhook']);
+        Route::delete('/webhooks/{webhookId}', [ProviderManagementController::class, 'deleteWebhook']);
+        Route::get('/routes', [ProviderManagementController::class, 'listRoutes']);
+        Route::post('/routes', [ProviderManagementController::class, 'createRoute']);
+        Route::put('/routes/{routeId}', [ProviderManagementController::class, 'updateRoute']);
+        Route::delete('/routes/{routeId}', [ProviderManagementController::class, 'deleteRoute']);
+        Route::get('/events', [ProviderManagementController::class, 'getEvents']);
+        Route::get('/suppressions/check', [ProviderManagementController::class, 'checkSuppression']);
+        Route::post('/suppressions/check-batch', [ProviderManagementController::class, 'checkSuppressionBatch']);
+        Route::get('/suppressions/{type}', [ProviderManagementController::class, 'listSuppressions']);
+        Route::get('/suppressions/{type}/export', [ProviderManagementController::class, 'exportSuppressions']);
+        Route::post('/suppressions/{type}/import', [ProviderManagementController::class, 'importSuppressions']);
+        Route::delete('/suppressions/{type}/{address}', [ProviderManagementController::class, 'deleteSuppression'])
+            ->where('address', '.*');
+        Route::get('/tracking', [ProviderManagementController::class, 'getTracking']);
+        Route::put('/tracking/{type}', [ProviderManagementController::class, 'updateTracking']);
+        Route::get('/stats', [ProviderManagementController::class, 'getStats']);
+    });
+
     // Mailboxes (access-based: users see mailboxes they have access to)
     Route::prefix('email/mailboxes')->group(function () {
         Route::get('/', [MailboxController::class, 'index']);
