@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.18] - 2026-03-10
+
+### Fixed
+- Sanitize SES configuration set names to replace dots with hyphens
 ## [0.2.17] - 2026-03-10
 
 ### Added
