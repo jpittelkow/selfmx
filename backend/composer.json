@@ -18,7 +18,7 @@
         "league/flysystem-azure-blob-storage": "^3.0",
         "league/flysystem-google-cloud-storage": "^3.0",
         "meilisearch/meilisearch-php": "^1.6",
-        "minishlink/web-push": "^9.0",
+        "minishlink/web-push": "^10.0",
         "novuhq/novu": "^1.0",
         "nuwave/lighthouse": "^6.0",
         "pragmarx/google2fa-laravel": "^2.2",
