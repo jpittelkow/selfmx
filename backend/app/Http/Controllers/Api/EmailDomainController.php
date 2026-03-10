@@ -23,7 +23,7 @@ class EmailDomainController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = EmailDomain::where('user_id', $request->user()->id)
-            ->with('catchallMailbox');
+            ->with(['catchallMailbox', 'providerAccount:id,name,provider,is_default,health_status']);
 
         if ($search = $request->query('search')) {
             $escaped = \App\Support\Str::escapeLike($search);
@@ -38,6 +38,10 @@ class EmailDomainController extends Controller
             $query->where('provider', $provider);
         }
 
+        if ($accountId = $request->query('account_id')) {
+            $query->where('email_provider_account_id', $accountId);
+        }
+
         $domains = $query->orderByDesc('created_at')->get();
 
         return response()->json(['domains' => $domains]);
@@ -47,7 +51,8 @@ class EmailDomainController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('email_domains', 'name')->where('user_id', $request->user()->id)],
-            'provider' => ['sometimes', 'string', 'in:mailgun,ses,sendgrid,postmark'],
+            'email_provider_account_id' => ['sometimes', 'nullable', 'integer', Rule::exists('email_provider_accounts', 'id')->where('user_id', $request->user()->id)],
+            'provider' => ['sometimes', 'string', 'in:mailgun,ses,postmark'],
             'provider_config' => ['sometimes', 'array'],
         ]);
 
@@ -56,9 +61,10 @@ class EmailDomainController extends Controller
             $validated['name'],
             $validated['provider'] ?? 'mailgun',
             $validated['provider_config'] ?? [],
+            $validated['email_provider_account_id'] ?? null,
         );
 
-        $data = ['domain' => $result['domain']];
+        $data = ['domain' => $result['domain']->load('providerAccount:id,name,provider')];
         if (! empty($result['warnings'])) {
             $data['warnings'] = $result['warnings'];
         }
@@ -72,7 +78,7 @@ class EmailDomainController extends Controller
             return $this->errorResponse('Not found', 404);
         }
 
-        $emailDomain->load(['mailboxes', 'catchallMailbox']);
+        $emailDomain->load(['mailboxes', 'catchallMailbox', 'providerAccount:id,name,provider,is_default,health_status']);
 
         return response()->json(['domain' => $emailDomain]);
     }
@@ -85,6 +91,7 @@ class EmailDomainController extends Controller
 
         $validated = $request->validate([
             'catchall_mailbox_id' => ['sometimes', 'nullable', Rule::exists('mailboxes', 'id')->where('email_domain_id', $emailDomain->id)],
+            'email_provider_account_id' => ['sometimes', 'nullable', 'integer', Rule::exists('email_provider_accounts', 'id')->where('user_id', $request->user()->id)],
             'is_active' => ['sometimes', 'boolean'],
             'provider_config' => ['sometimes', 'array'],
         ]);

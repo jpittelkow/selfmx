@@ -9,7 +9,7 @@ Integrate with Cloudflare DNS to automatically manage DNS records required by em
 
 ## Overview
 
-Email providers (Mailgun, AWS SES, SendGrid, Postmark) require specific DNS records (SPF, DKIM, MX, tracking CNAMEs) to function. Currently, users must manually configure these in their DNS provider. This phase automates DNS record management by integrating with Cloudflare, allowing:
+Email providers (Mailgun, AWS SES, SendGrid, Postmark — see [Email Provider Comparison](email-provider-comparison.md)) require specific DNS records (SPF, DKIM, MX, tracking CNAMEs) to function. Currently, users must manually configure these in their DNS provider. This phase automates DNS record management by integrating with Cloudflare, allowing:
 
 - One-click Cloudflare connection (securely encrypted API token)
 - Auto-detection of which selfmx email domains have matching Cloudflare zones

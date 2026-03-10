@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,28 +16,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { User, Settings, Shield, LogOut, ChevronDown, Info, Sparkles, HelpCircle, ListFilter } from "lucide-react";
 import { AboutDialog } from "@/components/about-dialog";
 import { useWizard } from "@/components/onboarding/wizard-provider";
 import { useHelp } from "@/components/help/help-provider";
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 export function UserDropdown() {
   const { user } = useAuth();
@@ -76,14 +67,12 @@ export function UserDropdown() {
             </AvatarFallback>
           </Avatar>
           <div className="hidden sm:flex items-center gap-2">
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-medium leading-tight">{user.name}</span>
-              {isAdminUser(user) && (
-                <Badge variant="secondary" className="text-xs h-4 px-1.5 mt-0.5">
-                  Admin
-                </Badge>
-              )}
-            </div>
+            <span className="text-sm font-medium leading-tight">{user.name}</span>
+            {isAdminUser(user) && (
+              <Badge variant="secondary" className="text-xs h-4 px-1.5">
+                Admin
+              </Badge>
+            )}
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </div>
         </button>
@@ -134,25 +123,24 @@ export function UserDropdown() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-    <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Sign out?</AlertDialogTitle>
-          <AlertDialogDescription>
+    <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Sign out?</DialogTitle>
+          <DialogDescription>
             Are you sure you want to sign out of your account?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleLogout}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setShowLogoutConfirm(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleLogout}>
             Sign Out
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
     </>
   );

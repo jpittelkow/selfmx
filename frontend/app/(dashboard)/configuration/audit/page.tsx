@@ -29,7 +29,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Download, Loader2, Search, Radio, Wifi, WifiOff } from "lucide-react";
+import { Download, Filter, Loader2, Search, Radio, Wifi, WifiOff } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -39,6 +46,7 @@ import {
 } from "@/components/ui/select";
 import { useAuditStream, type AuditLogStreamPayload } from "@/lib/use-audit-stream";
 import { HelpLink } from "@/components/help/help-link";
+import { useIsMobile } from "@/lib/use-mobile";
 
 interface AuditLog {
   id: number;
@@ -82,8 +90,10 @@ const SEVERITY_VARIANTS: Record<string, string> = {
 };
 
 export default function AuditLogPage() {
+  const isMobile = useIsMobile();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -323,115 +333,141 @@ export default function AuditLogPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>
-            Filter audit logs by user, action, severity, correlation ID, or date range
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-            <div className="space-y-2">
-              <Label htmlFor="user">User</Label>
-              <Select
-                value={filters.user_id || "all"}
-                onValueChange={(v) =>
-                  setFilters({ ...filters, user_id: v === "all" ? "" : v })
-                }
-                disabled={usersLoading}
-              >
-                <SelectTrigger id="user">
-                  <SelectValue placeholder="All users" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All users</SelectItem>
-                  {users.map((u) => (
-                    <SelectItem key={u.id} value={String(u.id)}>
-                      {u.name} ({u.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="action">Action / Search</Label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      {/* Filter fields — shared between Card (desktop) and Sheet (mobile) */}
+      {(() => {
+        const hasActiveFilters = Object.values(filters).some((v) => v !== "");
+        const filterFields = (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+              <div className="space-y-2">
+                <Label htmlFor="user">User</Label>
+                <Select
+                  value={filters.user_id || "all"}
+                  onValueChange={(v) =>
+                    setFilters({ ...filters, user_id: v === "all" ? "" : v })
+                  }
+                  disabled={usersLoading}
+                >
+                  <SelectTrigger id="user">
+                    <SelectValue placeholder="All users" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All users</SelectItem>
+                    {users.map((u) => (
+                      <SelectItem key={u.id} value={String(u.id)}>
+                        {u.name} ({u.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="action">Action / Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="action"
+                    placeholder="e.g., auth.login"
+                    className="pl-8"
+                    value={filters.action}
+                    onChange={(e) =>
+                      setFilters({ ...filters, action: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="severity">Severity</Label>
+                <Select
+                  value={filters.severity || "all"}
+                  onValueChange={(v) =>
+                    setFilters({ ...filters, severity: v === "all" ? "" : v })
+                  }
+                >
+                  <SelectTrigger id="severity">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="info">Info</SelectItem>
+                    <SelectItem value="warning">Warning</SelectItem>
+                    <SelectItem value="error">Error</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="correlation_id">Correlation ID</Label>
                 <Input
-                  id="action"
-                  placeholder="e.g., auth.login"
-                  className="pl-8"
-                  value={filters.action}
+                  id="correlation_id"
+                  placeholder="Trace ID"
+                  value={filters.correlation_id}
                   onChange={(e) =>
-                    setFilters({ ...filters, action: e.target.value })
+                    setFilters({ ...filters, correlation_id: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date_from">From Date</Label>
+                <Input
+                  id="date_from"
+                  type="date"
+                  value={filters.date_from}
+                  onChange={(e) =>
+                    setFilters({ ...filters, date_from: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date_to">To Date</Label>
+                <Input
+                  id="date_to"
+                  type="date"
+                  value={filters.date_to}
+                  onChange={(e) =>
+                    setFilters({ ...filters, date_to: e.target.value })
                   }
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="severity">Severity</Label>
-              <Select
-                value={filters.severity || "all"}
-                onValueChange={(v) =>
-                  setFilters({ ...filters, severity: v === "all" ? "" : v })
-                }
-              >
-                <SelectTrigger id="severity">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                  <SelectItem value="warning">Warning</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="correlation_id">Correlation ID</Label>
-              <Input
-                id="correlation_id"
-                placeholder="Trace ID"
-                value={filters.correlation_id}
-                onChange={(e) =>
-                  setFilters({ ...filters, correlation_id: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="date_from">From Date</Label>
-              <Input
-                id="date_from"
-                type="date"
-                value={filters.date_from}
-                onChange={(e) =>
-                  setFilters({ ...filters, date_from: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="date_to">To Date</Label>
-              <Input
-                id="date_to"
-                type="date"
-                value={filters.date_to}
-                onChange={(e) =>
-                  setFilters({ ...filters, date_to: e.target.value })
-                }
-              />
-            </div>
+            <Button variant="outline" onClick={resetFilters}>
+              Clear filters
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={resetFilters}
-          >
-            Clear filters
-          </Button>
-        </CardContent>
-      </Card>
+        );
+
+        return isMobile ? (
+          <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <Filter className="mr-2 h-4 w-4" />
+                Filters
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                    Active
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filter Audit Logs</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">{filterFields}</div>
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Filters</CardTitle>
+              <CardDescription>
+                Filter audit logs by user, action, severity, correlation ID, or date range
+              </CardDescription>
+            </CardHeader>
+            <CardContent>{filterFields}</CardContent>
+          </Card>
+        );
+      })()}
 
       <Card>
         <CardHeader>

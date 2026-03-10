@@ -21,6 +21,9 @@ class PushSubscription extends Model
     protected function casts(): array
     {
         return [
+            'endpoint' => 'encrypted',
+            'p256dh' => 'encrypted',
+            'auth' => 'encrypted',
             'last_used_at' => 'datetime',
         ];
     }

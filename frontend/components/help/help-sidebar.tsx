@@ -2,6 +2,13 @@
 
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { type HelpCategory } from "@/lib/help/help-content";
 
 interface HelpSidebarProps {
@@ -30,51 +37,62 @@ export function HelpSidebar({
         );
 
         return (
-          <div key={category.slug}>
-            <button
-              type="button"
-              onClick={() => onSelectCategory(category.slug)}
-              className={cn(
-                "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                isExpanded || hasSelectedArticle
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-              )}
-            >
-              <span className="flex items-center gap-2">
-                {category.icon && (
-                  <category.icon className="h-4 w-4" />
-                )}
-                {category.name}
-              </span>
-              <ChevronRight
+          <Collapsible
+            key={category.slug}
+            open={isExpanded}
+            onOpenChange={() => onSelectCategory(category.slug)}
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
                 className={cn(
-                  "h-4 w-4 transition-transform",
-                  isExpanded && "rotate-90"
+                  "w-full justify-between px-3 py-2 h-auto text-sm font-medium",
+                  isExpanded || hasSelectedArticle
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
-              />
-            </button>
-
-            {isExpanded && (
-              <div className="mt-1 ml-4 space-y-1">
-                {category.articles.map((article) => (
-                  <button
-                    key={article.id}
-                    type="button"
-                    onClick={() => onSelectArticle(article.id)}
+              >
+                <span className="flex items-center gap-2">
+                  {category.icon && (
+                    <category.icon className="h-4 w-4" />
+                  )}
+                  {category.name}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
+                    {category.articles.length}
+                  </Badge>
+                  <ChevronRight
                     className={cn(
-                      "w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors",
+                      "h-4 w-4 transition-transform duration-200",
+                      isExpanded && "rotate-90"
+                    )}
+                  />
+                </span>
+              </Button>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:slide-in-from-top-1 data-[state=closed]:slide-out-to-top-1 duration-200">
+              <div className="mt-1 ml-4 space-y-0.5">
+                {category.articles.map((article) => (
+                  <Button
+                    key={article.id}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "w-full justify-start px-3 py-1.5 h-auto text-sm font-normal",
                       selectedArticle === article.id
                         ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
+                    onClick={() => onSelectArticle(article.id)}
                   >
                     {article.title}
-                  </button>
+                  </Button>
                 ))}
               </div>
-            )}
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         );
       })}
     </nav>

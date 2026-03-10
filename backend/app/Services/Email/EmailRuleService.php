@@ -174,7 +174,7 @@ class EmailRuleService
             $emailService = app(EmailService::class);
             $emailService->sendEmail($email->user, [
                 'mailbox_id' => $email->mailbox_id,
-                'to' => [['address' => $forwardTo]],
+                'to' => [$forwardTo],
                 'subject' => 'Fwd: ' . ($email->subject ?? ''),
                 'body_html' => $email->body_html ?? $email->body_text ?? '',
                 'body_text' => $email->body_text,

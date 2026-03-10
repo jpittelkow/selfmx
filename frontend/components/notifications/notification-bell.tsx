@@ -44,6 +44,12 @@ export function NotificationBell() {
       title={hasUnread ? `${unreadCount} unread` : "Notifications"}
     >
       <Bell className="h-5 w-5" />
+      {hasUnread && !open && (
+        <span
+          className="absolute -top-0.5 -right-0.5 h-4 w-4 animate-ping rounded-full bg-primary opacity-40"
+          aria-hidden
+        />
+      )}
       {hasUnread && (
         <span
           className={cn(
@@ -53,12 +59,6 @@ export function NotificationBell() {
         >
           {unreadCount > 99 ? "99+" : unreadCount}
         </span>
-      )}
-      {hasUnread && !open && (
-        <span
-          className="absolute -top-0.5 -right-0.5 h-2 w-2 animate-ping rounded-full bg-primary opacity-75"
-          aria-hidden
-        />
       )}
     </Button>
   );

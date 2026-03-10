@@ -37,6 +37,11 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/sidebar-context";
 import { useIsMobile } from "@/lib/use-mobile";
@@ -425,7 +430,7 @@ export function Sidebar() {
           side="left"
           className="w-96 max-w-[100vw] p-0 flex flex-col"
         >
-          <div className="flex flex-col h-full pt-14 px-3 pb-4">
+          <div className="flex flex-col h-full pt-14 px-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center border-b pb-3 mb-4">
               <Logo variant="full" size="md" />
             </div>
@@ -438,11 +443,13 @@ export function Sidebar() {
               {/* Other nav */}
               <nav className="flex flex-col gap-1 px-1">
                 <Button
-                  variant={isContacts ? "secondary" : "ghost"}
+                  variant="ghost"
                   size="default"
                   className={cn(
-                    "w-full justify-start gap-3 min-h-11",
-                    isContacts && "bg-muted text-foreground font-medium"
+                    "w-full justify-start gap-3 min-h-11 transition-colors duration-150",
+                    isContacts
+                      ? "bg-primary/10 text-primary font-medium border-l-2 border-primary rounded-l-none rounded-r-md"
+                      : "hover:bg-accent"
                   )}
                   title="Contacts"
                   asChild
@@ -453,11 +460,13 @@ export function Sidebar() {
                   </Link>
                 </Button>
                 <Button
-                  variant={isMailSettings ? "secondary" : "ghost"}
+                  variant="ghost"
                   size="default"
                   className={cn(
-                    "w-full justify-start gap-3 min-h-11",
-                    isMailSettings && "bg-muted text-foreground font-medium"
+                    "w-full justify-start gap-3 min-h-11 transition-colors duration-150",
+                    isMailSettings
+                      ? "bg-primary/10 text-primary font-medium border-l-2 border-primary rounded-l-none rounded-r-md"
+                      : "hover:bg-accent"
                   )}
                   title="Mail Settings"
                   asChild
@@ -475,11 +484,13 @@ export function Sidebar() {
                     <Separator orientation="horizontal" className="my-2" />
                     <nav className="flex flex-col gap-2 px-1">
                       <Button
-                        variant={isConfiguration ? "secondary" : "ghost"}
+                        variant="ghost"
                         size="default"
                         className={cn(
-                          "w-full justify-start gap-3 min-h-11",
-                          isConfiguration && "bg-muted text-foreground font-medium"
+                          "w-full justify-start gap-3 min-h-11 transition-colors duration-150",
+                          isConfiguration
+                            ? "bg-primary/10 text-primary font-medium border-l-2 border-primary rounded-l-none rounded-r-md"
+                            : "hover:bg-accent"
                         )}
                         title="Configuration"
                         onClick={() => {
@@ -505,7 +516,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 h-screen flex flex-col border-r bg-background z-30 transition-all duration-300",
+        "fixed left-0 top-0 h-screen flex flex-col border-r bg-muted/30 z-30 transition-all duration-300",
         isExpanded ? "w-56" : "w-16"
       )}
     >
@@ -529,13 +540,18 @@ export function Sidebar() {
             </Button>
           </>
         ) : (
-          <button
-            onClick={toggleSidebar}
-            className="flex items-center justify-center hover:opacity-80 transition-opacity"
-            title="Expand sidebar"
-          >
-            <Logo variant="icon" size="sm" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={toggleSidebar}
+                className="flex items-center justify-center hover:opacity-80 transition-opacity"
+                aria-label="Expand sidebar"
+              >
+                <Logo variant="icon" size="sm" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Expand sidebar</TooltipContent>
+          </Tooltip>
         )}
       </div>
 
@@ -547,38 +563,54 @@ export function Sidebar() {
 
         {/* Other nav */}
         <nav className="flex flex-col mt-1">
-          <Button
-            variant={isContacts ? "secondary" : "ghost"}
-            size={isExpanded ? "default" : "icon"}
-            className={cn(
-              "min-h-11",
-              isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
-              isContacts && "bg-muted text-foreground font-medium"
-            )}
-            title="Contacts"
-            asChild
-          >
-            <Link href="/contacts">
-              <Users className="h-5 w-5 flex-shrink-0" />
-              {isExpanded && <span>Contacts</span>}
-            </Link>
-          </Button>
-          <Button
-            variant={isMailSettings ? "secondary" : "ghost"}
-            size={isExpanded ? "default" : "icon"}
-            className={cn(
-              "min-h-11",
-              isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
-              isMailSettings && "bg-muted text-foreground font-medium"
-            )}
-            title="Mail Settings"
-            asChild
-          >
-            <Link href="/mail/settings">
-              <Settings className="h-5 w-5 flex-shrink-0" />
-              {isExpanded && <span>Mail Settings</span>}
-            </Link>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size={isExpanded ? "default" : "icon"}
+                className={cn(
+                  "min-h-11 transition-colors duration-150",
+                  isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
+                  isContacts
+                    ? isExpanded
+                      ? "bg-primary/10 text-primary font-medium border-l-2 border-primary rounded-l-none rounded-r-md"
+                      : "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-accent"
+                )}
+                asChild
+              >
+                <Link href="/contacts">
+                  <Users className="h-5 w-5 flex-shrink-0" />
+                  {isExpanded && <span>Contacts</span>}
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            {!isExpanded && <TooltipContent side="right">Contacts</TooltipContent>}
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size={isExpanded ? "default" : "icon"}
+                className={cn(
+                  "min-h-11 transition-colors duration-150",
+                  isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
+                  isMailSettings
+                    ? isExpanded
+                      ? "bg-primary/10 text-primary font-medium border-l-2 border-primary rounded-l-none rounded-r-md"
+                      : "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-accent"
+                )}
+                asChild
+              >
+                <Link href="/mail/settings">
+                  <Settings className="h-5 w-5 flex-shrink-0" />
+                  {isExpanded && <span>Mail Settings</span>}
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            {!isExpanded && <TooltipContent side="right">Mail Settings</TooltipContent>}
+          </Tooltip>
         </nav>
 
         <div className="mt-auto">
@@ -586,22 +618,30 @@ export function Sidebar() {
             <>
               <Separator orientation="horizontal" className="my-2" />
               <nav className="flex flex-col gap-2">
-                <Button
-                  variant={isConfiguration ? "secondary" : "ghost"}
-                  size={isExpanded ? "default" : "icon"}
-                  className={cn(
-                    "min-h-11",
-                    isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
-                    isConfiguration && "bg-muted text-foreground font-medium"
-                  )}
-                  title="Configuration"
-                  asChild
-                >
-                  <Link href="/configuration">
-                    <Settings className="h-5 w-5 flex-shrink-0" />
-                    {isExpanded && <span>Configuration</span>}
-                  </Link>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size={isExpanded ? "default" : "icon"}
+                      className={cn(
+                        "min-h-11 transition-colors duration-150",
+                        isExpanded ? "w-full justify-start gap-3" : "w-12 h-12 mx-auto",
+                        isConfiguration
+                          ? isExpanded
+                            ? "bg-primary/10 text-primary font-medium border-l-2 border-primary rounded-l-none rounded-r-md"
+                            : "bg-primary/10 text-primary font-medium"
+                          : "hover:bg-accent"
+                      )}
+                      asChild
+                    >
+                      <Link href="/configuration">
+                        <Settings className="h-5 w-5 flex-shrink-0" />
+                        {isExpanded && <span>Configuration</span>}
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  {!isExpanded && <TooltipContent side="right">Configuration</TooltipContent>}
+                </Tooltip>
               </nav>
             </>
           )}

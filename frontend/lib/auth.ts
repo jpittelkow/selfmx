@@ -16,6 +16,12 @@ export interface User {
   permissions?: string[];
 }
 
+/** Extended user type for admin views with additional fields. */
+export interface AdminUser extends User {
+  disabled_at: string | null;
+  created_at: string;
+}
+
 /**
  * Fire-and-forget: send the browser's timezone to the backend.
  * Only sets it if the user hasn't explicitly chosen one.

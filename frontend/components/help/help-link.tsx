@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, HelpCircle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useHelp } from "@/components/help/help-provider";
 import { cn } from "@/lib/utils";
@@ -45,7 +45,7 @@ export function HelpLink({
       )}
     >
       {label}
-      <ExternalLink className="h-3 w-3" />
+      <HelpCircle className="h-3 w-3" />
     </button>
   );
 }

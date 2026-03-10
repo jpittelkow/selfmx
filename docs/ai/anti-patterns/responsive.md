@@ -174,3 +174,50 @@ import { formatBytes, formatDate } from "@/lib/utils";
 **Centralized in `frontend/lib/utils.ts`:** `formatBytes`, `formatDate`, `formatDateTime`, `formatTimestamp`, `getErrorMessage`. Use these instead of defining inline.
 
 **Before adding any utility, search the codebase** to see if it already exists. If it does, use the existing one. If it doesn't exist but would be useful in multiple places, add it to `frontend/lib/utils.ts`.
+
+### Don't: Skip PWA Safe Area Insets
+
+```tsx
+// ❌ WRONG: Header clips behind iPhone notch in standalone mode
+<header className="sticky top-0 h-14">
+
+// ✅ CORRECT: Apply env() safe area padding
+<header className="sticky top-0 h-14 pt-[env(safe-area-inset-top)]">
+
+// ❌ WRONG: Bottom content hidden behind home indicator
+<div className="fixed bottom-0">
+
+// ✅ CORRECT: Respect home indicator
+<div className="fixed bottom-0 pb-[env(safe-area-inset-bottom)]">
+```
+
+Also confirm `<meta name="viewport" content="..., viewport-fit=cover">` is set — required for `env()` insets to work.
+
+> **PWA Impact**: HIGH — Without this, the header is partially hidden behind the iOS notch in standalone mode.
+
+### Don't: Use Hover-Only Delete/Action Buttons on Touch
+
+```tsx
+// ❌ WRONG: Delete button only appears on hover — invisible on touch devices
+<div className="relative group">
+  <Image src={logo} />
+  <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100">
+    <X className="h-4 w-4" />
+  </button>
+</div>
+
+// ✅ CORRECT: Always-visible action button (or persistent button below the element)
+<div className="relative">
+  <Image src={logo} />
+  <Button
+    variant="ghost"
+    size="icon"
+    className="absolute top-2 right-2"  // Always rendered, not hover-gated
+    onClick={handleDelete}
+  >
+    <X className="h-4 w-4" />
+  </Button>
+</div>
+```
+
+> Touch devices cannot hover. Hover-only interactions are completely broken for PWA users.

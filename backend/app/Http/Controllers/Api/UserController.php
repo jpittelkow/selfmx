@@ -39,6 +39,12 @@ class UserController extends Controller
         $search = $request->input('search');
         $groupSlug = $request->input('group');
 
+        $allowedSortFields = ['name', 'email', 'created_at'];
+        $sortField = in_array($request->input('sort'), $allowedSortFields)
+            ? $request->input('sort')
+            : 'created_at';
+        $sortDir = $request->input('sort_dir') === 'asc' ? 'asc' : 'desc';
+
         $query = User::query()->with('groups:id,name,slug');
 
         if ($search) {
@@ -55,7 +61,7 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')
+        $users = $query->orderBy($sortField, $sortDir)
             ->paginate($perPage);
 
         return $this->dataResponse($users);
@@ -153,7 +159,7 @@ class UserController extends Controller
             return $this->errorResponse('Cannot delete your own account', 400);
         }
 
-        $userService->deleteUser($user);
+        $userService->deleteUser($user, auth()->id());
 
         return $this->successResponse('User deleted successfully');
     }

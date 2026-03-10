@@ -529,8 +529,17 @@ class EmailService
             $this->logWebhook($provider, $parsed->providerEventId, 'inbound', $parsed, 'processed');
 
             // Forward email if mailbox has keep-copy forwarding configured
+            // Don't let forwarding failures prevent the inbound email from being stored
             if ($activeForward && $activeForward->keep_local_copy) {
-                $forwardingService->forwardEmail($email, $activeForward);
+                try {
+                    $forwardingService->forwardEmail($email, $mailbox, $activeForward);
+                } catch (\Exception $e) {
+                    Log::error('Keep-copy forwarding failed but email was stored', [
+                        'email_id' => $email->id,
+                        'mailbox_id' => $mailbox->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             // Extract contacts from inbound email

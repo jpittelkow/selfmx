@@ -15,6 +15,7 @@ class EmailDomain extends Model
         'user_id',
         'name',
         'provider',
+        'email_provider_account_id',
         'provider_domain_id',
         'provider_config',
         'catchall_mailbox_id',
@@ -44,6 +45,11 @@ class EmailDomain extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function providerAccount(): BelongsTo
+    {
+        return $this->belongsTo(EmailProviderAccount::class, 'email_provider_account_id');
+    }
+
     public function mailboxes(): HasMany
     {
         return $this->hasMany(Mailbox::class, 'email_domain_id');
@@ -52,6 +58,17 @@ class EmailDomain extends Model
     public function catchallMailbox(): BelongsTo
     {
         return $this->belongsTo(Mailbox::class, 'catchall_mailbox_id');
+    }
+
+    /**
+     * Get the effective configuration by merging account credentials with domain-level overrides.
+     */
+    public function getEffectiveConfig(): array
+    {
+        $accountCreds = $this->providerAccount?->credentials ?? [];
+        $domainConfig = $this->provider_config ?? [];
+
+        return array_merge($accountCreds, $domainConfig);
     }
 
     /**

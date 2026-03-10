@@ -2,7 +2,6 @@
 
 import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { UserDropdown } from "@/components/user-dropdown";
 import { useSidebar } from "@/components/sidebar-context";
 import { useSearch } from "@/components/search/search-provider";
@@ -20,13 +19,13 @@ export function Header() {
   const { setOpen: setSearchOpen, searchEnabled } = useSearch();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60 safe-area-top">
       <div className="flex h-14 w-full items-center px-4 gap-2 overflow-hidden">
         {/* Left: mobile menu + breadcrumbs */}
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden h-11 w-11 min-w-11 shrink-0"
+          className="md:hidden h-11 w-11 min-w-11 shrink-0 transition-transform duration-150 hover:scale-[1.03]"
           onClick={() => setMobileMenuOpen(true)}
           title="Open menu"
           aria-label="Open menu"
@@ -38,14 +37,14 @@ export function Header() {
         </div>
 
         {/* Right: actions */}
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="flex items-center gap-2 ml-auto">
           {/* Search group */}
           {searchEnabled && (
             <>
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden h-9 gap-1.5 px-2 shrink-0 text-muted-foreground hover:text-foreground"
+                className="md:hidden h-9 gap-1.5 px-2 shrink-0 text-muted-foreground hover:text-foreground transition-transform duration-150 hover:scale-[1.03]"
                 onClick={() => setSearchOpen(true)}
                 title="Search"
                 aria-label="Search"
@@ -61,13 +60,9 @@ export function Header() {
             </>
           )}
 
-          <Separator orientation="vertical" className="mx-1 hidden md:block h-5" />
-
           {/* Utility group: help + notifications */}
           <HelpIcon className="shrink-0" />
           <NotificationBell />
-
-          <Separator orientation="vertical" className="mx-1 hidden sm:block h-5" />
 
           {/* User group: theme + profile */}
           <div className="hidden sm:block">

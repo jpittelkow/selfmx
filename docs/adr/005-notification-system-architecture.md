@@ -80,6 +80,7 @@ interface ChannelInterface
 | Matrix | Matrix Protocol | ✅ |
 | Web Push | VAPID | ✅ |
 | Firebase | FCM | ✅ |
+| ntfy | ntfy.sh (self-hosted or cloud) | ✅ |
 | In-App | Database + WebSocket | ✅ |
 
 ### Notification Model
@@ -90,9 +91,8 @@ notifications
 ├── user_id (FK → users)
 ├── type (string, e.g., 'backup.completed')
 ├── title
-├── body
+├── message
 ├── data (JSON, additional metadata)
-├── channels_sent (JSON array)
 ├── read_at (timestamp, nullable)
 ├── created_at
 └── updated_at
@@ -105,22 +105,29 @@ Notifications are queued by default:
 ```php
 class NotificationOrchestrator
 {
-    public function send(User $user, Notification $notification): void
+    public function send(User $user, string $type, string $title, string $message, array $data = [], ?array $channels = null): void
     {
-        // Store in database (in-app)
-        $this->storeNotification($user, $notification);
-        
-        // Get user's enabled channels
-        $channels = $this->getUserChannels($user);
-        
+        // Create in-app notification
+        $this->createInAppNotification($user, $type, $title, $message, $data);
+
+        // Get user's enabled channels (or use explicit list)
+        $channels = $channels ?? $this->getUserChannels($user);
+
         // Dispatch to queue for each channel
         foreach ($channels as $channel) {
-            SendNotificationJob::dispatch($user, $notification, $channel)
+            SendNotificationJob::dispatch($user, $type, $title, $message, $data, $channel)
                 ->onQueue('notifications');
         }
     }
+
+    public function sendByType(User $user, string $type, array $variables, ?array $channels = null): void
+    {
+        // Renders per-channel-group templates (ADR-017) before dispatching
+    }
 }
 ```
+
+> **Note:** The original ADR specified `send(User $user, Notification $notification)`. The implementation evolved to pass type/title/message/data as separate parameters. `sendByType()` was added for template-driven notifications (see [ADR-017](017-notification-template-system.md)).
 
 ### User Preferences
 

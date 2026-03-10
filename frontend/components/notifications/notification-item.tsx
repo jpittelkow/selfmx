@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { AppNotification } from "@/lib/notifications";
 import { getNotificationType, getDefaultActionUrl } from "@/lib/notification-types";
 import { activateWaitingServiceWorker } from "@/lib/service-worker";
+import { Button } from "@/components/ui/button";
 
 function formatRelative(date: Date): string {
   const now = new Date();
@@ -66,11 +67,12 @@ export function NotificationItem({
     <div className="flex gap-3 w-full text-left">
       <div
         className={cn(
-          "shrink-0 mt-0.5 text-muted-foreground",
-          isUnread && "text-foreground"
+          "shrink-0 mt-0.5 rounded-full flex items-center justify-center",
+          compact ? "h-7 w-7" : "h-8 w-8",
+          typeMeta.bg,
         )}
       >
-        <TypeIcon className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
+        <TypeIcon className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4", typeMeta.color)} />
       </div>
       <div
         className={cn(
@@ -78,15 +80,22 @@ export function NotificationItem({
           compact ? "space-y-0.5" : "space-y-1"
         )}
       >
-        <p
-          className={cn(
-            "font-medium leading-tight truncate",
-            isUnread ? "text-foreground" : "text-muted-foreground",
-            compact ? "text-sm" : "text-base"
+        <div className={cn("flex items-center gap-2", compact && "justify-between")}>
+          <p
+            className={cn(
+              "font-medium leading-tight truncate",
+              isUnread ? "text-foreground" : "text-muted-foreground",
+              compact ? "text-sm" : "text-base"
+            )}
+          >
+            {notification.title}
+          </p>
+          {compact && (
+            <p className="text-xs text-muted-foreground shrink-0">
+              {formatRelative(new Date(notification.created_at))}
+            </p>
           )}
-        >
-          {notification.title}
-        </p>
+        </div>
         <p
           className={cn(
             "text-muted-foreground truncate",
@@ -95,24 +104,31 @@ export function NotificationItem({
         >
           {notification.message}
         </p>
-        <p className={cn("text-muted-foreground", compact ? "text-xs" : "text-sm")}>
-          {formatRelative(new Date(notification.created_at))}
-        </p>
+        {!compact && (
+          <p className="text-sm text-muted-foreground">
+            {formatRelative(new Date(notification.created_at))}
+          </p>
+        )}
       </div>
+      {isUnread && (
+        <span
+          className="shrink-0 mt-1.5 h-2 w-2 rounded-full bg-primary"
+          aria-hidden
+        />
+      )}
       {showMarkRead && isUnread && onMarkRead && (
-        <div
-          role="button"
-          tabIndex={0}
-          className="shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 h-8 w-8 text-muted-foreground"
           onClick={handleMarkRead}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleMarkRead(e as unknown as React.MouseEvent); } }}
           title="Mark as read"
           aria-label="Mark as read"
         >
           <Check className="h-4 w-4" />
-        </div>
+        </Button>
       )}
-      {actionUrl && (
+      {actionUrl && !isUnread && (
         <ChevronRight className="shrink-0 h-4 w-4 text-muted-foreground mt-1" />
       )}
     </div>

@@ -41,8 +41,8 @@ export function StatsWidget() {
   if (isLoading) {
     return (
       <>
-        <Skeleton className="h-[120px] rounded-lg" />
-        <Skeleton className="h-[120px] rounded-lg" />
+        <Skeleton className="h-[120px] rounded-lg animate-pulse" />
+        <Skeleton className="h-[120px] rounded-lg animate-pulse" />
       </>
     );
   }

@@ -116,6 +116,17 @@ Requires `admin` ability. See [Audit Logs roadmap](../plans/audit-logs-roadmap.m
 | GET | `/settings/{group}` | Get settings by group |
 | PUT | `/settings/{group}` | Update settings group |
 
+### System Settings (Admin)
+
+Requires `can:settings.view` / `can:settings.edit`. System-wide settings stored in the database with env fallback. Keys are grouped (e.g. `mail`, `backup`, `search`). See [ADR-014](../adr/014-database-settings-env-fallback.md).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/system-settings/public` | Public settings (no auth). Returns `settings` object (`general.app_name`, `general.app_url`, etc.) and `features` object (`email_configured`, `password_reset_available`, `email_verification_mode`, `two_factor_mode`). |
+| GET | `/system-settings` | Get all system settings (grouped). |
+| PUT | `/system-settings` | Update system settings (body: flat key→value map). |
+| GET | `/system-settings/{group}` | Get settings for a specific group (e.g. `mail`, `backup`, `search`). |
+
 ### Mail Settings (Admin)
 
 Settings are stored in the database with env fallback (see [ADR-014](../adr/014-database-settings-env-fallback.md)). Response/request keys use frontend names (e.g. `provider`, `host`, `port`); storage uses schema keys (e.g. `mailer`, `smtp_host`, `smtp_port`).
@@ -162,32 +173,132 @@ Requires `manage-settings` ability. Templates are stored in the database; defaul
 | POST | `/email-templates/{key}/test` | Send test email. Body: optional `to` (email; defaults to current user). Returns 503 if email not configured. |
 | POST | `/email-templates/{key}/reset` | Reset system template to default content (403 if not system template). |
 
+### Notification Templates (Admin)
+
+Requires `settings.view` / `settings.edit` abilities. Per-type, per-channel-group templates for notification content. See [ADR-017: Notification Template System](../adr/017-notification-template-system.md) and [Recipe: Add Notification Template](../ai/recipes/add-notification-template.md).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/notification-templates` | List all notification templates |
+| GET | `/notification-templates/{id}` | Get single template (includes siblings for same type across channel groups) |
+| PUT | `/notification-templates/{id}` | Update template (body: title, body, is_active). Requires `settings.edit`. |
+| POST | `/notification-templates/{id}/preview` | Preview with variables. Body: optional `variables` (object); optional `title`, `body` for live preview. |
+| POST | `/notification-templates/{id}/reset` | Reset system template to default content. Requires `settings.edit`. |
+
+Channel groups: `push` (WebPush, FCM, ntfy), `inapp` (database/in-app), `chat` (Telegram, Discord, Slack, Twilio, Signal, Matrix, Vonage, SNS), `email` (per-type email templates).
+
 ### Notifications
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/notifications` | List notifications |
+| GET | `/notifications` | List notifications (params: page, per_page, unread_only, category) |
 | GET | `/notifications/unread-count` | Get unread count |
-| POST | `/notifications/mark-read` | Mark specific as read |
+| POST | `/notifications/mark-read` | Mark specific as read (body: `ids` array of UUIDs) |
 | POST | `/notifications/mark-all-read` | Mark all as read |
 | DELETE | `/notifications/{id}` | Delete notification |
-| POST | `/notifications/test/{channel}` | Send test notification |
+| POST | `/notifications/delete-batch` | Batch delete notifications (body: `ids` array, max 100) |
+| POST | `/notifications/test/{channel}` | Send test notification (throttled: 5/min) |
+| GET | `/notifications/diagnose-push` | Diagnostic for web push delivery gates |
+
+### Notification Settings (Admin)
+
+System-level notification channel configuration. Requires admin access.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/notification-settings` | Get system notification settings |
+| PUT | `/notification-settings` | Update notification settings |
+| POST | `/notification-settings/generate-vapid` | Generate WebPush VAPID key pair |
+| POST | `/notification-settings/test/{channel}` | Test specific notification channel |
+| DELETE | `/notification-settings/keys/{key}` | Reset one setting to env default |
+
+### Admin Notification Channels
+
+Channel availability and provider configuration. Requires admin access.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/notification-channels` | List all channels with config status |
+| PUT | `/admin/notification-channels` | Toggle channel availability, set SMS provider |
+| POST | `/admin/notification-channels/test-all` | Test all enabled channels |
+| GET | `/admin/notification-channels/verify` | Verify channel configuration without sending |
+
+### Notification Deliveries (Admin)
+
+Delivery log for sent notifications. Requires admin access.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/notification-deliveries` | List notification delivery logs (paginated) |
+| GET | `/notification-deliveries/stats` | Get delivery statistics (success/failure counts) |
+
+### User Notification Settings
+
+Per-user notification preferences and web push subscriptions.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/user/notification-settings` | Get available channels and user preferences |
+| PUT | `/user/notification-settings` | Update user channel settings |
+| GET | `/user/notification-settings/type-preferences` | Get per-notification-type preferences |
+| PUT | `/user/notification-settings/type-preferences` | Update per-type preference |
+| GET | `/user/webpush-subscriptions` | List user's web push subscriptions |
+| POST | `/user/webpush-subscription` | Register web push subscription (body: endpoint, keys) |
+| DELETE | `/user/webpush-subscription` | Unsubscribe all web push |
+| DELETE | `/user/webpush-subscription/{id}` | Delete specific web push subscription |
+
+### Novu Integration
+
+Optional Novu notification infrastructure. See [ADR-025: Novu Notification Integration](../adr/025-novu-notification-integration.md).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/novu/subscriber-hash` | Get HMAC hash for Novu Inbox authentication |
+
+**Novu Settings (Admin):**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/novu-settings` | Get Novu settings (API key masked) |
+| PUT | `/novu-settings` | Update Novu settings |
+| POST | `/novu-settings/test` | Test Novu connection and validate workflows |
+| GET | `/novu-settings/workflow-map` | Get notification type → workflow ID mappings |
+| PUT | `/novu-settings/workflow-map` | Update workflow mappings |
+| DELETE | `/novu-settings/keys/{key}` | Reset one Novu setting to env default |
+
+### Real-Time Streaming
+
+WebSocket broadcasting via Laravel Reverb. See [ADR-027: Real-Time Streaming](../adr/027-real-time-streaming.md).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/broadcasting/auth` | Authenticate private channel subscription (Sanctum session) |
+
+Private channels: `app-logs` (admin, `AppLogCreated` events), `audit-logs` (admin, `AuditLogCreated` events), `user.{id}` (per-user, `NotificationSent` events). Requires `NEXT_PUBLIC_REVERB_APP_KEY` to be set on frontend.
 
 ### LLM/AI
 
+See [ADR-006: LLM Orchestration Modes](../adr/006-llm-orchestration-modes.md). Requires `can:settings.view` / `can:settings.edit`.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/llm/providers` | List available providers |
-| GET | `/llm/config` | Get user LLM config |
-| PUT | `/llm/config` | Update LLM config |
+| GET | `/llm/providers` | List configured providers with status |
+| POST | `/llm/providers` | Add a provider (body: `provider`, `api_key`, `host?`, `model?`). |
+| PUT | `/llm/providers/{provider}` | Update a provider's config. |
+| DELETE | `/llm/providers/{provider}` | Remove a provider. |
+| GET | `/llm/config` | Get LLM orchestration config (mode, primary provider, enabled providers) |
+| PUT | `/llm/config` | Update LLM config (body: `mode`, `providers` array) |
 | POST | `/llm/test/{provider}` | Test provider connection |
-| POST | `/llm/query` | Send text query |
-| POST | `/llm/query/vision` | Send vision query |
+| POST | `/llm/query` | Send text query (body: `prompt`, `mode?`, `provider?`) |
+| POST | `/llm/query/vision` | Send vision query (body: `prompt`, `image` file or `image_url`, `provider?`) |
 
-**LLM Settings (Admin) – model discovery:**
+**LLM Settings (Admin)**:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/llm-settings` | Get LLM system settings |
+| PUT | `/llm-settings` | Update LLM system settings |
+| DELETE | `/llm-settings/keys/{key}` | Reset one LLM setting to default |
 | POST | `/llm-settings/test-key` | Validate API key (body: `provider`, `api_key?`, `host?`). Returns `{ valid, error? }`. |
 | POST | `/llm-settings/discover-models` | Fetch available models (body: `provider`, `api_key?`, `host?`). Returns `{ models, provider }`. |
 
@@ -198,9 +309,89 @@ Requires `manage-settings` ability. Templates are stored in the database; defaul
 - `aggregation` - Query all, primary synthesizes
 - `council` - All providers vote, consensus resolution
 
+### Stripe Connect (Admin)
+
+Requires `can:settings.view` / `can:settings.edit`. See [ADR-026: Stripe Connect](../adr/026-stripe-connect-integration.md).
+
+**Stripe Connect:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/stripe/connect/status` | Get Stripe Connect account status (connected, account_id, details_submitted, charges_enabled) |
+| POST | `/stripe/connect/oauth-link` | Generate OAuth link to start Connect onboarding |
+| POST | `/stripe/connect/account-link` | Generate account link for returning users to complete onboarding |
+| POST | `/stripe/connect/login-link` | Generate Stripe Express Dashboard login link |
+| DELETE | `/stripe/connect/disconnect` | Disconnect and deauthorize Stripe Connect account |
+
+**Stripe Settings (Admin)**:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/stripe/settings` | Get Stripe settings (keys masked) |
+| PUT | `/stripe/settings` | Update Stripe settings (body: `secret_key`, `publishable_key`, `webhook_secret`, `mode`, `currency`, etc.) |
+| POST | `/stripe/settings/test` | Test Stripe API key connection |
+| DELETE | `/stripe/settings/keys/{key}` | Reset one setting to env default |
+
+**Payments:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/payments` | List current user's payments |
+| POST | `/payments/intent` | Create a payment intent (body: `amount`, `currency?`, `metadata?`) |
+| GET | `/payments/admin` | List all payments — admin only, requires `can:payments.manage` |
+| GET | `/payments/{payment}` | Get a single payment |
+
+**Stripe Webhook (public):**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/stripe/webhook` | Stripe webhook receiver (no auth; signature verified via `STRIPE_WEBHOOK_SECRET`) |
+
+### Outbound Webhooks (Admin)
+
+Requires `can:settings.view` / `can:settings.edit`. See [ADR-028: Webhook System](../adr/028-webhook-system.md).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/webhooks` | List all outbound webhooks |
+| POST | `/webhooks` | Create webhook (body: `name`, `url`, `events` array, `secret?`, `active?`) |
+| GET | `/webhooks/{webhook}` | Get single webhook |
+| PUT | `/webhooks/{webhook}` | Update webhook |
+| DELETE | `/webhooks/{webhook}` | Delete webhook |
+| GET | `/webhooks/{webhook}/deliveries` | Paginated delivery history (response: delivery logs with `event`, `payload`, `response_code`, `success`) |
+| POST | `/webhooks/{webhook}/test` | Send a test delivery to this webhook |
+
+Webhook payloads include `X-Webhook-Timestamp` and `X-Webhook-Signature` (`sha256=HMAC(timestamp.payload, secret)`) headers for verification.
+
+### Integration Usage & Costs (Admin)
+
+Requires `can:usage.view` / `can:logs.export`. See [ADR-029: Usage Tracking & Alerts](../adr/029-usage-tracking-alerts.md).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/usage/stats` | Aggregated usage stats. Query: `date_from`, `date_to`, `integration` (one of `llm,email,sms,storage,broadcasting,payments`), `provider`, `group_by` (`day`\|`week`\|`month`). |
+| GET | `/usage/breakdown` | Detailed breakdown for one integration. Query: `date_from`, `date_to`, `integration` (required), `user_id?`. |
+| GET | `/usage/export` | Export usage as CSV (streamed). Query: `date_from`, `date_to`, `integration?`, `provider?`. Requires `can:logs.export`. |
+
+### File Manager (Admin)
+
+Requires `can:admin`. Files are served from the active storage provider. See [ADR-030: File Manager](../adr/030-file-manager.md).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/storage/files` | List files/directories (paginated). Query: `path?`, `page`, `per_page`. |
+| POST | `/storage/files` | Upload file(s). Body: multipart `files[]` (array). |
+| GET | `/storage/files/{path}` | File or directory details + preview URL. |
+| GET | `/storage/files/{path}/download` | Download a file (streamed). |
+| PUT | `/storage/files/{path}/rename` | Rename file/directory. Body: `{ name }`. |
+| PUT | `/storage/files/{path}/move` | Move file/directory. Body: `{ destination }`. |
+| DELETE | `/storage/files/{path}` | Delete file/directory. |
+
+Paths with `..` segments, null bytes, or blocked segments (`.env`, `config`, `.git`, `bootstrap`, `vendor`) are rejected (403).
+
 ### Backup & Restore (Admin)
 
-Requires `manage-backups` ability. See [Backup & Restore documentation](../backup.md) for full context.
+Requires `can:backups.view` / `can:backups.create` / `can:backups.restore` / `can:backups.delete`. See [Backup & Restore documentation](../backup.md) for full context.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -236,6 +427,24 @@ Requires `manage-settings` ability. Storage configuration (driver, max upload si
 | POST | `/storage-settings/cleanup` | Run cleanup. Body: `{ type: "cache" | "temp" | "old_backups" }`. |
 | GET | `/storage-settings/paths` | Get storage location paths and descriptions (app, public, backups, cache, sessions, logs). |
 | GET | `/storage-settings/health` | Get storage health (status: healthy\|warning, writable, disk_used_percent, disk_free_formatted, disk_total_formatted). Warning when not writable or usage ≥ 90%. |
+
+### Search
+
+Authenticated. See [ADR-021: Search / Meilisearch](../adr/021-search-meilisearch-integration.md).
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/search` | Global search. Query: `q` (string), `type` (one of `users,user_groups,notifications,email_templates,notification_templates,api_tokens,ai_providers,webhooks`), `page`, `per_page`. Response: `{ data: [...], meta: { query, total, page, per_page } }`. |
+| GET | `/search/suggestions` | Autocomplete suggestions. Query: `q`, `type`. Returns quick-match items for typeahead. |
+
+**Search Admin** (requires `can:settings.view` / `can:settings.edit`):
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/search/stats` | Index statistics (index names, document counts, sizes). |
+| GET | `/admin/search/health` | Meilisearch health status. |
+| POST | `/admin/search/test-connection` | Test connection. Body: `{ host, api_key? }`. Returns `{ success, version? }`. |
+| POST | `/admin/search/reindex` | Reindex. Body: `{ model? }` — one of `users,user_groups,notifications,email_templates,notification_templates,api_tokens,ai_providers,webhooks,pages`, or omit for all. |
 
 ### Jobs / Scheduled Tasks (Admin)
 

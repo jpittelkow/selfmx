@@ -10,16 +10,21 @@ Development roadmaps and implementation history.
 
 Currently in progress. Complete these before starting new work.
 
-_None — ready for next item._
+*(None — pick from Next Up)*
 
 ## Next Up
 
 Ready to start. These are unblocked and can begin immediately.
 
 - **[Cloudflare DNS Integration (Phase 8)](plans/cloudflare-phase8-roadmap.md)** - Automatically manage DNS records required by email providers using Cloudflare API. Sync status dashboard, one-click DNS fixes, intelligent SPF merging, automated drift detection, and extensible DNS provider pattern.
-- **Mail Forwarding (Phase 11)** - Forward specific mailboxes or catchall mail to external addresses. Per-forward choice of keeping a local copy or pass-through. See [email-app-roadmap.md](plans/email-app-roadmap.md#phase-11-mail-forwarding).
+
 ## Completed
 
+- **[Sourdough Port: v0.9.2 → v0.10.0](plans/sourdough-port-roadmap.md)** - Backend changes (avatar upload, user sorting, usage tracking), ADR corrections, API README expansion (+220 lines), AI pattern/anti-pattern docs, audit journals. All phases complete.
+- **[Design Review: Sourdough Frontend Port](plans/design-review-roadmap.md)** - 8 workstreams across ~48 frontend files: component extraction (AI -1323 lines, SSO -529 lines), design system polish, help center enhancements, user management (DataTable, bulk actions, avatar upload), notification UI, tabbed preferences, and cross-cutting polish. All workstreams complete.
+- **[Mail Forwarding (Phase 11)](plans/email-app-roadmap.md#phase-11-mail-forwarding)** - First-class mail forwarding with pass-through (no-copy) and keep-copy modes. Forwarding configuration (API + frontend), service layer tests, and provider-direct sending (bypasses full send pipeline). 20 tests, all passing.
+- **[Provider Accounts & Multi-Provider Refactor](plans/provider-accounts-refactor-roadmap.md)** - All phases (A–F) complete. Multi-account support, provider-agnostic management interface, new providers (Resend, MailerSend, SMTP2GO), SendGrid removed, legacy cleanup done.
+- **Encryption Review (Data at Rest)** - Full audit complete. All sensitive fields already encrypted (provider credentials, API keys, OAuth tokens, webhook secrets, 30+ system settings). Added encryption for PushSubscription endpoint/p256dh/auth fields with data migration.
 - **[Code Review Remediation (Phases 1-5)](plans/code-review-remediation-roadmap.md)** - All phases complete: security fixes, hardening, cleanup, and test coverage expansion. Found and fixed SQLite ambiguous column bug in `UserController::updateGroups`. Zod schema tests deferred (inline in components).
 - **[Email Design Audit — Phases 1-3](plans/email-design-audit-roadmap.md)** - Webhook audit, reading experience, and compose experience all complete. Remaining phases (4-7: notifications, spam, navigation, polish) continue as future work.
 - **[Mailgun Deep Integration (Phase 7)](plans/mailgun-phase7-roadmap.md)** - Domain detail page with 8 tabs, domain search/filtering, provider health badge, webhook testing, DKIM auto-rotation UI with history, bulk suppression import/export (CSV), event-to-email linking popover, compose-time suppression warnings, and full test coverage. Nice-to-haves deferred to Phase 7.5.
@@ -52,9 +57,13 @@ Reference for paid third-party integrations used by selfmx. All integrations are
 |----------|--------------|-------|
 | SMTP (self-hosted) | Free | Requires own mail server |
 | Mailgun | Per email (free tier available) | 100 emails/day free, then per-email |
-| SendGrid | Per email (free tier available) | 100 emails/day free, then tiered plans |
 | AWS SES | Per email | ~$0.10/1,000 emails; very cost-effective at scale |
 | Postmark | Per email | Transactional-focused; tiered plans |
+| Resend | Per email (free tier available) | 3,000 emails/month free, then per-email |
+| MailerSend | Per email (free tier available) | 3,000 emails/month free |
+| SMTP2GO | Per email (free tier available) | 1,000 emails/month free |
+
+**Detailed comparison (free tiers, inbound support, DX, recommendations):** [Email Provider Comparison Guide](plans/email-provider-comparison.md)
 
 ### SMS Providers (per message)
 

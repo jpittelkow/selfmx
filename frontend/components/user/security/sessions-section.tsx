@@ -6,14 +6,7 @@ import { api } from "@/lib/api";
 import { errorLogger } from "@/lib/error-logger";
 import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import {
   Link as LinkIcon,
   Unlink,
@@ -61,59 +54,53 @@ export function SessionsSection() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <LinkIcon className="h-5 w-5" />
-          Connected Accounts
-        </CardTitle>
-        <CardDescription>
-          Link your account with external providers for easy sign-in.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {ssoProviders.map((provider) => (
-            <div
-              key={provider.id}
-              className="flex items-center justify-between py-2"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg">
-                  {provider.icon || provider.name[0]}
-                </div>
-                <div>
-                  <p className="font-medium capitalize">{provider.name}</p>
-                  {provider.connected && provider.nickname && (
-                    <p className="text-sm text-muted-foreground">
-                      {provider.nickname}
-                    </p>
-                  )}
-                </div>
+    <CollapsibleCard
+      title="Connected Accounts"
+      description="Link your account with external providers for easy sign-in."
+      icon={<LinkIcon className="h-5 w-5" />}
+      defaultOpen={false}
+    >
+      <div className="space-y-4">
+        {ssoProviders.map((provider) => (
+          <div
+            key={provider.id}
+            className="flex items-center justify-between py-2"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg">
+                {provider.icon || provider.name[0]}
               </div>
-              {provider.connected ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleUnlinkSSO(provider.id)}
-                >
-                  <Unlink className="mr-2 h-4 w-4" />
-                  Disconnect
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleLinkSSO(provider.id)}
-                >
-                  <LinkIcon className="mr-2 h-4 w-4" />
-                  Connect
-                </Button>
-              )}
+              <div>
+                <p className="font-medium capitalize">{provider.name}</p>
+                {provider.connected && provider.nickname && (
+                  <p className="text-sm text-muted-foreground">
+                    {provider.nickname}
+                  </p>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            {provider.connected ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleUnlinkSSO(provider.id)}
+              >
+                <Unlink className="mr-2 h-4 w-4" />
+                Disconnect
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleLinkSSO(provider.id)}
+              >
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Connect
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    </CollapsibleCard>
   );
 }

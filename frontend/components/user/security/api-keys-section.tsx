@@ -8,13 +8,7 @@ import { useAppConfig } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import {
   Dialog,
   DialogContent,
@@ -53,7 +47,7 @@ import {
   Copy,
   AlertTriangle,
 } from "lucide-react";
-import { HelpLink } from "@/components/help/help-link";
+
 
 interface ApiKey {
   id: number;
@@ -190,34 +184,27 @@ export function ApiKeysSection() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                API Keys
-              </CardTitle>
-              <CardDescription>
-                Manage personal API keys for programmatic access via the GraphQL API.{" "}
-                <HelpLink articleId="api-keys" />
-              </CardDescription>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => {
-                setCreatedKeyPlaintext(null);
-                setNewKeyName("");
-                setNewKeyExpires("");
-                setCreateKeyDialogOpen(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create API Key
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <CollapsibleCard
+        title="API Keys"
+        description="Manage personal API keys for programmatic access via the GraphQL API."
+        icon={<Key className="h-5 w-5" />}
+        defaultOpen={false}
+        headerActions={
+          <Button
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCreatedKeyPlaintext(null);
+              setNewKeyName("");
+              setNewKeyExpires("");
+              setCreateKeyDialogOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create API Key
+          </Button>
+        }
+      >
           {apiKeysLoading ? (
             <div className="space-y-3">
               {[1, 2].map((i) => (
@@ -322,8 +309,7 @@ export function ApiKeysSection() {
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </CollapsibleCard>
 
       {/* Create / Display API Key Dialog */}
       <Dialog

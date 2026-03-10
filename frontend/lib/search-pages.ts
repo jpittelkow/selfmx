@@ -281,12 +281,12 @@ export const SEARCH_PAGES: SearchPage[] = [
     keywords: ["contacts", "address", "book", "people", "email", "autocomplete"],
   },
   {
-    id: "config-email-provider",
-    title: "Configuration > Email Provider",
-    subtitle: "Provider API keys and settings",
-    url: "/configuration/email-provider",
+    id: "config-email-accounts",
+    title: "Configuration > Provider Accounts",
+    subtitle: "Manage email provider credentials",
+    url: "/configuration/email-accounts",
     adminOnly: true,
-    keywords: ["mailgun", "email", "provider", "api", "webhook", "spam"],
+    keywords: ["provider", "accounts", "credentials", "mailgun", "ses", "postmark", "resend"],
   },
   {
     id: "config-email-domains",

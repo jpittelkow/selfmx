@@ -25,7 +25,7 @@ class UsageController extends Controller
         $request->validate([
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date',
-            'integration' => 'nullable|string|in:llm,email,sms,storage,broadcasting',
+            'integration' => 'nullable|string|in:llm,email,sms,storage,broadcasting,payments',
             'provider' => 'nullable|string',
             'group_by' => 'nullable|string|in:day,week,month',
         ]);
@@ -55,7 +55,7 @@ class UsageController extends Controller
         $request->validate([
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date',
-            'integration' => 'required|string|in:llm,email,sms,storage,broadcasting',
+            'integration' => 'required|string|in:llm,email,sms,storage,broadcasting,payments',
             'user_id' => 'nullable|integer',
         ]);
 
@@ -82,7 +82,7 @@ class UsageController extends Controller
         $request->validate([
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date',
-            'integration' => 'nullable|string|in:llm,email,sms,storage,broadcasting',
+            'integration' => 'nullable|string|in:llm,email,sms,storage,broadcasting,payments',
             'provider' => 'nullable|string',
         ]);
 

@@ -63,9 +63,10 @@ use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\EmailThreadController;
 use App\Http\Controllers\Api\EmailLabelController;
 use App\Http\Controllers\Api\EmailAttachmentController;
-use App\Http\Controllers\Api\EmailProviderSettingController;
+use App\Http\Controllers\Api\EmailHostingSettingController;
+use App\Http\Controllers\Api\EmailProviderAccountController;
 use App\Http\Controllers\Api\EmailImportController;
-use App\Http\Controllers\Api\MailgunManagementController;
+use App\Http\Controllers\Api\ProviderManagementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -552,10 +553,21 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::delete('/favicon', [BrandingController::class, 'deleteFavicon'])->middleware('can:settings.edit');
     });
 
-    // Email Provider Settings (admin: settings.view / settings.edit)
-    Route::prefix('email-provider-settings')->group(function () {
-        Route::get('/', [EmailProviderSettingController::class, 'show'])->middleware('can:settings.view');
-        Route::put('/', [EmailProviderSettingController::class, 'update'])->middleware('can:settings.edit');
+    // Email Hosting Settings (spam threshold, attachment size)
+    Route::prefix('email-hosting-settings')->group(function () {
+        Route::get('/', [EmailHostingSettingController::class, 'show'])->middleware('can:settings.view');
+        Route::put('/', [EmailHostingSettingController::class, 'update'])->middleware('can:settings.edit');
+    });
+
+    // Email Provider Accounts (admin: settings.view / settings.edit)
+    Route::prefix('email/provider-accounts')->group(function () {
+        Route::get('/', [EmailProviderAccountController::class, 'index'])->middleware('can:settings.view');
+        Route::post('/', [EmailProviderAccountController::class, 'store'])->middleware('can:settings.edit');
+        Route::get('/{providerAccount}', [EmailProviderAccountController::class, 'show'])->middleware('can:settings.view');
+        Route::put('/{providerAccount}', [EmailProviderAccountController::class, 'update'])->middleware('can:settings.edit');
+        Route::delete('/{providerAccount}', [EmailProviderAccountController::class, 'destroy'])->middleware('can:settings.edit');
+        Route::post('/{providerAccount}/test', [EmailProviderAccountController::class, 'test'])->middleware('can:settings.edit');
+        Route::post('/{providerAccount}/default', [EmailProviderAccountController::class, 'setDefault'])->middleware('can:settings.edit');
     });
 
     // Email Domains (authenticated users manage their own domains)
@@ -568,48 +580,51 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::post('/{emailDomain}/verify', [EmailDomainController::class, 'verify']);
     });
 
-    // Mailgun Management (Phase 7) — per-domain Mailgun API access
-    Route::get('/email/provider/health', [MailgunManagementController::class, 'checkHealth']);
-    Route::get('/email/dkim-rotation-settings', [MailgunManagementController::class, 'getDkimRotationSettings']);
-    Route::put('/email/dkim-rotation-settings', [MailgunManagementController::class, 'updateDkimRotationSettings']);
-    Route::prefix('email/domains/{domainId}/mailgun')->whereNumber('domainId')->group(function () {
+    // Provider Management (Phase B) — provider-agnostic domain management
+    Route::get('/email/provider/health', [ProviderManagementController::class, 'checkHealth']);
+    Route::get('/email/dkim-rotation-settings', [ProviderManagementController::class, 'getDkimRotationSettings']);
+    Route::put('/email/dkim-rotation-settings', [ProviderManagementController::class, 'updateDkimRotationSettings']);
+    Route::prefix('email/domains/{domainId}/management')->whereNumber('domainId')->group(function () {
+        // Capabilities
+        Route::get('/capabilities', [ProviderManagementController::class, 'getCapabilities']);
+
         // DKIM
-        Route::get('/dkim', [MailgunManagementController::class, 'getDkim']);
-        Route::post('/dkim/rotate', [MailgunManagementController::class, 'rotateDkim']);
-        Route::get('/dkim/rotation-history', [MailgunManagementController::class, 'getDkimRotationHistory']);
+        Route::get('/dkim', [ProviderManagementController::class, 'getDkim']);
+        Route::post('/dkim/rotate', [ProviderManagementController::class, 'rotateDkim']);
+        Route::get('/dkim/rotation-history', [ProviderManagementController::class, 'getDkimRotationHistory']);
 
         // Webhooks
-        Route::get('/webhooks', [MailgunManagementController::class, 'listWebhooks']);
-        Route::post('/webhooks', [MailgunManagementController::class, 'createWebhook']);
-        Route::post('/webhooks/auto-configure', [MailgunManagementController::class, 'autoConfigureWebhooks']);
-        Route::post('/webhooks/{webhookId}/test', [MailgunManagementController::class, 'testWebhook']);
-        Route::put('/webhooks/{webhookId}', [MailgunManagementController::class, 'updateWebhook']);
-        Route::delete('/webhooks/{webhookId}', [MailgunManagementController::class, 'deleteWebhook']);
+        Route::get('/webhooks', [ProviderManagementController::class, 'listWebhooks']);
+        Route::post('/webhooks', [ProviderManagementController::class, 'createWebhook']);
+        Route::post('/webhooks/auto-configure', [ProviderManagementController::class, 'autoConfigureWebhooks']);
+        Route::post('/webhooks/{webhookId}/test', [ProviderManagementController::class, 'testWebhook']);
+        Route::put('/webhooks/{webhookId}', [ProviderManagementController::class, 'updateWebhook']);
+        Route::delete('/webhooks/{webhookId}', [ProviderManagementController::class, 'deleteWebhook']);
 
         // Inbound Routes
-        Route::get('/routes', [MailgunManagementController::class, 'listRoutes']);
-        Route::post('/routes', [MailgunManagementController::class, 'createRoute']);
-        Route::put('/routes/{routeId}', [MailgunManagementController::class, 'updateRoute']);
-        Route::delete('/routes/{routeId}', [MailgunManagementController::class, 'deleteRoute']);
+        Route::get('/routes', [ProviderManagementController::class, 'listRoutes']);
+        Route::post('/routes', [ProviderManagementController::class, 'createRoute']);
+        Route::put('/routes/{routeId}', [ProviderManagementController::class, 'updateRoute']);
+        Route::delete('/routes/{routeId}', [ProviderManagementController::class, 'deleteRoute']);
 
         // Event Log
-        Route::get('/events', [MailgunManagementController::class, 'getEvents']);
+        Route::get('/events', [ProviderManagementController::class, 'getEvents']);
 
         // Suppressions
-        Route::get('/suppressions/check', [MailgunManagementController::class, 'checkSuppression']);
-        Route::post('/suppressions/check-batch', [MailgunManagementController::class, 'checkSuppressionBatch']);
-        Route::get('/suppressions/{type}', [MailgunManagementController::class, 'listSuppressions']);
-        Route::get('/suppressions/{type}/export', [MailgunManagementController::class, 'exportSuppressions']);
-        Route::post('/suppressions/{type}/import', [MailgunManagementController::class, 'importSuppressions']);
-        Route::delete('/suppressions/{type}/{address}', [MailgunManagementController::class, 'deleteSuppression'])
+        Route::get('/suppressions/check', [ProviderManagementController::class, 'checkSuppression']);
+        Route::post('/suppressions/check-batch', [ProviderManagementController::class, 'checkSuppressionBatch']);
+        Route::get('/suppressions/{type}', [ProviderManagementController::class, 'listSuppressions']);
+        Route::get('/suppressions/{type}/export', [ProviderManagementController::class, 'exportSuppressions']);
+        Route::post('/suppressions/{type}/import', [ProviderManagementController::class, 'importSuppressions']);
+        Route::delete('/suppressions/{type}/{address}', [ProviderManagementController::class, 'deleteSuppression'])
             ->where('address', '.*');
 
         // Tracking
-        Route::get('/tracking', [MailgunManagementController::class, 'getTracking']);
-        Route::put('/tracking/{type}', [MailgunManagementController::class, 'updateTracking']);
+        Route::get('/tracking', [ProviderManagementController::class, 'getTracking']);
+        Route::put('/tracking/{type}', [ProviderManagementController::class, 'updateTracking']);
 
         // Stats
-        Route::get('/stats', [MailgunManagementController::class, 'getStats']);
+        Route::get('/stats', [ProviderManagementController::class, 'getStats']);
     });
 
     // Mailboxes (access-based: users see mailboxes they have access to)

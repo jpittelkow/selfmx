@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, X } from "lucide-react";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { useHelp } from "@/components/help/help-provider";
 import { HelpSidebar } from "@/components/help/help-sidebar";
 import { HelpSearch } from "@/components/help/help-search";
 import { HelpArticle } from "@/components/help/help-article";
+import { HelpArticleToc } from "@/components/help/help-article-toc";
 import { useAuth } from "@/lib/auth";
 import {
   getAllCategories,
@@ -22,6 +23,7 @@ import {
   getSearchableArticles,
 } from "@/lib/help/help-content";
 import { initializeSearch } from "@/lib/help/help-search";
+import { extractHeadings } from "@/lib/help/help-toc";
 
 export function HelpCenterModal() {
   const { isOpen, setIsOpen, currentArticle, setCurrentArticle } = useHelp();
@@ -33,6 +35,8 @@ export function HelpCenterModal() {
   const permissions = useMemo(() => rawPermissions ?? [], [JSON.stringify(rawPermissions)]);
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [gridKey, setGridKey] = useState(0);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
 
   // Get categories based on user permissions
   const categories = useMemo(() => getAllCategories(permissions), [permissions]);
@@ -61,6 +65,12 @@ export function HelpCenterModal() {
     return findArticle(currentArticle, permissions);
   }, [currentArticle, permissions]);
 
+  // Extract TOC headings from the current article
+  const tocHeadings = useMemo(() => {
+    if (!articleData) return null;
+    return extractHeadings(articleData.article.content);
+  }, [articleData]);
+
   const handleSelectCategory = useCallback((categorySlug: string) => {
     setSelectedCategory((prev) =>
       prev === categorySlug ? null : categorySlug
@@ -80,6 +90,7 @@ export function HelpCenterModal() {
 
   const handleBack = useCallback(() => {
     setCurrentArticle(null);
+    setGridKey((k) => k + 1);
   }, [setCurrentArticle]);
 
   const handleSearchResult = useCallback(
@@ -92,7 +103,7 @@ export function HelpCenterModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent
-        className="max-w-4xl h-[80vh] max-h-[600px] p-0 gap-0"
+        className="max-w-6xl h-[85vh] max-h-[800px] p-0 gap-0 overflow-hidden"
         hideClose
       >
         <DialogDescription className="sr-only">
@@ -128,12 +139,34 @@ export function HelpCenterModal() {
               <span className="sr-only">Close</span>
             </Button>
           </div>
-          {!currentArticle && (
-            <div className="mt-3">
-              <HelpSearch onSelectResult={handleSearchResult} />
-            </div>
-          )}
+          <div className="mt-3">
+            <HelpSearch onSelectResult={handleSearchResult} />
+          </div>
         </DialogHeader>
+
+        {/* Mobile category tab bar — shown when viewing an article */}
+        {currentArticle && (
+          <div className="md:hidden border-b px-2 py-1.5 overflow-x-auto shrink-0">
+            <div className="flex gap-1 min-w-max">
+              {categories.map((category) => (
+                <Button
+                  key={category.slug}
+                  variant={selectedCategory === category.slug ? "secondary" : "ghost"}
+                  size="sm"
+                  className="shrink-0 text-xs h-7 px-2.5"
+                  onClick={() => {
+                    if (category.articles.length > 0) {
+                      handleSelectArticle(category.articles[0].id);
+                    }
+                  }}
+                >
+                  {category.icon && <category.icon className="h-3 w-3 mr-1" />}
+                  {category.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-1 min-h-0">
           {/* Sidebar - hidden on mobile; category grid serves as nav */}
@@ -150,15 +183,27 @@ export function HelpCenterModal() {
           </aside>
 
           {/* Content */}
-          <main className="flex-1 min-w-0 overflow-hidden">
-            <ScrollArea className="h-full">
+          <main className="flex-1 min-w-0 overflow-hidden flex">
+            <ScrollArea className="h-full flex-1 min-w-0" ref={contentScrollRef}>
               <div className="p-6">
                 {currentArticle && articleData ? (
-                  <HelpArticle content={articleData.article.content} />
+                  <div key={currentArticle} className="animate-in fade-in duration-200">
+                    {/* Mobile inline TOC */}
+                    {tocHeadings && (
+                      <div className="lg:hidden mb-4">
+                        <HelpArticleToc
+                          headings={tocHeadings}
+                          scrollContainerRef={contentScrollRef}
+                          variant="inline"
+                        />
+                      </div>
+                    )}
+                    <HelpArticle content={articleData.article.content} />
+                  </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div key={gridKey} className="space-y-6 animate-in fade-in duration-200">
                     <div className="text-center py-8">
-                      <h2 className="text-2xl font-semibold mb-2">
+                      <h2 className="font-heading text-2xl font-semibold mb-2">
                         How can we help?
                       </h2>
                       <p className="text-muted-foreground">
@@ -177,11 +222,13 @@ export function HelpCenterModal() {
                               handleSelectArticle(category.articles[0].id);
                             }
                           }}
-                          className="p-4 text-left border rounded-lg hover:bg-accent/50 transition-colors"
+                          className="p-4 text-left border rounded-lg hover:bg-accent/50 transition-colors group"
                         >
                           <div className="flex items-center gap-3 mb-2">
                             {category.icon && (
-                              <category.icon className="h-5 w-5 text-primary" />
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15 transition-colors">
+                                <category.icon className="h-5 w-5" />
+                              </div>
                             )}
                             <span className="font-medium">{category.name}</span>
                           </div>
@@ -200,6 +247,17 @@ export function HelpCenterModal() {
                 )}
               </div>
             </ScrollArea>
+
+            {/* Desktop TOC sidebar */}
+            {currentArticle && articleData && tocHeadings && (
+              <aside className="hidden lg:block w-48 border-l p-4 overflow-y-auto shrink-0">
+                <HelpArticleToc
+                  headings={tocHeadings}
+                  scrollContainerRef={contentScrollRef}
+                  variant="sidebar"
+                />
+              </aside>
+            )}
           </main>
         </div>
       </DialogContent>

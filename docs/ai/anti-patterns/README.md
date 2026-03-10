@@ -40,3 +40,15 @@ Before submitting code, verify:
 - [ ] **Touch targets** - All interactive elements minimum 44px
 - [ ] **Tables** - Wrapped in `overflow-x-auto` or have card view alternative
 - [ ] **Tested** - Verified at 320px, 375px, 768px, and 1024px+ widths
+- [ ] **User deletion** - Uses `UserService::deleteUser()`, not `$user->delete()` directly
+- [ ] **URL validation** - User-supplied URLs validated through `UrlValidationService` (SSRF protection)
+- [ ] **No services in migrations** - Never use `app(Service::class)` in migrations
+- [ ] **N+1 queries** - Eager-load relations with `->with()` where needed
+- [ ] **Correlation IDs** - Uses `app('correlation_id')` for log correlation, not custom IDs
+- [ ] **Avatars** - Uses shadcn `Avatar`/`AvatarFallback` + shared `getInitials()`, not raw `div` with `.charAt(0)`
+- [ ] **Checkboxes** - Uses shadcn `Checkbox`, not native `<input type="checkbox">`
+- [ ] **Buttons** - Uses shadcn `Button`, not `role="button"` divs
+- [ ] **Loading spinners** - Uses `Loader2` or `SettingsPageSkeleton`, not custom `border-b-2` spinner divs
+- [ ] **PWA safe areas** - Header has `pt-[env(safe-area-inset-top)]`; bottom elements have `pb-[env(safe-area-inset-bottom)]`
+- [ ] **No hover-only actions** - Delete/action buttons always visible or have touch-accessible alternative
+- [ ] **No animations via framer-motion** - Use `tailwindcss-animate` utilities (`animate-in`, `fade-in`, `slide-in-from-bottom-*`)

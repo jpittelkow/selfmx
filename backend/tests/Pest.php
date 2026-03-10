@@ -86,14 +86,6 @@ function graphQL(string $query, array $variables = [], ?string $bearerToken = nu
         $headers['Authorization'] = 'Bearer ' . $bearerToken;
     }
 
-    // Fix RefreshDatabase transaction isolation issue:
-    // GraphQL requests are separate HTTP requests that can't see data from parent transaction
-    // Commit and restart transaction to ensure data is visible to GraphQL request
-    if (\Illuminate\Support\Facades\DB::transactionLevel() > 0) {
-        \Illuminate\Support\Facades\DB::commit();
-        \Illuminate\Support\Facades\DB::beginTransaction();
-    }
-
     $response = test()->postJson('/api/graphql', [
         'query' => $query,
         'variables' => $variables,

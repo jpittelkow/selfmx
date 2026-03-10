@@ -81,6 +81,18 @@ interface EmailDomain {
   is_active: boolean;
   verified_at: string | null;
   dkim_rotated_at: string | null;
+  provider_account?: { id: number; name: string; provider: string } | null;
+}
+
+interface Capabilities {
+  dkim_rotation: boolean;
+  webhooks: boolean;
+  inbound_routes: boolean;
+  events: boolean;
+  suppressions: boolean;
+  stats: boolean;
+  domain_management: boolean;
+  dns_records: boolean;
 }
 
 interface DnsRecord {
@@ -142,6 +154,10 @@ interface StatsPoint {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function mgmtPath(domainId: number, ...segments: string[]): string {
+  return `/email/domains/${domainId}/management/${segments.join("/")}`;
+}
+
 function copyToClipboard(text: string, label = "Copied") {
   void navigator.clipboard.writeText(text).then(() => toast.success(`${label} copied to clipboard`));
 }
@@ -150,6 +166,43 @@ function formatTs(ts: number | string | null | undefined): string {
   if (!ts) return "—";
   const d = typeof ts === "number" ? new Date(ts * 1000) : new Date(ts);
   return d.toLocaleString();
+}
+
+function providerLabel(domain: EmailDomain): string {
+  return domain.provider_account?.provider ?? domain.provider ?? "Unknown";
+}
+
+function CapabilityUnsupported({ capability, provider }: { capability: string; provider: string }) {
+  const labels: Record<string, string> = {
+    dkim_rotation: "DKIM management",
+    webhooks: "webhook management",
+    inbound_routes: "inbound route management",
+    events: "event log access",
+    suppressions: "suppression list management",
+    stats: "delivery stats and tracking",
+  };
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <AlertTriangle className="h-8 w-8 text-muted-foreground/50 mb-3" />
+      <p className="text-sm font-medium text-muted-foreground">Not available</p>
+      <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+        {providerDisplayName(provider)} doesn&apos;t support {labels[capability] ?? capability}.
+        This feature may be available with a different provider.
+      </p>
+    </div>
+  );
+}
+
+function providerDisplayName(provider: string): string {
+  const names: Record<string, string> = {
+    mailgun: "Mailgun",
+    ses: "AWS SES",
+    postmark: "Postmark",
+    resend: "Resend",
+    mailersend: "MailerSend",
+    smtp2go: "SMTP2GO",
+  };
+  return names[provider] ?? provider;
 }
 
 function EventBadge({ event }: { event: string }) {
@@ -271,7 +324,7 @@ function DkimTab({ domain }: { domain: EmailDomain }) {
   const fetchDkim = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await api.get<DkimInfo>(`/email/domains/${domain.id}/mailgun/dkim`);
+      const res = await api.get<DkimInfo>(mgmtPath(domain.id, "dkim"));
       setDkim(res.data);
     } catch {
       toast.error("Failed to load DKIM info");
@@ -287,7 +340,7 @@ function DkimTab({ domain }: { domain: EmailDomain }) {
       .then((res) => setIntervalDays(res.data.interval_days))
       .catch((err) => { if (err?.response?.status !== 403) toast.error("Failed to load DKIM rotation settings"); });
     api.get<{ history: Array<{ id: number; created_at: string; new_values?: Record<string, unknown> }> }>(
-      `/email/domains/${domain.id}/mailgun/dkim/rotation-history`
+      mgmtPath(domain.id, "dkim", "rotation-history")
     )
       .then((res) => setRotationHistory(res.data.history ?? []))
       .catch((err) => { if (err?.response?.status !== 403) toast.error("Failed to load rotation history"); });
@@ -309,7 +362,7 @@ function DkimTab({ domain }: { domain: EmailDomain }) {
     setIsRotating(true);
     setShowConfirm(false);
     try {
-      await api.post(`/email/domains/${domain.id}/mailgun/dkim/rotate`);
+      await api.post(mgmtPath(domain.id, "dkim", "rotate"));
       toast.success("DKIM key rotated. Update your DNS DKIM record with the new selector.");
       void fetchDkim();
     } catch {
@@ -371,7 +424,7 @@ function DkimTab({ domain }: { domain: EmailDomain }) {
       )}
 
       {!dkim && (
-        <p className="text-sm text-muted-foreground">No DKIM info available. The Mailgun API may not support this for your plan.</p>
+        <p className="text-sm text-muted-foreground">No DKIM info available. The provider API may not support this for your plan.</p>
       )}
 
       <div className="space-y-3 pt-2 border-t">
@@ -443,7 +496,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
   const fetchWebhooks = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await api.get<{ webhooks: Record<string, Webhook> }>(`/email/domains/${domain.id}/mailgun/webhooks`);
+      const res = await api.get<{ webhooks: Record<string, Webhook> }>(mgmtPath(domain.id, "webhooks"));
       setWebhooks(res.data.webhooks ?? {});
     } catch {
       toast.error("Failed to load webhooks");
@@ -457,7 +510,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
   const autoConfigure = async () => {
     setIsConfiguring(true);
     try {
-      const res = await api.post(`/email/domains/${domain.id}/mailgun/webhooks/auto-configure`);
+      const res = await api.post(mgmtPath(domain.id, "webhooks", "auto-configure"));
       if (res.data.errors && Object.keys(res.data.errors).length > 0) {
         const errorMessages = Object.values(res.data.errors as Record<string, string>).join(", ");
         toast.warning(`Some webhooks failed: ${errorMessages}`);
@@ -486,9 +539,9 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
     try {
       const existing = webhooks[editEvent];
       if (existing?.urls?.length) {
-        await api.put(`/email/domains/${domain.id}/mailgun/webhooks/${editEvent}`, { url: editUrl });
+        await api.put(mgmtPath(domain.id, "webhooks", editEvent), { url: editUrl });
       } else {
-        await api.post(`/email/domains/${domain.id}/mailgun/webhooks`, { event: editEvent, url: editUrl });
+        await api.post(mgmtPath(domain.id, "webhooks"), { event: editEvent, url: editUrl });
       }
       toast.success("Webhook saved");
       setEditEvent(null);
@@ -504,7 +557,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
     setTestingWebhook(event);
     try {
       const res = await api.post<{ success: boolean; status_code?: number; message?: string }>(
-        `/email/domains/${domain.id}/mailgun/webhooks/${event}/test`
+        mgmtPath(domain.id, "webhooks", event, "test")
       );
       if (res.data.success) {
         toast.success(`Test ${event} webhook: ${res.data.status_code} OK`);
@@ -520,7 +573,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
 
   const deleteWebhook = async (event: string) => {
     try {
-      await api.delete(`/email/domains/${domain.id}/mailgun/webhooks/${event}`);
+      await api.delete(mgmtPath(domain.id, "webhooks", event));
       toast.success("Webhook removed");
       void fetchWebhooks();
     } catch {
@@ -534,7 +587,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Configure which Mailgun events notify selfmx. Delivery events (delivered, permanent_fail, complained) are required for status tracking.
+          Configure which provider events notify selfmx. Delivery events (delivered, permanent_fail, complained) are required for status tracking.
         </p>
         <Button variant="outline" size="sm" onClick={autoConfigure} disabled={isConfiguring}>
           {isConfiguring ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-2 h-3 w-3" />}
@@ -587,7 +640,7 @@ function WebhooksTab({ domain }: { domain: EmailDomain }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Configure {editEvent} webhook</DialogTitle>
-            <DialogDescription>Enter the URL Mailgun should POST to when this event occurs.</DialogDescription>
+            <DialogDescription>Enter the URL your provider should POST to when this event occurs.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label>Webhook URL</Label>
@@ -624,7 +677,7 @@ function RoutesTab({ domain }: { domain: EmailDomain }) {
   const fetchRoutes = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await api.get<{ routes: Route[] }>(`/email/domains/${domain.id}/mailgun/routes`);
+      const res = await api.get<{ routes: Route[] }>(mgmtPath(domain.id, "routes"));
       setRoutes(res.data.routes ?? []);
     } catch {
       toast.error("Failed to load routes");
@@ -638,7 +691,7 @@ function RoutesTab({ domain }: { domain: EmailDomain }) {
   const createRoute = async () => {
     setIsSaving(true);
     try {
-      await api.post(`/email/domains/${domain.id}/mailgun/routes`, {
+      await api.post(mgmtPath(domain.id, "routes"), {
         expression: newExpr,
         actions: newAction.split("\n").map((a) => a.trim()).filter(Boolean),
         description: newDesc,
@@ -655,7 +708,7 @@ function RoutesTab({ domain }: { domain: EmailDomain }) {
 
   const deleteRoute = async (routeId: string) => {
     try {
-      await api.delete(`/email/domains/${domain.id}/mailgun/routes/${routeId}`);
+      await api.delete(mgmtPath(domain.id, "routes", routeId));
       toast.success("Route deleted");
       void fetchRoutes();
     } catch {
@@ -669,7 +722,7 @@ function RoutesTab({ domain }: { domain: EmailDomain }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Mailgun routing rules for this domain. selfmx auto-creates a catch-all forward route on domain setup.
+          Routing rules for this domain. A catch-all forward route is auto-created on domain setup.
         </p>
         <Button size="sm" onClick={() => setShowAdd(true)}>
           <Plus className="mr-2 h-3 w-3" />
@@ -707,7 +760,7 @@ function RoutesTab({ domain }: { domain: EmailDomain }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Inbound Route</DialogTitle>
-            <DialogDescription>Create a Mailgun routing rule for this domain.</DialogDescription>
+            <DialogDescription>Create a routing rule for this domain.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
@@ -761,7 +814,7 @@ function EventLogTab({ domain }: { domain: EmailDomain }) {
       if (page) params.page = page;
 
       const res = await api.get<{ items: EventItem[]; nextPage: string | null }>(
-        `/email/domains/${domain.id}/mailgun/events`,
+        mgmtPath(domain.id, "events"),
         { params }
       );
       setItems(page ? (prev) => [...prev, ...(res.data.items ?? [])] : (res.data.items ?? []));
@@ -857,7 +910,7 @@ function SuppressionsTab({ domain }: { domain: EmailDomain }) {
       const params: Record<string, string> = { limit: "25" };
       if (page) params.page = page;
       const res = await api.get<{ items: SuppressionItem[]; nextPage: string | null }>(
-        `/email/domains/${domain.id}/mailgun/suppressions/${type}`,
+        mgmtPath(domain.id, "suppressions", type),
         { params }
       );
       setItems(page ? (prev) => [...prev, ...(res.data.items ?? [])] : (res.data.items ?? []));
@@ -877,7 +930,7 @@ function SuppressionsTab({ domain }: { domain: EmailDomain }) {
 
   const deleteItem = async (address: string) => {
     try {
-      await api.delete(`/email/domains/${domain.id}/mailgun/suppressions/${subTab}/${encodeURIComponent(address)}`);
+      await api.delete(mgmtPath(domain.id, "suppressions", subTab, encodeURIComponent(address)));
       toast.success(`Removed ${address}`);
       void fetchItems(subTab);
     } catch {
@@ -888,7 +941,7 @@ function SuppressionsTab({ domain }: { domain: EmailDomain }) {
   const handleExport = async () => {
     try {
       const res = await api.get(
-        `/email/domains/${domain.id}/mailgun/suppressions/${subTab}/export`,
+        mgmtPath(domain.id, "suppressions", subTab, "export"),
         { responseType: "blob" }
       );
       const url = URL.createObjectURL(res.data);
@@ -912,7 +965,7 @@ function SuppressionsTab({ domain }: { domain: EmailDomain }) {
       const formData = new FormData();
       formData.append("file", file);
       const res = await api.post<{ imported: number }>(
-        `/email/domains/${domain.id}/mailgun/suppressions/${subTab}/import`,
+        mgmtPath(domain.id, "suppressions", subTab, "import"),
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -1006,7 +1059,7 @@ function TrackingTab({ domain }: { domain: EmailDomain }) {
   const [saving, setSaving] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get<TrackingSettings>(`/email/domains/${domain.id}/mailgun/tracking`)
+    api.get<TrackingSettings>(mgmtPath(domain.id, "tracking"))
       .then((res) => setTracking(res.data))
       .catch(() => toast.error("Failed to load tracking settings"))
       .finally(() => setIsLoading(false));
@@ -1015,9 +1068,9 @@ function TrackingTab({ domain }: { domain: EmailDomain }) {
   const toggle = async (type: "click" | "open" | "unsubscribe", active: boolean) => {
     setSaving(type);
     try {
-      await api.put(`/email/domains/${domain.id}/mailgun/tracking/${type}`, { active });
+      await api.put(mgmtPath(domain.id, "tracking", type), { active });
       // Re-fetch tracking state to confirm the change persisted
-      const res = await api.get<TrackingSettings>(`/email/domains/${domain.id}/mailgun/tracking`);
+      const res = await api.get<TrackingSettings>(mgmtPath(domain.id, "tracking"));
       setTracking(res.data);
       const actualState = res.data[type]?.active ?? false;
       if (actualState !== active) {
@@ -1070,7 +1123,7 @@ function StatsTab({ domain }: { domain: EmailDomain }) {
   const fetchStats = useCallback(async (dur: string) => {
     setIsLoading(true);
     try {
-      const res = await api.get<{ stats: StatsPoint[] }>(`/email/domains/${domain.id}/mailgun/stats`, {
+      const res = await api.get<{ stats: StatsPoint[] }>(mgmtPath(domain.id, "stats"), {
         params: { duration: dur, resolution: "day" },
       });
       setStats(res.data.stats ?? []);
@@ -1153,6 +1206,25 @@ function StatsTab({ domain }: { domain: EmailDomain }) {
   );
 }
 
+// ─── Capability → Tab mapping ─────────────────────────────────────────────────
+
+interface TabDef {
+  value: string;
+  label: string;
+  capability: keyof Capabilities | null; // null = always shown
+}
+
+const ALL_TABS: TabDef[] = [
+  { value: "dns", label: "DNS Records", capability: null },
+  { value: "dkim", label: "DKIM", capability: "dkim_rotation" },
+  { value: "webhooks", label: "Webhooks", capability: "webhooks" },
+  { value: "routes", label: "Inbound Routes", capability: "inbound_routes" },
+  { value: "events", label: "Event Log", capability: "events" },
+  { value: "suppressions", label: "Suppressions", capability: "suppressions" },
+  { value: "tracking", label: "Tracking", capability: "stats" },
+  { value: "stats", label: "Stats", capability: "stats" },
+];
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function DomainDetailPage() {
@@ -1161,17 +1233,54 @@ export default function DomainDetailPage() {
   const domainId = params.id as string;
 
   const [domain, setDomain] = useState<EmailDomain | null>(null);
+  const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ domain: EmailDomain }>(`/email/domains/${domainId}`)
-      .then((res) => setDomain(res.data.domain))
-      .catch(() => { toast.error("Domain not found"); router.push("/configuration/email-domains"); })
-      .finally(() => setIsLoading(false));
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const domainRes = await api.get<{ domain: EmailDomain }>(`/email/domains/${domainId}`);
+        if (cancelled) return;
+        setDomain(domainRes.data.domain);
+
+        // Fetch capabilities — if the provider doesn't support management, we get a 422/404
+        try {
+          const capsRes = await api.get<{ capabilities: Capabilities }>(
+            `/email/domains/${domainRes.data.domain.id}/management/capabilities`
+          );
+          if (!cancelled) setCapabilities(capsRes.data.capabilities);
+        } catch {
+          // Provider has no management interface — show DNS-only
+          if (!cancelled) setCapabilities(null);
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error("Domain not found");
+          router.push("/configuration/email-domains");
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    void load();
+    return () => { cancelled = true; };
   }, [domainId, router]);
 
   if (isLoading) return <SettingsPageSkeleton />;
   if (!domain) return null;
+
+  const provider = providerLabel(domain);
+  const displayProvider = providerDisplayName(provider);
+
+  // Filter tabs based on capabilities
+  const visibleTabs = ALL_TABS.filter((tab) => {
+    if (tab.capability === null) return true; // always show DNS
+    if (!capabilities) return false; // no management = DNS only
+    return true; // show tab even if capability is false (we'll show empty state)
+  });
 
   return (
     <div className="space-y-6">
@@ -1192,7 +1301,7 @@ export default function DomainDetailPage() {
                 Unverified
               </Badge>
             )}
-            <Badge variant="outline">Mailgun</Badge>
+            <Badge variant="outline">{displayProvider}</Badge>
           </div>
         </div>
       </div>
@@ -1200,26 +1309,40 @@ export default function DomainDetailPage() {
       {/* Tabs */}
       <Tabs defaultValue="dns">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="dns">DNS Records</TabsTrigger>
-          <TabsTrigger value="dkim">DKIM</TabsTrigger>
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="routes">Inbound Routes</TabsTrigger>
-          <TabsTrigger value="events">Event Log</TabsTrigger>
-          <TabsTrigger value="suppressions">Suppressions</TabsTrigger>
-          <TabsTrigger value="tracking">Tracking</TabsTrigger>
-          <TabsTrigger value="stats">Stats</TabsTrigger>
+          {visibleTabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+          ))}
         </TabsList>
 
         <Card className="mt-4">
           <CardContent className="pt-6">
             <TabsContent value="dns" className="mt-0"><DnsTab domain={domain} /></TabsContent>
-            <TabsContent value="dkim" className="mt-0"><DkimTab domain={domain} /></TabsContent>
-            <TabsContent value="webhooks" className="mt-0"><WebhooksTab domain={domain} /></TabsContent>
-            <TabsContent value="routes" className="mt-0"><RoutesTab domain={domain} /></TabsContent>
-            <TabsContent value="events" className="mt-0"><EventLogTab domain={domain} /></TabsContent>
-            <TabsContent value="suppressions" className="mt-0"><SuppressionsTab domain={domain} /></TabsContent>
-            <TabsContent value="tracking" className="mt-0"><TrackingTab domain={domain} /></TabsContent>
-            <TabsContent value="stats" className="mt-0"><StatsTab domain={domain} /></TabsContent>
+
+            {capabilities ? (
+              <>
+                <TabsContent value="dkim" className="mt-0">
+                  {capabilities.dkim_rotation ? <DkimTab domain={domain} /> : <CapabilityUnsupported capability="dkim_rotation" provider={provider} />}
+                </TabsContent>
+                <TabsContent value="webhooks" className="mt-0">
+                  {capabilities.webhooks ? <WebhooksTab domain={domain} /> : <CapabilityUnsupported capability="webhooks" provider={provider} />}
+                </TabsContent>
+                <TabsContent value="routes" className="mt-0">
+                  {capabilities.inbound_routes ? <RoutesTab domain={domain} /> : <CapabilityUnsupported capability="inbound_routes" provider={provider} />}
+                </TabsContent>
+                <TabsContent value="events" className="mt-0">
+                  {capabilities.events ? <EventLogTab domain={domain} /> : <CapabilityUnsupported capability="events" provider={provider} />}
+                </TabsContent>
+                <TabsContent value="suppressions" className="mt-0">
+                  {capabilities.suppressions ? <SuppressionsTab domain={domain} /> : <CapabilityUnsupported capability="suppressions" provider={provider} />}
+                </TabsContent>
+                <TabsContent value="tracking" className="mt-0">
+                  {capabilities.stats ? <TrackingTab domain={domain} /> : <CapabilityUnsupported capability="stats" provider={provider} />}
+                </TabsContent>
+                <TabsContent value="stats" className="mt-0">
+                  {capabilities.stats ? <StatsTab domain={domain} /> : <CapabilityUnsupported capability="stats" provider={provider} />}
+                </TabsContent>
+              </>
+            ) : null}
           </CardContent>
         </Card>
       </Tabs>

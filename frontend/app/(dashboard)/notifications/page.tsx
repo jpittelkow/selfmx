@@ -21,6 +21,7 @@ import { CheckCheck, Trash2 } from "lucide-react";
 import type { AppNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { getAllCategories } from "@/lib/notification-types";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const PER_PAGE = 20;
 
@@ -226,7 +227,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        <TabsContent value="all" className="mt-6">
+        <TabsContent value="all" className="mt-4">
           <NotificationsContent
             notifications={notifications}
             isLoading={isLoading}
@@ -237,7 +238,7 @@ export default function NotificationsPage() {
             emptyMessage="No notifications yet."
           />
         </TabsContent>
-        <TabsContent value="unread" className="mt-6">
+        <TabsContent value="unread" className="mt-4">
           <NotificationsContent
             notifications={notifications}
             isLoading={isLoading}
@@ -251,26 +252,28 @@ export default function NotificationsPage() {
       </Tabs>
 
       {lastPage > 1 && !isLoading && (
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => goToPage(page - 1)}
-            disabled={page <= 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground px-2">
-            Page {page} of {lastPage}
+        <div className="mt-6 flex items-center justify-between gap-2">
+          <span className="text-sm text-muted-foreground">
+            Showing {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} of {total}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => goToPage(page + 1)}
-            disabled={page >= lastPage}
-          >
-            Next
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPage(page - 1)}
+              disabled={page <= 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPage(page + 1)}
+              disabled={page >= lastPage}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
     </div>
@@ -317,41 +320,83 @@ function NotificationsContent({
     );
   }
 
+  const grouped = groupByDate(notifications);
+
   return (
     <div className="space-y-4">
       <label className="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={notifications.every((n) => selectedIds.has(n.id))}
-          onChange={onToggleSelectAll}
-          className="rounded border-input"
+          onCheckedChange={(checked) => {
+            if (checked) {
+              notifications.forEach((n) => !selectedIds.has(n.id) && onToggleSelect(n.id));
+            } else {
+              notifications.forEach((n) => selectedIds.has(n.id) && onToggleSelect(n.id));
+            }
+          }}
+          aria-label="Select all on page"
         />
         <span className="text-muted-foreground">Select all on page</span>
       </label>
-      <div className="space-y-2">
-        {notifications.map((n) => (
-          <div key={n.id} className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              checked={selectedIds.has(n.id)}
-              onChange={() => onToggleSelect(n.id)}
-              className={cn(
-                "mt-4 rounded border-input shrink-0",
-                "focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              )}
-              aria-label={`Select notification: ${n.title}`}
-            />
-            <div className="flex-1 min-w-0">
-              <NotificationItem
-                notification={n}
-                compact={false}
-                showMarkRead
-                onMarkRead={(id) => onMarkRead([id])}
-              />
+      <div className="space-y-6">
+        {grouped.map(({ label, items }) => (
+          <div key={label}>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{label}</p>
+            <div className="space-y-2">
+              {items.map((n) => (
+                <div key={n.id} className="flex items-start gap-3">
+                  <Checkbox
+                    className="mt-4 shrink-0"
+                    checked={selectedIds.has(n.id)}
+                    onCheckedChange={() => onToggleSelect(n.id)}
+                    aria-label={`Select notification: ${n.title}`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <NotificationItem
+                      notification={n}
+                      compact={false}
+                      showMarkRead
+                      onMarkRead={(id) => onMarkRead([id])}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
     </div>
   );
+}
+
+function groupByDate(notifications: AppNotification[]): { label: string; items: AppNotification[] }[] {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today.getTime() - 86400000);
+  const weekAgo = new Date(today.getTime() - 6 * 86400000);
+
+  const groups: Record<string, AppNotification[]> = {
+    "Today": [],
+    "Yesterday": [],
+    "Earlier this week": [],
+    "Older": [],
+  };
+
+  for (const n of notifications) {
+    const d = new Date(n.created_at);
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (day >= today) {
+      groups["Today"].push(n);
+    } else if (day >= yesterday) {
+      groups["Yesterday"].push(n);
+    } else if (day >= weekAgo) {
+      groups["Earlier this week"].push(n);
+    } else {
+      groups["Older"].push(n);
+    }
+  }
+
+  return Object.entries(groups)
+    .filter(([, items]) => items.length > 0)
+    .map(([label, items]) => ({ label, items }));
 }

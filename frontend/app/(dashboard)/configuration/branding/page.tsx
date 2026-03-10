@@ -21,6 +21,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { SaveButton } from "@/components/ui/save-button";
@@ -333,7 +344,7 @@ export default function BrandingSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Theme & Branding</h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground mt-2">
           Customize the appearance of your application.{" "}
           <HelpLink articleId="branding" />
         </p>
@@ -383,7 +394,7 @@ export default function BrandingSettingsPage() {
                         type="button"
                         variant="destructive"
                         size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -top-2 -right-2 h-6 w-6 transition-opacity"
                         onClick={handleDeleteLogo}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -410,7 +421,7 @@ export default function BrandingSettingsPage() {
                       )}
                       {isUploading ? "Uploading..." : "Upload Logo"}
                     </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Or enter a URL
                     </p>
                   </div>
@@ -447,7 +458,7 @@ export default function BrandingSettingsPage() {
                         type="button"
                         variant="destructive"
                         size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -top-2 -right-2 h-6 w-6 transition-opacity"
                         onClick={handleDeleteDarkLogo}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -474,7 +485,7 @@ export default function BrandingSettingsPage() {
                       )}
                       {isUploadingDarkLogo ? "Uploading..." : "Upload Dark Logo"}
                     </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Or enter a URL
                     </p>
                   </div>
@@ -508,7 +519,7 @@ export default function BrandingSettingsPage() {
                         type="button"
                         variant="destructive"
                         size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -top-2 -right-2 h-6 w-6 transition-opacity"
                         onClick={handleDeleteFavicon}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -535,7 +546,7 @@ export default function BrandingSettingsPage() {
                       )}
                       {isUploadingFavicon ? "Uploading..." : "Upload Favicon"}
                     </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Or enter a URL
                     </p>
                   </div>
@@ -629,15 +640,32 @@ export default function BrandingSettingsPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleResetDefaults}
-              disabled={isSaving}
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Reset to Defaults
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSaving}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Reset to Defaults
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset to Defaults</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will reset your logo, colors, and custom CSS to defaults. You&apos;ll still need to save changes to apply the reset.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetDefaults}>
+                    Reset
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <SaveButton isDirty={isDirty} isSaving={isSaving} />
           </CardFooter>
         </Card>

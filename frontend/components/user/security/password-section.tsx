@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -73,9 +73,8 @@ export function PasswordSection() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="current_password">Current Password</Label>
-            <Input
+            <PasswordInput
               id="current_password"
-              type="password"
               {...register("current_password")}
               disabled={isLoading}
             />
@@ -89,9 +88,8 @@ export function PasswordSection() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="password">New Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 {...register("password")}
                 disabled={isLoading}
               />
@@ -104,9 +102,8 @@ export function PasswordSection() {
 
             <div className="space-y-2">
               <Label htmlFor="password_confirmation">Confirm Password</Label>
-              <Input
+              <PasswordInput
                 id="password_confirmation"
-                type="password"
                 {...register("password_confirmation")}
                 disabled={isLoading}
               />

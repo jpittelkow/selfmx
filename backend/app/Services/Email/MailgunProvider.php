@@ -4,15 +4,44 @@ namespace App\Services\Email;
 
 use App\Exceptions\MailgunApiException;
 use App\Models\Mailbox;
+use App\Services\Email\Concerns\HasDeliveryStats;
+use App\Services\Email\Concerns\HasDkimManagement;
+use App\Services\Email\Concerns\HasEventLog;
+use App\Services\Email\Concerns\HasInboundRoutes;
+use App\Services\Email\Concerns\HasSuppressionManagement;
+use App\Services\Email\Concerns\HasWebhookManagement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class MailgunProvider implements EmailProviderInterface
+class MailgunProvider implements
+    EmailProviderInterface,
+    ProviderManagementInterface,
+    HasDkimManagement,
+    HasWebhookManagement,
+    HasInboundRoutes,
+    HasEventLog,
+    HasSuppressionManagement,
+    HasDeliveryStats
 {
     public function getName(): string
     {
         return 'mailgun';
+    }
+
+    public function getCapabilities(): array
+    {
+        return [
+            'dkim_rotation'  => true,
+            'webhooks'       => true,
+            'inbound_routes' => true,
+            'events'         => true,
+            'suppressions'   => true,
+            'stats'          => true,
+            // Coming in Phase 8 (Cloudflare) / Phase E (SES, Postmark)
+            'domain_management' => false,
+            'dns_records'       => false,
+        ];
     }
 
     public function verifyWebhookSignature(Request $request): bool
@@ -75,7 +104,7 @@ class MailgunProvider implements EmailProviderInterface
         array $headers = [],
     ): SendResult {
         $domain = $mailbox->emailDomain;
-        $config = $domain->provider_config ?? [];
+        $config = $domain->getEffectiveConfig();
         $apiKey = $config['api_key'] ?? $this->getApiKey();
         $region = $config['region'] ?? $this->getRegion();
 

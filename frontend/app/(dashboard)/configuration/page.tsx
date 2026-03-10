@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 export default function ConfigurationPage() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function ConfigurationPage() {
 
   return (
     <div className="min-h-[50vh] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   );
 }

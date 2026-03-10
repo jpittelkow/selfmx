@@ -138,15 +138,30 @@ protected function injectStorageConfig(): void
 
 ### API Endpoints
 
+**Storage Settings** (admin; requires `can:settings.view` / `can:settings.edit`):
+
 ```
-GET    /api/storage/settings          - Get storage settings
-PUT    /api/storage/settings          - Update storage settings
-POST   /api/storage/settings/test     - Test provider connection
-GET    /api/storage/stats             - Get storage statistics
-GET    /api/storage/files             - List files/directories
-POST   /api/storage/files/upload      - Upload file
-GET    /api/storage/files/download    - Download file
-DELETE /api/storage/files             - Delete file
+GET    /api/storage-settings              - Get storage settings (alert thresholds + provider config)
+PUT    /api/storage-settings              - Update storage settings
+POST   /api/storage-settings/test         - Test provider connection
+GET    /api/storage-settings/stats        - Get storage usage statistics
+GET    /api/storage-settings/analytics    - Storage analytics (usage over time)
+GET    /api/storage-settings/cleanup-suggestions - Suggest files for cleanup
+POST   /api/storage-settings/cleanup      - Execute cleanup
+GET    /api/storage-settings/paths        - List storage directory paths
+GET    /api/storage-settings/health       - Storage health status
+```
+
+**File Manager** (admin only; requires `can:admin`):
+
+```
+GET    /api/storage/files                     - List files/directories (paginated)
+POST   /api/storage/files                     - Upload file(s)
+GET    /api/storage/files/{path}              - File/directory details + preview URL
+GET    /api/storage/files/{path}/download     - Download file
+PUT    /api/storage/files/{path}/rename       - Rename file/directory
+PUT    /api/storage/files/{path}/move         - Move file/directory
+DELETE /api/storage/files/{path}              - Delete file/directory
 ```
 
 ## Consequences

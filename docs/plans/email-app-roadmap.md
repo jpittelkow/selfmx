@@ -1,6 +1,6 @@
 # Email App Roadmap
 
-Self-hosted email client using email providers (Mailgun, etc.) for domain management, inbound routing via webhooks, and outbound sending via API.
+Self-hosted email client using email providers (Mailgun, etc.) for domain management, inbound routing via webhooks, and outbound sending via API. See [Email Provider Comparison Guide](email-provider-comparison.md) for provider selection criteria, pricing, and free tier details.
 
 ## Phase 1: Foundation — Domains, Mailboxes & Inbound Email *(Complete)*
 
@@ -224,6 +224,19 @@ Self-hosted email client using email providers (Mailgun, etc.) for domain manage
 - [ ] DigitalOcean DNS implementation
 - [ ] Manual DNS provider (display-only — shows required records for user to configure manually)
 
+## Provider Accounts & Multi-Provider Refactor
+
+**Goal**: Support multiple accounts from the same provider, provider-agnostic management interface, new providers.
+
+**Full roadmap**: [→ Provider Accounts Refactor Roadmap](provider-accounts-refactor-roadmap.md)
+
+- [x] Phase A: Foundation — multi-account support, provider accounts entity, SendGrid removed
+- [ ] Phase B: Provider Management Interface (`ProviderManagementInterface` with capabilities)
+- [ ] Phase C: Frontend Management Dashboard (provider-agnostic domain detail UI)
+- [ ] Phase D: New Provider Adapters (Resend, MailerSend, SMTP2GO)
+- [ ] Phase E: Deep Management for SES & Postmark
+- [ ] Phase F: Cleanup (remove legacy settings fallback)
+
 ## Phase 9: Extended Provider Management
 
 **Goal**: Bring the same deep management capabilities from Phase 7 to other email providers.
@@ -241,16 +254,30 @@ Self-hosted email client using email providers (Mailgun, etc.) for domain manage
 - [ ] Virtual deliverability manager insights (if enabled)
 - [ ] Account-level sending quotas and sending rate display
 
-### SendGrid Management
+### Resend Management
 
-- [ ] Sender authentication (domain authentication, link branding, reverse DNS)
-- [ ] DNS record requirements and verification status
-- [ ] API key management (scoped keys)
-- [ ] Event webhook configuration
-- [ ] Suppressions (bounces, blocks, spam reports, invalid emails, global unsubscribes)
-- [ ] Stats dashboard (delivered, bounced, blocked, spam reports — by domain, category, mailbox provider)
-- [ ] Inbound parse settings per domain
-- [ ] IP access management and IP pools
+- [ ] Domain verification and DNS records
+- [ ] API key management
+- [ ] Email sending and delivery tracking
+- [ ] Webhook configuration for events
+- [ ] Suppression management
+
+### MailerSend Management
+
+- [ ] Domain verification and DNS records
+- [ ] API token management
+- [ ] Email sending with templates
+- [ ] Analytics and activity tracking
+- [ ] Suppression management (bounces, unsubscribes, spam complaints)
+- [ ] Inbound routing configuration
+
+### SMTP2GO Management
+
+- [ ] Sender domain verification
+- [ ] SMTP credential management
+- [ ] Sending statistics and reports
+- [ ] Suppression management
+- [ ] Webhook configuration
 
 ### Postmark Management
 
@@ -350,32 +377,32 @@ The GraphQL schema (`backend/graphql/schema.graphql`) exposes:
 - [ ] Write Pest tests for all new queries and mutations (auth, scoping, pagination, edge cases)
 - [ ] Update GraphQL config page to show email-related usage stats
 
-## Phase 11: Mail Forwarding
+## Phase 11: Mail Forwarding *(Complete — v0.3.0)*
 
 **Goal**: First-class mail forwarding — forward specific mailboxes or catchall mail to external email addresses, with per-forward choice of keeping a local copy or passing through.
 
 ### Forwarding Configuration
 
-- [ ] `mailbox_forwards` table (user_id, mailbox_id, forward_to, keep_local_copy, is_active)
-- [ ] `MailboxForward` model with `Mailbox` and `User` relationships
-- [ ] `MailboxForwardController` API — GET/PUT/DELETE per mailbox (`/api/email/mailboxes/{mailbox}/forward`)
+- [x] `mailbox_forwards` table (user_id, mailbox_id, forward_to, keep_local_copy, is_active)
+- [x] `MailboxForward` model with `Mailbox` and `User` relationships
+- [x] `MailboxForwardController` API — GET/PUT/DELETE per mailbox (`/api/email/mailboxes/{mailbox}/forward`)
 
 ### Forwarding Engine
 
-- [ ] `EmailForwardingService` — handles pass-through (no local storage) and keep-copy (store + forward) flows
-- [ ] Integrate into `EmailService::processInboundEmail` — check for active forward before/after DB transaction
-- [ ] Pass-through mode: forward via provider API, skip local email storage entirely
-- [ ] Keep-copy mode: store email locally, then forward after transaction commits
-- [ ] Transparent forwarding: preserve original From, add `X-Forwarded-To` header
+- [x] `EmailForwardingService` — handles pass-through (no local storage) and keep-copy (store + forward) flows
+- [x] Integrate into `EmailService::processInboundEmail` — check for active forward before/after DB transaction
+- [x] Pass-through mode: forward via provider API, skip local email storage entirely
+- [x] Keep-copy mode: store email locally, then forward after transaction commits
+- [x] Transparent forwarding: preserve original From, add `X-Forwarded-To` header
 
 ### Frontend
 
-- [ ] Forwarding section in Edit Mailbox dialog (toggle, forward-to address, keep local copy toggle)
-- [ ] Forwarding badge on mailbox table rows
-- [ ] Catchall forwarding: forward on wildcard/catchall mailbox applies to all unmatched domain mail
+- [x] Forwarding section in Edit Mailbox dialog (toggle, forward-to address, keep local copy toggle)
+- [x] Forwarding badge on mailbox table rows
+- [x] Catchall forwarding: forward on wildcard/catchall mailbox applies to all unmatched domain mail
 
 ### Testing
 
-- [ ] Unit tests for `EmailForwardingService`
-- [ ] Feature tests for both forwarding modes in `processInboundEmail`
-- [ ] API endpoint tests (CRUD, user scoping, validation)
+- [x] Unit tests for `EmailForwardingService` (11 tests)
+- [x] Feature tests for both forwarding modes in `processInboundEmail`
+- [x] API endpoint tests (CRUD, user scoping, validation) (7 tests)

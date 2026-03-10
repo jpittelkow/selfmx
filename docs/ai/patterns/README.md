@@ -38,7 +38,7 @@ Follow these patterns for consistency across the codebase. Read only the files r
 | Dashboard Widget | [dashboard-widget.md](dashboard-widget.md) | Adding dashboard widgets |
 | Responsive & Mobile-First | [responsive.md](responsive.md) | Mobile-first CSS, responsive layouts |
 | Global Components | [components.md](components.md) | Reusable components, charts, redirects |
-| UI Components | [ui-patterns.md](ui-patterns.md) | CollapsibleCard, ProviderIcon, Help, Auth, PWA |
+| UI Components | [ui-patterns.md](ui-patterns.md) | CollapsibleCard, ProviderIcon, Help, Auth, PWA, Avatar, Loading, Animations, Typography, Notifications, Safe Area |
 | Interactive Patterns | [interactive.md](interactive.md) | Test connection, file download, confirmation dialog |
 
 ## Cross-Cutting Patterns
@@ -61,3 +61,9 @@ Follow these patterns for consistency across the codebase. Read only the files r
 | Frontend page | `page.tsx` in route folder | `app/(dashboard)/example/page.tsx` |
 | Frontend component | `kebab-case.tsx` | `example-card.tsx` |
 | Migration | `{timestamp}_create_{table}_table.php` | `2024_01_01_000000_create_examples_table.php` |
+| Hook | `use-{feature}.ts` | `use-permission.ts` |
+| Test (PHP) | `{Feature}Test.php` | `AuthTest.php` |
+| Test (TS) | `{feature}.test.ts(x)` | `api.test.ts` |
+| Factory | `{Model}Factory.php` | `UserFactory.php` |
+| Middleware | `{PascalCase}.php` | `AddCorrelationId.php` |
+| Helper | `{Feature}Helper.php` | `QueryHelper.php` |

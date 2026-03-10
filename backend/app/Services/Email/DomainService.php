@@ -3,6 +3,7 @@
 namespace App\Services\Email;
 
 use App\Models\EmailDomain;
+use App\Models\EmailProviderAccount;
 use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Support\Facades\Log;
@@ -18,22 +19,34 @@ class DomainService
      *
      * @return array{domain: EmailDomain, warnings: string[]}
      */
-    public function createDomain(User $user, string $domainName, string $provider, array $providerConfig = []): array
+    public function createDomain(User $user, string $domainName, string $provider, array $providerConfig = [], ?int $accountId = null): array
     {
+        // If an account ID is provided, resolve the provider from it
+        $account = null;
+        $runtimeConfig = $providerConfig;
+        if ($accountId) {
+            $account = EmailProviderAccount::where('user_id', $user->id)->findOrFail($accountId);
+            $provider = $account->provider;
+            // Merge account credentials with any domain-specific overrides for the API call
+            $runtimeConfig = array_merge($account->credentials ?? [], $providerConfig);
+        }
+
         $emailProvider = $this->resolveProvider($provider);
         $warnings = [];
 
-        // Register with provider
-        $result = $emailProvider->addDomain($domainName, $providerConfig);
+        // Register with provider (use full credentials for API call)
+        $result = $emailProvider->addDomain($domainName, $runtimeConfig);
 
         if (! $result->success) {
-            throw new \RuntimeException("Failed to register domain with {$provider}: {$result->error}");
+            abort(422, "Failed to register domain with {$provider}: {$result->error}");
         }
 
+        // Only store domain-specific overrides in provider_config, not account credentials
         $domain = EmailDomain::create([
             'user_id' => $user->id,
             'name' => strtolower($domainName),
             'provider' => $provider,
+            'email_provider_account_id' => $accountId,
             'provider_domain_id' => $result->providerDomainId,
             'provider_config' => $providerConfig,
             'is_verified' => false,
@@ -43,12 +56,13 @@ class DomainService
         $this->auditService->log('email_domain.created', $domain, [], [
             'name' => $domain->name,
             'provider' => $provider,
+            'account_id' => $accountId,
         ]);
 
         // Try to configure inbound webhook route
         $webhookUrl = url("/api/email/webhook/{$provider}");
         try {
-            $webhookOk = $emailProvider->configureDomainWebhook($domainName, $webhookUrl, $providerConfig);
+            $webhookOk = $emailProvider->configureDomainWebhook($domainName, $webhookUrl, $runtimeConfig);
             if (! $webhookOk) {
                 Log::warning("Failed to configure inbound webhook for {$domainName}");
                 $warnings[] = 'Inbound webhook route could not be created. Configure it manually in the domain settings.';
@@ -58,12 +72,12 @@ class DomainService
             $warnings[] = "Inbound webhook setup failed: {$e->getMessage()}";
         }
 
-        // Register delivery event webhooks + stored (inbound)
-        if ($emailProvider instanceof MailgunProvider) {
+        // Register delivery event webhooks + stored (inbound) for providers that support it
+        if ($emailProvider instanceof Concerns\HasWebhookManagement) {
             $eventsUrl = url("/api/email/webhook/{$provider}/events");
             foreach (['delivered', 'permanent_fail', 'complained', 'stored'] as $event) {
                 try {
-                    $emailProvider->createWebhook($domainName, $event, $eventsUrl, $providerConfig);
+                    $emailProvider->createWebhook($domainName, $event, $eventsUrl, $runtimeConfig);
                 } catch (\Exception $e) {
                     Log::warning("Failed to configure {$event} webhook for {$domainName}", ['error' => $e->getMessage()]);
                     $warnings[] = "Delivery webhook ({$event}) setup failed: {$e->getMessage()}";
@@ -80,7 +94,8 @@ class DomainService
     public function verifyDomain(EmailDomain $domain): DomainVerificationResult
     {
         $provider = $this->resolveProvider($domain->provider);
-        $result = $provider->verifyDomain($domain->name, $domain->provider_config ?? []);
+        $config = $this->getCredentialsForDomain($domain);
+        $result = $provider->verifyDomain($domain->name, $config);
 
         if ($result->isVerified && !$domain->is_verified) {
             $domain->update([
@@ -112,6 +127,20 @@ class DomainService
     }
 
     /**
+     * Get credentials for a domain — account FK first, then domain-level config.
+     */
+    public function getCredentialsForDomain(EmailDomain $domain): array
+    {
+        // Priority 1: Provider account credentials merged with domain overrides
+        if ($domain->email_provider_account_id) {
+            return $domain->getEffectiveConfig();
+        }
+
+        // Priority 2: Domain's own provider_config (legacy domains not yet migrated to accounts)
+        return $domain->provider_config ?? [];
+    }
+
+    /**
      * Resolve a provider implementation by name.
      */
     public function resolveProvider(string $provider): EmailProviderInterface
@@ -119,8 +148,10 @@ class DomainService
         return match ($provider) {
             'mailgun' => app(MailgunProvider::class),
             'ses' => app(SesProvider::class),
-            'sendgrid' => app(SendGridProvider::class),
             'postmark' => app(PostmarkProvider::class),
+            'resend' => app(ResendProvider::class),
+            'mailersend' => app(MailerSendProvider::class),
+            'smtp2go' => app(Smtp2GoProvider::class),
             default => throw new \InvalidArgumentException("Unknown email provider: {$provider}"),
         };
     }

@@ -5,9 +5,11 @@ use App\Models\EmailDomain;
 use App\Models\Mailbox;
 use App\Models\MailboxForward;
 use App\Models\User;
+use App\Services\Email\DomainService;
 use App\Services\Email\EmailForwardingService;
-use App\Services\Email\EmailService;
+use App\Services\Email\EmailProviderInterface;
 use App\Services\Email\ParsedEmail;
+use App\Services\Email\SendResult;
 use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
@@ -28,7 +30,14 @@ beforeEach(function () {
         'is_active' => true,
     ]);
 
-    $this->service = new EmailForwardingService();
+    // Create mock provider and DomainService
+    $this->mockProvider = $this->mock(EmailProviderInterface::class);
+    $this->mockDomainService = $this->mock(DomainService::class);
+    $this->mockDomainService->shouldReceive('resolveProvider')
+        ->with('mailgun')
+        ->andReturn($this->mockProvider);
+
+    $this->service = new EmailForwardingService($this->mockDomainService);
 });
 
 describe('EmailForwardingService', function () {
@@ -95,7 +104,7 @@ describe('EmailForwardingService', function () {
 
     describe('forwardParsed (pass-through mode)', function () {
 
-        it('calls sendEmail with correct parameters', function () {
+        it('calls provider sendEmail with correct parameters', function () {
             $forward = MailboxForward::create([
                 'user_id' => $this->user->id,
                 'mailbox_id' => $this->mailbox->id,
@@ -124,22 +133,26 @@ describe('EmailForwardingService', function () {
                 recipientAddress: 'inbox@test.example.com',
             );
 
-            $mockEmailService = $this->mock(EmailService::class);
-            $mockEmailService->shouldReceive('sendEmail')
+            $this->mockProvider->shouldReceive('sendEmail')
                 ->once()
-                ->withArgs(function ($user, $data) {
-                    return $user->id === $this->user->id
-                        && $data['to'][0]['address'] === 'external@gmail.com'
-                        && $data['subject'] === 'Test Subject'
-                        && $data['body_html'] === '<p>HTML body</p>'
-                        && $data['body_text'] === 'Plain text body'
-                        && $data['headers']['X-Forwarded-To'] === 'external@gmail.com'
-                        && $data['headers']['X-Original-From'] === 'sender@example.com';
-                });
+                ->with(
+                    $this->mailbox,
+                    [['address' => 'external@gmail.com']],
+                    'Test Subject',
+                    '<p>HTML body</p>',
+                    'Plain text body',
+                    [],
+                    [],
+                    [],
+                    \Mockery::on(function ($headers) {
+                        return $headers['X-Forwarded-To'] === 'external@gmail.com'
+                            && $headers['X-Original-From'] === 'sender@example.com';
+                    })
+                )
+                ->andReturn(SendResult::success('msg-id'));
 
             Log::shouldReceive('info')
-                ->once()
-                ->withArgs(fn ($msg) => str_contains($msg, 'pass-through'));
+                ->once();
 
             $this->service->forwardParsed($parsed, $this->mailbox, $forward);
         });
@@ -173,14 +186,12 @@ describe('EmailForwardingService', function () {
                 recipientAddress: 'inbox@test.example.com',
             );
 
-            $mockEmailService = $this->mock(EmailService::class);
-            $mockEmailService->shouldReceive('sendEmail')
+            $this->mockProvider->shouldReceive('sendEmail')
                 ->once()
                 ->andThrow(new \RuntimeException('Send failed'));
 
             Log::shouldReceive('error')
-                ->once()
-                ->withArgs(fn ($msg) => str_contains($msg, 'Failed to forward'));
+                ->once();
 
             $this->service->forwardParsed($parsed, $this->mailbox, $forward);
         })->throws(\RuntimeException::class, 'Send failed');
@@ -214,13 +225,20 @@ describe('EmailForwardingService', function () {
                 recipientAddress: 'inbox@test.example.com',
             );
 
-            $mockEmailService = $this->mock(EmailService::class);
-            $mockEmailService->shouldReceive('sendEmail')
+            $this->mockProvider->shouldReceive('sendEmail')
                 ->once()
-                ->withArgs(function ($user, $data) {
-                    return $data['body_html'] === 'Plain only'
-                        && $data['subject'] === '';
-                });
+                ->with(
+                    $this->mailbox,
+                    [['address' => 'external@gmail.com']],
+                    '(no subject)',
+                    'Plain only',
+                    'Plain only',
+                    [],
+                    [],
+                    [],
+                    \Mockery::any()
+                )
+                ->andReturn(SendResult::success('msg-id'));
 
             Log::shouldReceive('info')->once();
 
@@ -230,7 +248,7 @@ describe('EmailForwardingService', function () {
 
     describe('forwardEmail (keep-copy mode)', function () {
 
-        it('calls sendEmail with correct parameters from Email record', function () {
+        it('calls provider sendEmail with correct parameters from Email record', function () {
             $email = Email::create([
                 'user_id' => $this->user->id,
                 'mailbox_id' => $this->mailbox->id,
@@ -253,27 +271,31 @@ describe('EmailForwardingService', function () {
                 'is_active' => true,
             ]);
 
-            $mockEmailService = $this->mock(EmailService::class);
-            $mockEmailService->shouldReceive('sendEmail')
+            $this->mockProvider->shouldReceive('sendEmail')
                 ->once()
-                ->withArgs(function ($user, $data) {
-                    return $user->id === $this->user->id
-                        && $data['to'][0]['address'] === 'external@gmail.com'
-                        && $data['subject'] === 'Keep Copy Test'
-                        && $data['body_html'] === '<p>HTML</p>'
-                        && $data['body_text'] === 'Plain text'
-                        && $data['headers']['X-Forwarded-To'] === 'external@gmail.com'
-                        && $data['headers']['X-Original-From'] === 'sender@example.com';
-                });
+                ->with(
+                    $this->mailbox,
+                    [['address' => 'external@gmail.com']],
+                    'Keep Copy Test',
+                    '<p>HTML</p>',
+                    'Plain text',
+                    [],
+                    [],
+                    [],
+                    \Mockery::on(function ($headers) {
+                        return $headers['X-Forwarded-To'] === 'external@gmail.com'
+                            && $headers['X-Original-From'] === 'sender@example.com';
+                    })
+                )
+                ->andReturn(SendResult::success('msg-id'));
 
             Log::shouldReceive('info')
-                ->once()
-                ->withArgs(fn ($msg) => str_contains($msg, 'keep-copy'));
+                ->once();
 
-            $this->service->forwardEmail($email, $forward);
+            $this->service->forwardEmail($email, $this->mailbox, $forward);
         });
 
-        it('swallows exceptions silently on send failure', function () {
+        it('logs error on send failure but still throws', function () {
             $email = Email::create([
                 'user_id' => $this->user->id,
                 'mailbox_id' => $this->mailbox->id,
@@ -294,18 +316,15 @@ describe('EmailForwardingService', function () {
                 'is_active' => true,
             ]);
 
-            $mockEmailService = $this->mock(EmailService::class);
-            $mockEmailService->shouldReceive('sendEmail')
+            $this->mockProvider->shouldReceive('sendEmail')
                 ->once()
                 ->andThrow(new \RuntimeException('Send failed'));
 
             Log::shouldReceive('error')
-                ->once()
-                ->withArgs(fn ($msg) => str_contains($msg, 'Failed to forward'));
+                ->once();
 
-            // Should not throw — keep-copy mode swallows exceptions
-            $this->service->forwardEmail($email, $forward);
-        });
+            $this->service->forwardEmail($email, $this->mailbox, $forward);
+        })->throws(\RuntimeException::class);
 
         it('uses bodyText fallback when bodyHtml is null', function () {
             $email = Email::create([
@@ -329,14 +348,24 @@ describe('EmailForwardingService', function () {
                 'is_active' => true,
             ]);
 
-            $mockEmailService = $this->mock(EmailService::class);
-            $mockEmailService->shouldReceive('sendEmail')
+            $this->mockProvider->shouldReceive('sendEmail')
                 ->once()
-                ->withArgs(fn ($user, $data) => $data['body_html'] === 'Only plain text');
+                ->with(
+                    $this->mailbox,
+                    [['address' => 'external@gmail.com']],
+                    'Fallback Test',
+                    'Only plain text',
+                    'Only plain text',
+                    [],
+                    [],
+                    [],
+                    \Mockery::any()
+                )
+                ->andReturn(SendResult::success('msg-id'));
 
             Log::shouldReceive('info')->once();
 
-            $this->service->forwardEmail($email, $forward);
+            $this->service->forwardEmail($email, $this->mailbox, $forward);
         });
     });
 

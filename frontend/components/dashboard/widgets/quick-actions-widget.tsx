@@ -21,9 +21,9 @@ export function QuickActionsWidget() {
             <Link
               key={action.href}
               href={action.href}
-              className="flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-colors hover:bg-muted min-h-[72px] justify-center"
+              className="flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-colors hover:bg-muted hover:border-primary/30 min-h-[72px] justify-center"
             >
-              <action.icon className="h-5 w-5 text-muted-foreground" />
+              <action.icon className="h-5 w-5 text-muted-foreground transition-colors" />
               <span className="text-xs font-medium">{action.label}</span>
             </Link>
           ))}

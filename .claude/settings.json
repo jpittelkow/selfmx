@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l c:/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/ai/page.tsx c:/Users/jpitt_6932a9v/code/selfmx/frontend/components/ai/ai-types.ts c:/Users/jpitt_6932a9v/code/selfmx/frontend/components/ai/orchestration-mode-card.tsx c:/Users/jpitt_6932a9v/code/selfmx/frontend/components/ai/provider-card.tsx c:/Users/jpitt_6932a9v/code/selfmx/frontend/components/ai/provider-dialog.tsx c:/Users/jpitt_6932a9v/code/selfmx/frontend/components/ai/provider-list-card.tsx)",
+      "Read(//c/Users/jpitt_6932a9v/code//**)",
+      "Bash(wc -l \"c:\\\\Users\\\\jpitt_6932a9v\\\\code\\\\selfmx\\\\frontend\\\\app\\\\\\(dashboard\\)\\\\user\\\\preferences\\\\page.tsx\")",
+      "Bash(cat \"c:\\\\Users\\\\jpitt_6932a9v\\\\code\\\\selfmx\\\\frontend\\\\app\\\\\\(dashboard\\)\\\\user\\\\preferences\\\\page.tsx\")",
+      "Bash(diff /c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/branding/page.tsx /c/Users/jpitt_6932a9v/code/sourdough/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/branding/page.tsx)",
+      "Bash(diff /c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/security/page.tsx /c/Users/jpitt_6932a9v/code/sourdough/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/security/page.tsx)",
+      "Bash(git -C c:/Users/jpitt_6932a9v/code/selfmx diff --stat HEAD)",
+      "Bash(git -C c:/Users/jpitt_6932a9v/code/selfmx diff --name-only HEAD -- backend/app/Services/Email/ backend/app/Http/Controllers/Api/ backend/database/migrations/)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\jpitt_6932a9v\\code\\selfmx\\frontend\\components"
+    ]
+  }
+}

@@ -49,7 +49,7 @@ export function AuditStatsCard({
   return (
     <Card
       className={cn(
-        "transition-colors",
+        "transition-all hover:shadow-sm",
         styles.card,
         className
       )}

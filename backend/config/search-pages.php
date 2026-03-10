@@ -310,13 +310,13 @@ return [
         'content' => 'import mbox eml upload email file mailbox',
     ],
     [
-        'id' => 'config-email-provider',
-        'title' => 'Configuration > Email Provider',
-        'subtitle' => 'Provider API keys and settings',
-        'url' => '/configuration/email-provider',
+        'id' => 'config-email-accounts',
+        'title' => 'Configuration > Provider Accounts',
+        'subtitle' => 'Manage email provider credentials',
+        'url' => '/configuration/email-accounts',
         'admin_only' => true,
         'permission' => 'settings.view',
-        'content' => 'mailgun email provider api webhook spam threshold attachment',
+        'content' => 'provider accounts credentials mailgun ses postmark resend mailersend smtp2go email api key',
     ],
     [
         'id' => 'config-email-domains',

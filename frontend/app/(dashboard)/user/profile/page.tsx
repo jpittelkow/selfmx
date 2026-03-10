@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth";
+import { useAuth, isAdminUser } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,12 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { AvatarUpload } from "@/components/user/avatar-upload";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +30,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, UsersRound } from "lucide-react";
+import Link from "next/link";
 import { HelpLink } from "@/components/help/help-link";
 import { SaveButton } from "@/components/ui/save-button";
 import { Badge } from "@/components/ui/badge";
@@ -107,14 +104,6 @@ export default function ProfilePage() {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   return (
     <div className="space-y-6">
@@ -135,19 +124,8 @@ export default function ProfilePage() {
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-6">
-            {/* Avatar section */}
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user?.avatar || undefined} />
-                <AvatarFallback className="text-lg">
-                  {user?.name ? getInitials(user.name) : "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{user?.name}</p>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
-              </div>
-            </div>
+            {/* Hero avatar section with upload */}
+            <AvatarUpload user={user} onAvatarUpdated={fetchUser} />
 
             <Separator />
 
@@ -192,19 +170,38 @@ export default function ProfilePage() {
       {/* Group Memberships (from auth user) */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Group Memberships</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <UsersRound className="h-5 w-5" />
+            Group Memberships
+          </CardTitle>
           <CardDescription>
             Groups determine your permissions and access levels.
+            {isAdminUser(user) && (
+              <>
+                {" "}
+                <Link href="/configuration/groups" className="text-primary hover:underline">
+                  Manage groups
+                </Link>
+              </>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {user?.groups && user.groups.length > 0 ? (
-              user.groups.map((g) => (
-                <Badge key={g.id} variant="secondary">
-                  {g.name}
-                </Badge>
-              ))
+              user.groups.map((g) =>
+                isAdminUser(user) ? (
+                  <Link key={g.id} href="/configuration/groups">
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
+                      {g.name}
+                    </Badge>
+                  </Link>
+                ) : (
+                  <Badge key={g.id} variant="secondary">
+                    {g.name}
+                  </Badge>
+                )
+              )
             ) : (
               <span className="text-sm text-muted-foreground">
                 No groups assigned

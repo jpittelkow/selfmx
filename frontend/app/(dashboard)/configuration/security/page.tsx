@@ -20,7 +20,8 @@ import { SaveButton } from "@/components/ui/save-button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { HelpTooltip } from "@/components/ui/help-tooltip";
 import { HelpLink } from "@/components/help/help-link";
-import { Loader2, AlertTriangle, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ShieldCheck } from "lucide-react";
+import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { TOOLTIP_CONTENT } from "@/lib/tooltip-content";
 
 const AUTH_MODES = ["disabled", "optional", "required"] as const;
@@ -128,10 +129,7 @@ export default function SecurityPage() {
             </Alert>
           )}
           {authLoading ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading auth settings…
-            </div>
+            <SettingsPageSkeleton minHeight="120px" />
           ) : (
             <>
               <div className="space-y-3">

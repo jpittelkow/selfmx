@@ -23,10 +23,10 @@ export function WelcomeWidget() {
   return (
     <Card className="col-span-full bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20">
       <CardContent className="pt-6">
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-lg font-heading font-semibold">
           {greeting}, {firstName}
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1.5">
           {dateStr} &middot; {appName}
         </p>
       </CardContent>

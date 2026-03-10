@@ -11,7 +11,13 @@ Suspected bugs and issues to investigate. Claude logs items here when something 
 
 ## Suspected Bugs
 
-_None yet._
+### `GET /storage-settings` returns incomplete data
+- **Observed**: 2026-03-08
+- **Status**: Suspected
+- **Context**: ADR & API audit (batch 3) of ADR-022 (Storage Provider System)
+- **Symptoms**: `StorageSettingController::show()` uses `settingService->getGroup('storage')` which only returns schema-defined alert settings (4 keys), not the driver or provider credentials. The storage system itself works because `StorageService` reads directly from `SystemSetting::getGroup()` (bypassing schema).
+- **Files involved**: `backend/app/Http/Controllers/Api/StorageSettingController.php`, `backend/app/Services/SettingService.php`, `backend/config/settings-schema.php`
+- **Notes**: Low severity — storage works correctly; only the admin API response is incomplete. Users updating storage settings via the UI won't notice, but API consumers expecting full config in the GET response will get a partial response.
 
 <!-- Template:
 ### [Short description]

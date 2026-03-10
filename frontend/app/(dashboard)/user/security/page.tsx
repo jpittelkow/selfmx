@@ -1,3 +1,4 @@
+import { SecurityOverview } from "@/components/user/security/security-overview";
 import { PasswordSection } from "@/components/user/security/password-section";
 import { TwoFactorSection } from "@/components/user/security/two-factor-section";
 import { PasskeySection } from "@/components/user/security/passkey-section";
@@ -14,6 +15,7 @@ export default function SecurityPage() {
         </p>
       </div>
 
+      <SecurityOverview />
       <PasswordSection />
       <TwoFactorSection />
       <PasskeySection />

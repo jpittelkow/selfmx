@@ -191,7 +191,7 @@ return [
 
 ### API Endpoints
 
-**Backup operations** (admin; requires `manage-backups`):
+**Backup operations** (admin; requires `can:backups.view` / `can:backups.create` / `can:backups.restore` / `can:backups.delete`):
 
 ```
 GET    /api/backup                    - List available backups
@@ -201,7 +201,7 @@ POST   /api/backup/restore            - Restore (body: filename or multipart bac
 DELETE /api/backup/{filename}         - Delete a backup
 ```
 
-**Backup settings** (admin; requires `manage-settings`):
+**Backup settings** (admin; requires `can:settings.view` / `can:settings.edit`):
 
 ```
 GET    /api/backup-settings           - Get all backup settings (retention, schedule, S3/SFTP/Google Drive, encryption, notifications)

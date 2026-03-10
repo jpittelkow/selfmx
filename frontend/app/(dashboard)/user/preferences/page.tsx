@@ -27,7 +27,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Palette, Bell, Brain, Send, Smartphone, Download, Globe, ChevronDown, SlidersHorizontal, Trash2, Sparkles } from "lucide-react";
+import { Loader2, Palette, Bell, Brain, Send, Smartphone, Download, Globe, ChevronDown, SlidersHorizontal, Trash2, Sparkles, Settings2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SaveButton } from "@/components/ui/save-button";
 
 import Link from "next/link";
@@ -585,562 +586,585 @@ export default function PreferencesPage() {
         <OfflineBadge />
       </div>
 
-      {/* Appearance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Appearance
-          </CardTitle>
-          <CardDescription>
-            Choose your preferred mode and color theme.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ThemePicker />
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="appearance">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="appearance" className="gap-1.5">
+            <Palette className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Appearance</span>
+          </TabsTrigger>
+          <TabsTrigger value="defaults" className="gap-1.5">
+            <Settings2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Defaults</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-1.5">
+            <Bell className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger value="pwa" className="gap-1.5">
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">PWA</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Defaults */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            Defaults
-          </CardTitle>
-          <CardDescription>
-            Set your default preferences for AI interactions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="default_llm_mode">Default LLM Mode</Label>
-            <Select
-              value={preferences.default_llm_mode ?? "single"}
-              onValueChange={(value) => {
-                if (isOffline) return;
-                const validMode = ["single", "aggregation", "council"].includes(value)
-                  ? (value as "single" | "aggregation" | "council")
-                  : "single";
-                savePreferences({
-                  default_llm_mode: validMode,
-                });
-              }}
-              disabled={isOffline}
-            >
-              <SelectTrigger id="default_llm_mode">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Single Provider</SelectItem>
-                <SelectItem value="aggregation">Aggregation</SelectItem>
-                <SelectItem value="council">Council</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              <strong>Single:</strong> Uses one provider (fastest, cheapest).{" "}
-              <strong>Aggregation:</strong> Queries all providers, primary synthesizes responses.{" "}
-              <strong>Council:</strong> Providers vote for consensus (best for accuracy).
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Tab 1: Appearance */}
+        <TabsContent value="appearance" className="mt-6 space-y-6">
+          <Card className="border-t-2 border-t-primary">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Appearance
+              </CardTitle>
+              <CardDescription>
+                Choose your preferred mode and color theme.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ThemePicker />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Email AI Features */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Email AI Features
-          </CardTitle>
-          <CardDescription>
-            {aiAvailable
-              ? "Control AI-powered email features. These use your configured LLM provider."
-              : "AI features require an LLM provider to be configured. "}
-            {!aiAvailable && (
-              <Link href="/configuration/system" className="text-primary hover:underline">
-                Configure a provider
-              </Link>
-            )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!aiAvailable ? (
-            <p className="text-sm text-muted-foreground">
-              No AI provider is configured. Enable and configure at least one LLM provider to use these features.
-            </p>
-          ) : (
-            <>
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <Label className="text-base font-medium">Thread Summarization</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Generate AI summaries of email threads with key points and action items.
-                  </p>
-                </div>
-                <Switch
-                  checked={aiSettings.summarization_enabled}
-                  onCheckedChange={(v) => updateAISetting("summarization_enabled", v)}
+        {/* Tab 2: Defaults & Regional */}
+        <TabsContent value="defaults" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Defaults
+              </CardTitle>
+              <CardDescription>
+                Set your default preferences for AI interactions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="default_llm_mode">Default LLM Mode</Label>
+                <Select
+                  value={preferences.default_llm_mode ?? "single"}
+                  onValueChange={(value) => {
+                    if (isOffline) return;
+                    const validMode = ["single", "aggregation", "council"].includes(value)
+                      ? (value as "single" | "aggregation" | "council")
+                      : "single";
+                    savePreferences({ default_llm_mode: validMode });
+                  }}
                   disabled={isOffline}
-                />
+                >
+                  <SelectTrigger id="default_llm_mode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single Provider</SelectItem>
+                    <SelectItem value="aggregation">Aggregation</SelectItem>
+                    <SelectItem value="council">Council</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  <strong>Single:</strong> Uses one provider (fastest, cheapest).{" "}
+                  <strong>Aggregation:</strong> Queries all providers, primary synthesizes responses.{" "}
+                  <strong>Council:</strong> Providers vote for consensus (best for accuracy).
+                </p>
               </div>
+            </CardContent>
+          </Card>
 
-              <Separator />
-
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <Label className="text-base font-medium">Smart Labeling</Label>
-                  <p className="text-sm text-muted-foreground">
-                    AI suggests labels for incoming emails based on content analysis.
-                  </p>
-                </div>
-                <Switch
-                  checked={aiSettings.auto_labeling_enabled}
-                  onCheckedChange={(v) => updateAISetting("auto_labeling_enabled", v)}
-                  disabled={isOffline}
-                />
-              </div>
-
-              {aiSettings.auto_labeling_enabled && (
-                <div className="flex items-center justify-between gap-4 pl-6">
-                  <div className="min-w-0 flex-1">
-                    <Label className="text-sm">Auto-apply high-confidence labels</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Automatically apply labels with 80%+ confidence that match existing labels.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={aiSettings.auto_labeling_auto_apply}
-                    onCheckedChange={(v) => updateAISetting("auto_labeling_auto_apply", v)}
-                    disabled={isOffline}
-                  />
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <Label className="text-base font-medium">Priority Inbox</Label>
-                  <p className="text-sm text-muted-foreground">
-                    AI scores email importance using content analysis and sender patterns.
-                  </p>
-                </div>
-                <Switch
-                  checked={aiSettings.priority_inbox_enabled}
-                  onCheckedChange={(v) => updateAISetting("priority_inbox_enabled", v)}
-                  disabled={isOffline}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <Label className="text-base font-medium">Smart Replies</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Generate reply suggestions with different tones when viewing emails.
-                  </p>
-                </div>
-                <Switch
-                  checked={aiSettings.smart_replies_enabled}
-                  onCheckedChange={(v) => updateAISetting("smart_replies_enabled", v)}
-                  disabled={isOffline}
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <Label className="text-base font-medium">Process Inbound Automatically</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Run enabled AI features automatically on new incoming emails.
-                  </p>
-                </div>
-                <Switch
-                  checked={aiSettings.process_inbound_automatically}
-                  onCheckedChange={(v) => updateAISetting("process_inbound_automatically", v)}
-                  disabled={isOffline}
-                />
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Regional */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Regional
-          </CardTitle>
-          <CardDescription>
-            Set your preferred timezone for dates and times throughout the app.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="timezone">Timezone</Label>
-            <Select
-              value={preferences.timezone ?? ""}
-              onValueChange={(value) => {
-                if (isOffline) return;
-                savePreferences({ timezone: value === "__system_default__" ? null : value });
-              }}
-              disabled={isOffline}
-            >
-              <SelectTrigger id="timezone">
-                <SelectValue placeholder="Use system default" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__system_default__">Use system default</SelectItem>
-                {/* Show current value if not in curated list (e.g. auto-detected unusual timezone) */}
-                {preferences.timezone && !TIMEZONES.some((tz) => tz.value === preferences.timezone) && (
-                  <SelectItem key={preferences.timezone} value={preferences.timezone}>
-                    {preferences.timezone} (detected)
-                  </SelectItem>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Email AI Features
+              </CardTitle>
+              <CardDescription>
+                {aiAvailable
+                  ? "Control AI-powered email features. These use your configured LLM provider."
+                  : "AI features require an LLM provider to be configured. "}
+                {!aiAvailable && (
+                  <Link href="/configuration/system" className="text-primary hover:underline">
+                    Configure a provider
+                  </Link>
                 )}
-                {TIMEZONES.map((tz) => (
-                  <SelectItem key={tz.value} value={tz.value}>
-                    {tz.label} ({tz.value})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              {preferences.timezone
-                ? `Manually set to ${preferences.timezone}.`
-                : `Auto-detected from your browser. Currently using: ${effectiveTimezone}.`}
-              {" "}Select &quot;Use system default&quot; to revert to automatic detection.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notification Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Notification Preferences
-          </CardTitle>
-          <CardDescription>
-            {novu?.enabled
-              ? "Notifications are delivered via Novu. Use the notification bell in the header to view and manage preferences."
-              : "Enable channels, add your webhook or phone number, test, and accept usage. Only channels enabled by an administrator are shown."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {novu?.enabled ? (
-            <p className="text-sm text-muted-foreground">
-              Click the notification bell in the header to open your inbox and manage notification preferences.
-            </p>
-          ) : channelsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : channels.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No notification channels available. An administrator must enable channels in{" "}
-              <Link href="/configuration/notifications" className="text-primary hover:underline">
-                Configuration
-              </Link>
-              .
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {channels.map((channel) => (
-                <div key={channel.id} className="space-y-3">
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!aiAvailable ? (
+                <p className="text-sm text-muted-foreground">
+                  No AI provider is configured. Enable and configure at least one LLM provider to use these features.
+                </p>
+              ) : (
+                <>
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <Label className="text-base font-medium">{channel.name}</Label>
-                      <p className="text-sm text-muted-foreground">{channel.description}</p>
+                      <Label className="text-base font-medium">Thread Summarization</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Generate AI summaries of email threads with key points and action items.
+                      </p>
                     </div>
-                    {channel.id === "webpush" ? (
-                      <div className="flex items-center gap-2">
-                        {channel.configured || currentDeviceSubscribed ? (
-                          <Switch
-                            checked={channel.enabled}
-                            onCheckedChange={(enabled) => toggleChannel("webpush", enabled)}
-                            disabled={webpushLoading || isOffline}
-                          />
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={enableWebPush}
-                            disabled={
-                              webpushLoading ||
-                              isOffline ||
-                              !features?.webpushEnabled ||
-                              !isWebPushSupported()
-                            }
-                          >
-                            {webpushLoading ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Smartphone className="mr-2 h-4 w-4" />
-                            )}
-                            Enable Browser Notifications
-                          </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        {channel.settings.length > 0 && !channel.configured && (
-                          <span className="text-xs text-muted-foreground">
-                            Enter settings below to enable
-                          </span>
-                        )}
-                        <Switch
-                          checked={channel.enabled}
-                          onCheckedChange={(enabled) => toggleChannel(channel.id, enabled)}
-                          disabled={(channel.settings.length > 0 && !channel.configured) || isOffline}
-                        />
-                      </div>
-                    )}
+                    <Switch
+                      checked={aiSettings.summarization_enabled}
+                      onCheckedChange={(v) => updateAISetting("summarization_enabled", v)}
+                      disabled={isOffline}
+                    />
                   </div>
-                  {channel.id === "webpush" && (
-                    <div className="space-y-3">
-                      {currentDeviceSubscribed && (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => testChannel("webpush")}
-                            disabled={testingChannel === "webpush" || isOffline}
-                          >
-                            {testingChannel === "webpush" ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Send className="mr-2 h-4 w-4" />
-                            )}
-                            Test
-                          </Button>
-                        </div>
-                      )}
-                      {pushDevices.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-muted-foreground">Registered Devices</p>
-                          <div className="space-y-1">
-                            {pushDevices.map((device) => (
-                              <div key={device.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                                <div className="min-w-0 flex-1">
-                                  <span className="font-medium">{device.device_name || "Unknown Device"}</span>
-                                  {device.last_used_at && (
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                      Last used {new Date(device.last_used_at).toLocaleDateString()}
-                                    </span>
-                                  )}
-                                </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 shrink-0"
-                                  onClick={() => removeDevice(device.id)}
-                                  disabled={removingDeviceId === device.id || isOffline}
-                                >
-                                  {removingDeviceId === device.id ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  )}
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {!currentDeviceSubscribed && isWebPushSupported() && features?.webpushEnabled && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={enableWebPush}
-                          disabled={webpushLoading || isOffline}
-                        >
-                          {webpushLoading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Smartphone className="mr-2 h-4 w-4" />
-                          )}
-                          Add This Device
-                        </Button>
-                      )}
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-base font-medium">Smart Labeling</Label>
+                      <p className="text-sm text-muted-foreground">
+                        AI suggests labels for incoming emails based on content analysis.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={aiSettings.auto_labeling_enabled}
+                      onCheckedChange={(v) => updateAISetting("auto_labeling_enabled", v)}
+                      disabled={isOffline}
+                    />
+                  </div>
+
+                  {aiSettings.auto_labeling_enabled && (
+                    <div className="flex items-center justify-between gap-4 pl-6">
+                      <div className="min-w-0 flex-1">
+                        <Label className="text-sm">Auto-apply high-confidence labels</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Automatically apply labels with 80%+ confidence that match existing labels.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={aiSettings.auto_labeling_auto_apply}
+                        onCheckedChange={(v) => updateAISetting("auto_labeling_auto_apply", v)}
+                        disabled={isOffline}
+                      />
                     </div>
                   )}
-                  {channel.id === "webpush" && (
-                    <WebPushHelperText webpushEnabled={!!features?.webpushEnabled} isSubscribed={currentDeviceSubscribed} />
-                  )}
-                  {channel.settings.length > 0 && channel.id !== "webpush" && (
-                    <>
-                      <Separator />
-                      <div className="space-y-3 pl-0">
-                        {channel.settings.map((s) => (
-                          <div key={s.key} className="space-y-1">
-                            <Label htmlFor={`${channel.id}-${s.key}`}>{s.label}</Label>
-                            <Input
-                              id={`${channel.id}-${s.key}`}
-                              type={s.type === "password" ? "password" : "text"}
-                              value={channelSettings[channel.id]?.[s.key] ?? ""}
-                              onChange={(e) => updateChannelSetting(channel.id, s.key, e.target.value)}
-                              placeholder={s.placeholder}
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-base font-medium">Priority Inbox</Label>
+                      <p className="text-sm text-muted-foreground">
+                        AI scores email importance using content analysis and sender patterns.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={aiSettings.priority_inbox_enabled}
+                      onCheckedChange={(v) => updateAISetting("priority_inbox_enabled", v)}
+                      disabled={isOffline}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-base font-medium">Smart Replies</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Generate reply suggestions with different tones when viewing emails.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={aiSettings.smart_replies_enabled}
+                      onCheckedChange={(v) => updateAISetting("smart_replies_enabled", v)}
+                      disabled={isOffline}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-base font-medium">Process Inbound Automatically</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Run enabled AI features automatically on new incoming emails.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={aiSettings.process_inbound_automatically}
+                      onCheckedChange={(v) => updateAISetting("process_inbound_automatically", v)}
+                      disabled={isOffline}
+                    />
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Regional
+              </CardTitle>
+              <CardDescription>
+                Set your preferred timezone for dates and times throughout the app.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select
+                  value={preferences.timezone ?? ""}
+                  onValueChange={(value) => {
+                    if (isOffline) return;
+                    savePreferences({ timezone: value === "__system_default__" ? null : value });
+                  }}
+                  disabled={isOffline}
+                >
+                  <SelectTrigger id="timezone">
+                    <SelectValue placeholder="Use system default" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__system_default__">Use system default</SelectItem>
+                    {preferences.timezone && !TIMEZONES.some((tz) => tz.value === preferences.timezone) && (
+                      <SelectItem key={preferences.timezone} value={preferences.timezone}>
+                        {preferences.timezone} (detected)
+                      </SelectItem>
+                    )}
+                    {TIMEZONES.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label} ({tz.value})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  {preferences.timezone
+                    ? `Manually set to ${preferences.timezone}.`
+                    : `Auto-detected from your browser. Currently using: ${effectiveTimezone}.`}
+                  {" "}Select &quot;Use system default&quot; to revert to automatic detection.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 3: Notifications */}
+        <TabsContent value="notifications" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notification Preferences
+              </CardTitle>
+              <CardDescription>
+                {novu?.enabled
+                  ? "Notifications are delivered via Novu. Use the notification bell in the header to view and manage preferences."
+                  : "Enable channels, add your webhook or phone number, test, and accept usage. Only channels enabled by an administrator are shown."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {novu?.enabled ? (
+                <p className="text-sm text-muted-foreground">
+                  Click the notification bell in the header to open your inbox and manage notification preferences.
+                </p>
+              ) : channelsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : channels.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No notification channels available. An administrator must enable channels in{" "}
+                  <Link href="/configuration/notifications" className="text-primary hover:underline">
+                    Configuration
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {channels.map((channel) => (
+                    <div key={channel.id} className="space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <Label className="text-base font-medium">{channel.name}</Label>
+                          <p className="text-sm text-muted-foreground">{channel.description}</p>
+                        </div>
+                        {channel.id === "webpush" ? (
+                          <div className="flex items-center gap-2">
+                            {channel.configured || currentDeviceSubscribed ? (
+                              <Switch
+                                checked={channel.enabled}
+                                onCheckedChange={(enabled) => toggleChannel("webpush", enabled)}
+                                disabled={webpushLoading || isOffline}
+                              />
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={enableWebPush}
+                                disabled={
+                                  webpushLoading ||
+                                  isOffline ||
+                                  !features?.webpushEnabled ||
+                                  !isWebPushSupported()
+                                }
+                              >
+                                {webpushLoading ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Smartphone className="mr-2 h-4 w-4" />
+                                )}
+                                Enable Browser Notifications
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            {channel.settings.length > 0 && !channel.configured && (
+                              <span className="text-xs text-muted-foreground">
+                                Enter settings below to enable
+                              </span>
+                            )}
+                            <Switch
+                              checked={channel.enabled}
+                              onCheckedChange={(enabled) => toggleChannel(channel.id, enabled)}
+                              disabled={(channel.settings.length > 0 && !channel.configured) || isOffline}
                             />
                           </div>
-                        ))}
-                        <div className="flex gap-2">
-                          <SaveButton
-                            type="button"
-                            size="sm"
-                            isDirty={JSON.stringify(channelSettings[channel.id] ?? {}) !== JSON.stringify(savedChannelSettings[channel.id] ?? {})}
-                            isSaving={savingChannel === channel.id}
-                            disabled={isOffline}
-                            onClick={() => saveChannelSettings(channel.id)}
-                          />
-                          {channel.configured && (
+                        )}
+                      </div>
+                      {channel.id === "webpush" && (
+                        <div className="space-y-3">
+                          {currentDeviceSubscribed && (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => testChannel("webpush")}
+                                disabled={testingChannel === "webpush" || isOffline}
+                              >
+                                {testingChannel === "webpush" ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Send className="mr-2 h-4 w-4" />
+                                )}
+                                Test
+                              </Button>
+                            </div>
+                          )}
+                          {pushDevices.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-muted-foreground">Registered Devices</p>
+                              <div className="space-y-1">
+                                {pushDevices.map((device) => (
+                                  <div key={device.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                                    <div className="min-w-0 flex-1">
+                                      <span className="font-medium">{device.device_name || "Unknown Device"}</span>
+                                      {device.last_used_at && (
+                                        <span className="ml-2 text-xs text-muted-foreground">
+                                          Last used {new Date(device.last_used_at).toLocaleDateString()}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7 shrink-0"
+                                      onClick={() => removeDevice(device.id)}
+                                      disabled={removingDeviceId === device.id || isOffline}
+                                    >
+                                      {removingDeviceId === device.id ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {!currentDeviceSubscribed && isWebPushSupported() && features?.webpushEnabled && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => testChannel(channel.id)}
-                              disabled={testingChannel === channel.id || isOffline}
+                              onClick={enableWebPush}
+                              disabled={webpushLoading || isOffline}
                             >
-                              {testingChannel === channel.id ? (
+                              {webpushLoading ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               ) : (
-                                <Send className="mr-2 h-4 w-4" />
+                                <Smartphone className="mr-2 h-4 w-4" />
                               )}
-                              Test
+                              Add This Device
                             </Button>
                           )}
                         </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Per-type preference matrix */}
-          {!novu?.enabled && (() => {
-            const enabledChannels = channels.filter((c) => c.enabled && c.id !== "database");
-            if (enabledChannels.length < 1) return null;
-            const categories = getTypesByCategory();
-            return (
-              <Collapsible open={typePrefsOpen} onOpenChange={setTypePrefsOpen} className="mt-6">
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="flex w-full items-center justify-between p-0 h-auto hover:bg-transparent">
-                    <span className="flex items-center gap-2 text-sm font-medium">
-                      <SlidersHorizontal className="h-4 w-4" />
-                      Fine-tune by notification type
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${typePrefsOpen ? "rotate-180" : ""}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Control which notification types are sent to each channel. Unchecked types will be silenced on that channel.
-                  </p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 pr-4 font-medium">Type</th>
-                          {enabledChannels.map((ch) => (
-                            <th key={ch.id} className="text-center py-2 px-2 font-medium whitespace-nowrap">
-                              {ch.name}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {categories.map((cat) => (
-                          <React.Fragment key={cat.category}>
-                            <tr>
-                              <td colSpan={enabledChannels.length + 1} className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                {cat.categoryLabel}
-                              </td>
-                            </tr>
-                            {cat.types.map(({ type, label, icon: Icon }) => (
-                              <tr key={type} className="border-b border-border/50">
-                                <td className="py-2 pr-4">
-                                  <span className="flex items-center gap-2">
-                                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                                    {label}
-                                  </span>
-                                </td>
-                                {enabledChannels.map((ch) => {
-                                  const checked = typePreferences[type]?.[ch.id] !== false;
-                                  return (
-                                    <td key={ch.id} className="text-center py-2 px-2">
-                                      <Checkbox
-                                        checked={checked}
-                                        onCheckedChange={(val) => toggleTypePreference(type, ch.id, !!val)}
-                                        disabled={isOffline}
-                                        aria-label={`${label} via ${ch.name}`}
-                                      />
-                                    </td>
-                                  );
-                                })}
-                              </tr>
+                      )}
+                      {channel.id === "webpush" && (
+                        <WebPushHelperText webpushEnabled={!!features?.webpushEnabled} isSubscribed={currentDeviceSubscribed} />
+                      )}
+                      {channel.settings.length > 0 && channel.id !== "webpush" && (
+                        <>
+                          <Separator />
+                          <div className="space-y-3 pl-0">
+                            {channel.settings.map((s) => (
+                              <div key={s.key} className="space-y-1">
+                                <Label htmlFor={`${channel.id}-${s.key}`}>{s.label}</Label>
+                                <Input
+                                  id={`${channel.id}-${s.key}`}
+                                  type={s.type === "password" ? "password" : "text"}
+                                  value={channelSettings[channel.id]?.[s.key] ?? ""}
+                                  onChange={(e) => updateChannelSetting(channel.id, s.key, e.target.value)}
+                                  placeholder={s.placeholder}
+                                />
+                              </div>
                             ))}
-                          </React.Fragment>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          })()}
-        </CardContent>
-      </Card>
-
-      {/* Install App (PWA) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
-            Install App
-          </CardTitle>
-          <CardDescription>
-            Install this app on your device for quick access and offline use.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isInstalled ? (
-            <p className="text-sm text-muted-foreground">
-              The app is installed. Open it from your home screen or app drawer.
-            </p>
-          ) : canPrompt ? (
-            <Button
-              size="sm"
-              onClick={async () => {
-                setInstallPrompting(true);
-                try {
-                  const result = await promptInstall();
-                  if (result?.outcome === "accepted") {
-                    toast.success("App installed");
-                  }
-                } finally {
-                  setInstallPrompting(false);
-                }
-              }}
-              disabled={installPrompting || isOffline}
-            >
-              {installPrompting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
+                            <div className="flex gap-2">
+                              <SaveButton
+                                type="button"
+                                size="sm"
+                                isDirty={JSON.stringify(channelSettings[channel.id] ?? {}) !== JSON.stringify(savedChannelSettings[channel.id] ?? {})}
+                                isSaving={savingChannel === channel.id}
+                                disabled={isOffline}
+                                onClick={() => saveChannelSettings(channel.id)}
+                              />
+                              {channel.configured && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => testChannel(channel.id)}
+                                  disabled={testingChannel === channel.id || isOffline}
+                                >
+                                  {testingChannel === channel.id ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Send className="mr-2 h-4 w-4" />
+                                  )}
+                                  Test
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
-              Install App
-            </Button>
-          ) : (
-            <InstallInstructions />
-          )}
-        </CardContent>
-      </Card>
 
+              {/* Per-type preference matrix */}
+              {!novu?.enabled && (() => {
+                const enabledChannels = channels.filter((c) => c.enabled && c.id !== "database");
+                if (enabledChannels.length < 1) return null;
+                const categories = getTypesByCategory();
+                return (
+                  <Collapsible open={typePrefsOpen} onOpenChange={setTypePrefsOpen} className="mt-6">
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="flex w-full items-center justify-between p-0 h-auto hover:bg-transparent">
+                        <span className="flex items-center gap-2 text-sm font-medium">
+                          <SlidersHorizontal className="h-4 w-4" />
+                          Fine-tune by notification type
+                        </span>
+                        <ChevronDown className={`h-4 w-4 transition-transform ${typePrefsOpen ? "rotate-180" : ""}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-4">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Control which notification types are sent to each channel. Unchecked types will be silenced on that channel.
+                      </p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-2 pr-4 font-medium">Type</th>
+                              {enabledChannels.map((ch) => (
+                                <th key={ch.id} className="text-center py-2 px-2 font-medium whitespace-nowrap">
+                                  {ch.name}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {categories.map((cat) => (
+                              <React.Fragment key={cat.category}>
+                                <tr>
+                                  <td colSpan={enabledChannels.length + 1} className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                    {cat.categoryLabel}
+                                  </td>
+                                </tr>
+                                {cat.types.map(({ type, label, icon: Icon }) => (
+                                  <tr key={type} className="border-b border-border/50">
+                                    <td className="py-2 pr-4">
+                                      <span className="flex items-center gap-2">
+                                        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                        {label}
+                                      </span>
+                                    </td>
+                                    {enabledChannels.map((ch) => {
+                                      const checked = typePreferences[type]?.[ch.id] !== false;
+                                      return (
+                                        <td key={ch.id} className="text-center py-2 px-2">
+                                          <Checkbox
+                                            checked={checked}
+                                            onCheckedChange={(val) => toggleTypePreference(type, ch.id, !!val)}
+                                            disabled={isOffline}
+                                            aria-label={`${label} via ${ch.name}`}
+                                          />
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ))}
+                              </React.Fragment>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 4: PWA & Devices */}
+        <TabsContent value="pwa" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Install App
+              </CardTitle>
+              <CardDescription>
+                Install this app on your device for quick access and offline use.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isInstalled ? (
+                <p className="text-sm text-muted-foreground">
+                  The app is installed. Open it from your home screen or app drawer.
+                </p>
+              ) : canPrompt ? (
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    setInstallPrompting(true);
+                    try {
+                      const result = await promptInstall();
+                      if (result?.outcome === "accepted") {
+                        toast.success("App installed");
+                      }
+                    } finally {
+                      setInstallPrompting(false);
+                    }
+                  }}
+                  disabled={installPrompting || isOffline}
+                >
+                  {installPrompting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  Install App
+                </Button>
+              ) : (
+                <InstallInstructions />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

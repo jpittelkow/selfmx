@@ -87,7 +87,7 @@ export function FileBrowser({
     return (
       <div className="flex flex-col items-center justify-center rounded-md border py-16 text-center text-muted-foreground">
         <Folder className="h-12 w-12 mb-4 opacity-50" />
-        <p className="font-medium">This folder is empty</p>
+        <p className="font-heading font-medium">This folder is empty</p>
         <p className="text-sm mt-1">
           {currentPath ? "Navigate up or upload files here." : "Upload files to get started."}
         </p>

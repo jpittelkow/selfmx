@@ -1,4 +1,4 @@
-import Fuse, { type IFuseOptions } from "fuse.js";
+import Fuse, { type IFuseOptions, type FuseResultMatch } from "fuse.js";
 
 export interface HelpSearchItem {
   id: string;
@@ -7,6 +7,11 @@ export interface HelpSearchItem {
   category: string;
   categorySlug: string;
   tags?: string[];
+}
+
+export interface HelpSearchResult {
+  item: HelpSearchItem;
+  matches?: readonly FuseResultMatch[];
 }
 
 const fuseOptions: IFuseOptions<HelpSearchItem> = {
@@ -18,6 +23,7 @@ const fuseOptions: IFuseOptions<HelpSearchItem> = {
   ],
   threshold: 0.4,
   includeScore: true,
+  includeMatches: true,
   ignoreLocation: true,
   minMatchCharLength: 2,
 };
@@ -28,13 +34,16 @@ export function initializeSearch(items: HelpSearchItem[]): void {
   fuseInstance = new Fuse(items, fuseOptions);
 }
 
-export function searchHelp(query: string): HelpSearchItem[] {
+export function searchHelp(query: string): HelpSearchResult[] {
   if (!fuseInstance || !query.trim()) {
     return [];
   }
 
   const results = fuseInstance.search(query);
-  return results.map((result) => result.item);
+  return results.map((result) => ({
+    item: result.item,
+    matches: result.matches,
+  }));
 }
 
 export function resetSearch(): void {

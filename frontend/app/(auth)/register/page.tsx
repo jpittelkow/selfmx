@@ -123,6 +123,7 @@ export default function RegisterPage() {
             id="name"
             type="text"
             placeholder="John Doe"
+            className="h-10"
             autoFocus
             {...register("name")}
             disabled={isLoading}
@@ -142,6 +143,7 @@ export default function RegisterPage() {
               type="email"
               placeholder="you@example.com"
               className={cn(
+                "h-10",
                 (isChecking || isAvailable !== undefined) && "pr-10"
               )}
               {...register("email")}

@@ -177,8 +177,7 @@ return [
     
     'council' => [
         'min_providers' => 3,
-        'consensus_threshold' => 0.7, // 70% agreement
-        'include_dissent' => true,
+        'strategy' => 'majority', // majority | weighted | synthesize
     ],
 ];
 ```

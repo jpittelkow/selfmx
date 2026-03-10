@@ -254,7 +254,7 @@ export function ComposeDialog({
       try {
         const res = await api.post<{
           results: Record<string, { suppressed: boolean; reason: string | null; detail: string | null }>;
-        }>(`/email/domains/${mailbox.email_domain_id}/mailgun/suppressions/check-batch`, {
+        }>(`/email/domains/${mailbox.email_domain_id}/management/suppressions/check-batch`, {
           addresses: unchecked,
         });
         const newEntries: Record<string, SuppressionWarning | null> = {};

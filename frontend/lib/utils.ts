@@ -119,3 +119,16 @@ export function formatCurrency(value: number): string {
   if (!Number.isFinite(value)) return "$0.00";
   return `$${value.toFixed(2)}`;
 }
+
+/**
+ * Get initials from a full name (up to 2 characters).
+ */
+export function getInitials(name: string): string {
+  if (!name?.trim()) return "?";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}

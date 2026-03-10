@@ -306,3 +306,62 @@ function ExampleCard({ title, description, onClick }: ExampleCardProps) {
 ```
 
 See [Recipe: Add help article](../recipes/add-help-article.md) and [Help System Pattern](../patterns/ui-patterns.md#help-system).
+
+### Don't: Use a Raw `div` for Avatar Fallback
+
+```tsx
+// ❌ WRONG: Custom div that doesn't match shadcn Avatar used elsewhere
+<div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
+  {user.name.charAt(0)}
+</div>
+
+// ✅ CORRECT: shadcn Avatar with shared getInitials()
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils";
+
+<Avatar className="h-8 w-8">
+  <AvatarImage src={user.avatar_url} />
+  <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+</Avatar>
+```
+
+`getInitials()` returns two initials. Never call `.charAt(0)` — it produces inconsistent single-character fallbacks.
+
+### Don't: Use Native `<input type="checkbox">` in App UI
+
+```tsx
+// ❌ WRONG: Native checkbox — inconsistent styling, small touch target
+<input type="checkbox" checked={selected} onChange={handleChange} />
+
+// ✅ CORRECT: shadcn Checkbox — consistent 16px hit area, proper focus ring
+import { Checkbox } from "@/components/ui/checkbox";
+import { Controller } from "react-hook-form";
+
+// With react-hook-form
+<Controller
+  name="field"
+  control={control}
+  render={({ field }) => (
+    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+  )}
+/>
+
+// Without form
+<Checkbox checked={isChecked} onCheckedChange={setIsChecked} />
+```
+
+### Don't: Use a Custom Spinner Div Instead of `Loader2`
+
+```tsx
+// ❌ WRONG: Custom spinner (inconsistent, harder to theme)
+<div className="border-b-2 border-primary animate-spin rounded-full h-8 w-8" />
+
+// ✅ CORRECT: Lucide Loader2
+import { Loader2 } from "lucide-react";
+
+<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+
+// Or for full-page initial load:
+import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
+if (isLoading) return <SettingsPageSkeleton />;
+```

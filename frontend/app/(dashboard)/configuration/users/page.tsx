@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { SortingState } from "@tanstack/react-table";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, AdminUser } from "@/lib/auth";
+import { useDebounce } from "@/lib/use-debounce";
 import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,24 +27,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGroups } from "@/lib/use-groups";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Plus, Search, Users, Loader2 } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { HelpLink } from "@/components/help/help-link";
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  avatar: string | null;
-  is_admin: boolean;
-  email_verified_at: string | null;
-  disabled_at: string | null;
-  created_at: string;
-  groups?: { id: number; name: string; slug: string }[];
-}
-
 interface PaginatedResponse {
-  data: User[];
+  data: AdminUser[];
   current_page: number;
   last_page: number;
   per_page: number;
@@ -51,32 +40,37 @@ interface PaginatedResponse {
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const perPage = 15;
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string>("");
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "created_at", desc: true },
+  ]);
   const { groups } = useGroups();
-
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debouncedSearch = useDebounce(search, 300);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        per_page: "15",
+        per_page: perPage.toString(),
       });
       if (debouncedSearch) {
         params.append("search", debouncedSearch);
       }
       if (selectedGroup) {
         params.append("group", selectedGroup);
+      }
+      if (sorting.length > 0) {
+        params.append("sort", sorting[0].id);
+        params.append("sort_dir", sorting[0].desc ? "desc" : "asc");
       }
 
       const response = await api.get<PaginatedResponse>(`/users?${params}`);
@@ -89,38 +83,40 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, debouncedSearch, selectedGroup]);
+  }, [currentPage, perPage, debouncedSearch, selectedGroup, sorting]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Reset to page 1 when search or group filter changes
   useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedGroup]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setDebouncedSearch(value);
-      setCurrentPage(1);
-    }, 300);
   };
 
   const handleGroupChange = (value: string) => {
     setSelectedGroup(value === "all" ? "" : value);
+  };
+
+  const handleSortingChange = (newSorting: SortingState) => {
+    setSorting(newSorting);
     setCurrentPage(1);
   };
+
+  // Pagination display helpers
+  const startItem = (currentPage - 1) * perPage + 1;
+  const endItem = Math.min(currentPage * perPage, total);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-2">
             Manage application users and permissions.{" "}
             <HelpLink articleId="user-management" />
           </p>
@@ -177,30 +173,23 @@ export default function UsersPage() {
               ))}
             </div>
           ) : users.length === 0 ? (
-            search ? (
-              <EmptyState
-                icon={Search}
-                title="No users found"
-                description="Try adjusting your search query"
-              />
-            ) : (
-              <EmptyState
-                icon={Users}
-                title="No users found"
-              />
-            )
+            <div className="text-center py-12 text-muted-foreground">
+              {search ? "No users found matching your search" : "No users found"}
+            </div>
           ) : (
             <>
               <UserTable
                 users={users}
                 onUserUpdated={fetchUsers}
                 currentUserId={currentUser?.id}
+                sorting={sorting}
+                onSortingChange={handleSortingChange}
               />
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
+                    Showing {startItem}–{endItem} of {total} users
                   </div>
                   <div className="flex gap-2">
                     <Button

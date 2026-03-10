@@ -36,7 +36,7 @@ class EmailConfigService
             return [
                 'configured' => false,
                 'provider' => $mailer,
-                'missing_fields' => ['mailer must be smtp, mailgun, sendgrid, ses, or postmark'],
+                'missing_fields' => ['mailer must be smtp, mailgun, ses, or postmark'],
             ];
         }
 
@@ -52,10 +52,9 @@ class EmailConfigService
         $missing = match ($mailer) {
             'smtp' => $this->validateSmtp($settings),
             'mailgun' => $this->validateMailgun($settings),
-            'sendgrid' => $this->validateSendgrid($settings),
             'ses' => $this->validateSes($settings),
             'postmark' => $this->validatePostmark($settings),
-            default => ['mailer must be smtp, mailgun, sendgrid, ses, or postmark'],
+            default => ['mailer must be smtp, mailgun, ses, or postmark'],
         };
 
         return [
@@ -91,11 +90,6 @@ class EmailConfigService
         }
         if (!empty($settings['mailgun_secret'])) {
             config(['services.mailgun.secret' => $settings['mailgun_secret']]);
-        }
-
-        // SendGrid
-        if (!empty($settings['sendgrid_api_key'])) {
-            config(['services.sendgrid.api_key' => $settings['sendgrid_api_key']]);
         }
 
         // SES
@@ -154,20 +148,6 @@ class EmailConfigService
         }
         if (empty(trim((string) ($settings['mailgun_secret'] ?? '')))) {
             $missing[] = 'mailgun_secret';
-        }
-
-        return $missing;
-    }
-
-    /**
-     * @param array<string, mixed> $settings
-     * @return array<string>
-     */
-    private function validateSendgrid(array $settings): array
-    {
-        $missing = [];
-        if (empty(trim((string) ($settings['sendgrid_api_key'] ?? '')))) {
-            $missing[] = 'sendgrid_api_key';
         }
 
         return $missing;

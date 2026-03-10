@@ -7,6 +7,7 @@ import { bodyFont, headingFont } from "@/config/fonts";
 // Dynamic branding overrides this client-side via AppConfigProvider.
 export const viewport: Viewport = {
   themeColor: "#3b82f6",
+  viewportFit: "cover",
 };
 
 // Metadata uses minimal title for SSR - actual app name from settings

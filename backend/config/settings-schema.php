@@ -239,33 +239,8 @@ return [
     ],
 
     'email_hosting' => [
-        'default_provider' => ['env' => 'EMAIL_HOSTING_PROVIDER', 'default' => 'mailgun'],
         'spam_threshold' => ['env' => 'EMAIL_SPAM_THRESHOLD', 'default' => '5.0'],
         'max_attachment_size' => ['env' => 'EMAIL_MAX_ATTACHMENT_SIZE', 'default' => '25'],
-    ],
-
-    'mailgun' => [
-        'api_key' => ['env' => 'MAILGUN_API_KEY', 'default' => '', 'encrypted' => true],
-        'region' => ['env' => 'MAILGUN_REGION', 'default' => 'us'],
-        'webhook_signing_key' => ['env' => 'MAILGUN_WEBHOOK_SIGNING_KEY', 'default' => '', 'encrypted' => true],
-        'auto_configure_webhooks' => ['env' => null, 'default' => true],
-        'dkim_rotation_interval_days' => ['env' => null, 'default' => 0],
-    ],
-
-    'ses' => [
-        'access_key_id' => ['env' => 'SES_ACCESS_KEY_ID', 'default' => '', 'encrypted' => true],
-        'secret_access_key' => ['env' => 'SES_SECRET_ACCESS_KEY', 'default' => '', 'encrypted' => true],
-        'region' => ['env' => 'SES_REGION', 'default' => 'us-east-1'],
-        'configuration_set' => ['env' => 'SES_CONFIGURATION_SET', 'default' => ''],
-    ],
-
-    'sendgrid' => [
-        'api_key' => ['env' => 'SENDGRID_API_KEY', 'default' => '', 'encrypted' => true],
-        'webhook_verification_key' => ['env' => 'SENDGRID_WEBHOOK_VERIFICATION_KEY', 'default' => '', 'encrypted' => true],
-    ],
-
-    'postmark' => [
-        'server_token' => ['env' => 'POSTMARK_SERVER_TOKEN', 'default' => '', 'encrypted' => true],
     ],
 
     'email_ai' => [

@@ -115,6 +115,7 @@ export default function LoginPage() {
             id="email"
             type="email"
             placeholder="you@example.com"
+            className="h-10"
             autoFocus
             {...register("email")}
             disabled={isLoading}

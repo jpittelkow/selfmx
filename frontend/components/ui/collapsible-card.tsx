@@ -30,6 +30,8 @@ export interface CollapsibleCardProps {
   headerActions?: React.ReactNode;
   /** Additional CSS classes for the card */
   className?: string;
+  /** Visual intent — "danger" adds a destructive border tint, "info" adds a primary tint */
+  intent?: "default" | "danger" | "info";
 }
 
 const statusToBadgeVariant: Record<
@@ -54,6 +56,7 @@ export function CollapsibleCard({
   children,
   headerActions,
   className,
+  intent = "default",
 }: CollapsibleCardProps) {
   const isControlled = controlledOpen !== undefined;
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
@@ -77,7 +80,10 @@ export function CollapsibleCard({
       className={cn("group/card", className)}
       data-state={open ? "open" : "closed"}
     >
-      <Card>
+      <Card className={cn(
+        intent === "danger" && "border-destructive/30",
+        intent === "info" && "border-primary/20"
+      )}>
         <CollapsibleTrigger
           asChild
           disabled={disabled}

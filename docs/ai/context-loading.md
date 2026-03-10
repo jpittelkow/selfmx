@@ -228,6 +228,25 @@ backend/routes/web.php                              # connect callback
 - [Handle Stripe Webhooks](recipes/handle-stripe-webhooks.md)
 - [Stripe Connect Onboarding](recipes/stripe-connect-onboarding.md)
 
+## Email Provider Selection Work
+
+**Read first:**
+```
+docs/plans/email-provider-comparison.md          # Provider comparison, pricing, selection criteria, API docs
+docs/adr/027-email-hosting-architecture.md       # Provider abstraction architecture
+backend/app/Services/Email/EmailProviderInterface.php  # Provider interface contract
+```
+
+**Also useful:**
+```
+backend/app/Services/Email/MailgunProvider.php    # Reference adapter implementation
+backend/app/Services/Email/SesProvider.php        # SES adapter
+backend/app/Services/Email/PostmarkProvider.php   # Postmark adapter
+backend/app/Services/Email/SendGridProvider.php   # SendGrid adapter
+backend/config/settings-schema.php               # email_hosting settings group
+frontend/app/(dashboard)/configuration/email-provider/ # Provider configuration UI
+```
+
 ## Email Template Work
 
 **Read first:**

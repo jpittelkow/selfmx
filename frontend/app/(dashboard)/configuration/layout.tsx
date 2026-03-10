@@ -39,9 +39,9 @@ import {
   MailOpen,
   Terminal,
   ChevronDown,
-  ChevronRight,
   ShieldCheck,
   ShieldBan,
+  Loader2,
   Search,
   UsersRound,
   MessageSquareText,
@@ -95,7 +95,7 @@ const navigationGroups: NavGroup[] = [
     name: "Email Hosting",
     icon: Mail,
     items: [
-      { name: "Email Provider", href: "/configuration/email-provider", icon: Settings, description: "Provider API keys and settings", permission: "settings.view" },
+      { name: "Provider Accounts", href: "/configuration/email-accounts", icon: Key, description: "Manage email provider credentials", permission: "settings.view" },
       { name: "Domains", href: "/configuration/email-domains", icon: Globe, description: "Manage email domains", permission: "settings.view" },
       { name: "Mailboxes", href: "/configuration/mailboxes", icon: Mail, description: "Manage email addresses", permission: "settings.view" },
       { name: "Global Spam Filter", href: "/configuration/spam-filter", icon: ShieldBan, description: "System-wide allow and block lists (applies to all users)", permission: "settings.view" },
@@ -268,17 +268,13 @@ function GroupedNavigation({ pathname }: { pathname: string }) {
             >
               <group.icon className="h-4 w-4 shrink-0" />
               <span className="flex-1 text-left">{group.name}</span>
-              {isExpanded ? (
-                <ChevronDown
-                  className="h-4 w-4 shrink-0 transition-transform duration-200"
-                  aria-hidden
-                />
-              ) : (
-                <ChevronRight
-                  className="h-4 w-4 shrink-0 transition-transform duration-200"
-                  aria-hidden
-                />
-              )}
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-transform duration-200",
+                  !isExpanded && "-rotate-90"
+                )}
+                aria-hidden
+              />
             </CollapsibleTrigger>
             <CollapsibleContent
               id={`${groupId}-content`}
@@ -292,16 +288,16 @@ function GroupedNavigation({ pathname }: { pathname: string }) {
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-2 py-2 min-h-10 text-sm transition-colors",
+                        "group flex items-center gap-3 rounded-lg px-2 py-2 min-h-10 text-sm transition-colors",
                         isActive
-                          ? "bg-muted text-foreground font-medium border border-border"
+                          ? "bg-primary/10 text-primary font-medium border-l-2 border-primary"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       <div className="flex flex-col min-w-0">
                         <span className="font-medium truncate">{item.name}</span>
-                        <span className="text-xs truncate text-muted-foreground">
+                        <span className="text-xs truncate text-muted-foreground hidden group-hover:block">
                           {item.description}
                         </span>
                       </div>
@@ -371,7 +367,7 @@ export default function ConfigurationLayout({
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }

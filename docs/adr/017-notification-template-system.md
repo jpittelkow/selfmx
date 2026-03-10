@@ -21,7 +21,7 @@ We will implement a **per-type notification template system** for push, in-app, 
 - **Variable replacement**: Same as EmailTemplateService — `{{variable}}` and `{{user.name}}` (dot notation); missing variables replaced with empty string.
 - **NotificationTemplateService**: `getByTypeAndChannel($type, $channelGroup)`, `render($type, $channelGroup, $variables)`, `renderTemplate(NotificationTemplate $template, $variables)`, `renderContent($title, $body, $variables)`, `getAvailableVariables($type, $channelGroup)`, `getDefaultContent($type, $channelGroup)`.
 - **NotificationOrchestrator**: New `sendByType($user, $type, $variables, $channels)` resolves templates per channel group and sends; existing `send($user, $type, $title, $message, $data)` unchanged. Each channel’s `send()` optionally resolves a template for (type, channel_group) when present, otherwise uses passed title/message (backward compatible).
-- **Seeder**: NotificationTemplateSeeder defines default templates for common types (backup.completed, backup.failed, auth.login, auth.password_reset, system.update, llm.quota_warning) × push, inapp, chat; run from migration. Seeder exposes `getDefaultFor($type, $channelGroup)` for reset.
+- **Seeder**: NotificationTemplateSeeder defines default templates for all notification types × 4 channel groups (push, inapp, chat, email); run from migration. Seeder exposes `getDefaultFor($type, $channelGroup)` for reset. Current types: backup.completed, backup.failed, auth.login, auth.password_reset, system.update, llm.quota_warning, storage.warning, storage.critical, suspicious_activity, usage.budget_warning, usage.budget_exceeded, payment.succeeded, payment.failed, payment.refunded.
 - **Admin API**: NotificationTemplateController under `auth:sanctum` + `can:settings.view` / `can:settings.edit` with index, show, update, preview, reset (by id).
 
 ### Architecture
@@ -39,7 +39,7 @@ We will implement a **per-type notification template system** for push, in-app, 
 
 ### Negative
 
-- More templates to maintain (e.g. 6 types × 3 channel groups = 18 defaults). New notification types require seeder entries and optional migration.
+- More templates to maintain (e.g. 14 types × 4 channel groups = 56 defaults). New notification types require seeder entries and optional migration.
 
 ## Related Decisions
 

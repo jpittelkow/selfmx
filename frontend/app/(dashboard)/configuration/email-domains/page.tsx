@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,14 +47,26 @@ import { Globe, Plus, Trash2, RefreshCw, Loader2, Info, CheckCircle2, XCircle, C
 const providerLabels: Record<string, string> = {
   mailgun: "Mailgun",
   ses: "AWS SES",
-  sendgrid: "SendGrid",
   postmark: "Postmark",
+  resend: "Resend",
+  mailersend: "MailerSend",
+  smtp2go: "SMTP2GO",
 };
+
+interface ProviderAccountRef {
+  id: number;
+  name: string;
+  provider: string;
+  is_default?: boolean;
+  health_status?: string | null;
+}
 
 interface EmailDomain {
   id: number;
   name: string;
   provider: string;
+  email_provider_account_id: number | null;
+  provider_account: ProviderAccountRef | null;
   is_verified: boolean;
   is_active: boolean;
   verified_at: string | null;
@@ -76,7 +89,7 @@ function ProviderHealthBadge() {
       <Circle
         className={`h-2 w-2 fill-current ${health.healthy ? "text-green-500" : "text-red-500"}`}
       />
-      <span>{health.provider === "mailgun" ? "Mailgun" : "Provider"}: {health.healthy ? "Connected" : "Unreachable"}</span>
+      <span>{(health.provider && providerLabels[health.provider]) ?? "Provider"}: {health.healthy ? "Connected" : "Unreachable"}</span>
       {health.healthy && health.latency_ms != null && (
         <span className="text-xs">({health.latency_ms}ms)</span>
       )}
@@ -86,10 +99,11 @@ function ProviderHealthBadge() {
 
 export default function EmailDomainsPage() {
   const [domains, setDomains] = useState<EmailDomain[]>([]);
+  const [accounts, setAccounts] = useState<ProviderAccountRef[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newDomain, setNewDomain] = useState("");
-  const [newProvider, setNewProvider] = useState("mailgun");
+  const [newAccountId, setNewAccountId] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -113,6 +127,20 @@ export default function EmailDomainsPage() {
     }
   }, [searchQuery, verifiedFilter]);
 
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const res = await api.get<{ accounts: ProviderAccountRef[] }>("/email/provider-accounts");
+      setAccounts(res.data.accounts);
+      // Default to first account if available
+      if (res.data.accounts.length > 0 && !newAccountId) {
+        const defaultAccount = res.data.accounts.find((a) => a.is_default) || res.data.accounts[0];
+        setNewAccountId(String(defaultAccount.id));
+      }
+    } catch {
+      // Non-critical — user may not have settings.view permission
+    }
+  }, []);
+
   // Debounce search — refetch 300ms after search/filter changes
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -121,11 +149,21 @@ export default function EmailDomainsPage() {
     return () => clearTimeout(timer);
   }, [fetchDomains, searchQuery]);
 
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
   const handleAdd = async () => {
     if (!newDomain.trim()) return;
     setIsAdding(true);
     try {
-      const res = await api.post<{ domain: unknown; warnings?: string[] }>("/email/domains", { name: newDomain.trim(), provider: newProvider });
+      const body: Record<string, unknown> = { name: newDomain.trim() };
+      if (newAccountId) {
+        body.email_provider_account_id = parseInt(newAccountId, 10);
+      } else {
+        body.provider = "mailgun"; // fallback for installations without accounts
+      }
+      const res = await api.post<{ domain: unknown; warnings?: string[] }>("/email/domains", body);
       if (res.data.warnings?.length) {
         toast.warning(`Domain created, but: ${res.data.warnings.join("; ")}`);
       } else {
@@ -133,10 +171,9 @@ export default function EmailDomainsPage() {
       }
       setShowAddDialog(false);
       setNewDomain("");
-      setNewProvider("mailgun");
       fetchDomains();
-    } catch {
-      toast.error("Failed to add domain");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to add domain"));
     } finally {
       setIsAdding(false);
     }
@@ -243,7 +280,7 @@ export default function EmailDomainsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Domain</TableHead>
-                    <TableHead>Provider</TableHead>
+                    <TableHead>Account</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -252,19 +289,20 @@ export default function EmailDomainsPage() {
                   {domains.map((domain) => (
                     <TableRow key={domain.id}>
                       <TableCell className="font-medium">
-                        {domain.provider === "mailgun" ? (
-                          <Link
-                            href={`/configuration/email-domains/${domain.id}`}
-                            className="hover:underline underline-offset-4"
-                          >
-                            {domain.name}
-                          </Link>
-                        ) : (
-                          domain.name
-                        )}
+                        <Link
+                          href={`/configuration/email-domains/${domain.id}`}
+                          className="hover:underline underline-offset-4"
+                        >
+                          {domain.name}
+                        </Link>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{providerLabels[domain.provider] ?? domain.provider}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{providerLabels[domain.provider] ?? domain.provider}</Badge>
+                          {domain.provider_account && (
+                            <span className="text-xs text-muted-foreground">{domain.provider_account.name}</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {domain.is_verified ? (
@@ -290,14 +328,12 @@ export default function EmailDomainsPage() {
                               Verify
                             </Button>
                           )}
-                          {domain.provider === "mailgun" && (
-                            <Link href={`/configuration/email-domains/${domain.id}`}>
-                              <Button variant="outline" size="sm">
-                                Manage
-                                <ChevronRight className="ml-1 h-3 w-3" />
-                              </Button>
-                            </Link>
-                          )}
+                          <Link href={`/configuration/email-domains/${domain.id}`}>
+                            <Button variant="outline" size="sm">
+                              Manage
+                              <ChevronRight className="ml-1 h-3 w-3" />
+                            </Button>
+                          </Link>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -388,20 +424,31 @@ export default function EmailDomainsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Provider</Label>
-              <Select value={newProvider} onValueChange={setNewProvider}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mailgun">Mailgun</SelectItem>
-                  <SelectItem value="ses">AWS SES</SelectItem>
-                  <SelectItem value="sendgrid">SendGrid</SelectItem>
-                  <SelectItem value="postmark">Postmark</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Provider Account</Label>
+              {accounts.length > 0 ? (
+                <Select value={newAccountId} onValueChange={setNewAccountId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={String(account.id)}>
+                        {account.name} ({providerLabels[account.provider] ?? account.provider})
+                        {account.is_default ? " \u2014 Default" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No provider accounts configured.{" "}
+                  <Link href="/configuration/email-accounts" className="text-primary hover:underline">
+                    Add one first
+                  </Link>.
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
-                The email provider to use for this domain. Configure credentials on the Email Provider page first.
+                The provider account to use for this domain. Configure accounts on the Provider Accounts page.
               </p>
             </div>
           </div>
