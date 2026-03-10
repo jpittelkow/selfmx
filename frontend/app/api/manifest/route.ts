@@ -40,8 +40,8 @@ export async function GET() {
     });
 
     let faviconUrl: string | null = null;
-    let appName = 'selfmx';
-    let shortName = 'MX';
+    let appName = '📬 selfmx';
+    let shortName = '📬 MX';
     let themeColor = '#3b82f6';
     const backgroundColor = '#ffffff'; // Always white for PWA splash screen
 
@@ -58,9 +58,10 @@ export async function GET() {
 
     if (systemSettingsResponse.ok) {
       const systemSettings = await systemSettingsResponse.json();
-      appName = systemSettings.settings?.general?.app_name || appName;
+      const rawName = systemSettings.settings?.general?.app_name || 'selfmx';
+      appName = `📬 ${rawName}`;
       // Generate short name from app name (first 2-3 characters)
-      shortName = appName.length > 3 ? appName.substring(0, 3).toUpperCase() : appName.toUpperCase();
+      shortName = `📬 ${rawName.length > 3 ? rawName.substring(0, 3).toUpperCase() : rawName.toUpperCase()}`;
     }
 
     // Build icons array - use uploaded favicon if available, otherwise full icon set from /icons/
@@ -118,8 +119,8 @@ export async function GET() {
   } catch (error) {
     // Fallback to static manifest if backend is unavailable
     const fallbackManifest = {
-      name: 'selfmx',
-      short_name: 'MX',
+      name: '📬 selfmx',
+      short_name: '📬 MX',
       description: 'Self-hosted Email the easy way',
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

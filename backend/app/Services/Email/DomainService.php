@@ -127,7 +127,7 @@ class DomainService
     }
 
     /**
-     * Get credentials for a domain — account FK first, then domain-level config.
+     * Get credentials for a domain — account FK first, then domain-level config, then default account.
      */
     public function getCredentialsForDomain(EmailDomain $domain): array
     {
@@ -137,7 +137,19 @@ class DomainService
         }
 
         // Priority 2: Domain's own provider_config (legacy domains not yet migrated to accounts)
-        return $domain->provider_config ?? [];
+        $domainConfig = $domain->provider_config ?? [];
+        if (! empty($domainConfig)) {
+            return $domainConfig;
+        }
+
+        // Priority 3: Fall back to the user's default account for this provider
+        $defaultAccount = EmailProviderAccount::where('provider', $domain->provider)
+            ->where('user_id', $domain->user_id)
+            ->where('is_default', true)
+            ->where('is_active', true)
+            ->first();
+
+        return $defaultAccount ? $defaultAccount->credentials ?? [] : [];
     }
 
     /**

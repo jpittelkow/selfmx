@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, CheckCircle2, XCircle, Loader2, Star, PlugZap } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, XCircle, Loader2, Star, PlugZap, Download, HelpCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,10 @@ import { SettingsPageSkeleton } from "@/components/ui/settings-page-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SaveButton } from "@/components/ui/save-button";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { ProviderComparisonDialog } from "@/components/email/provider-comparison-dialog";
+import { ProviderSetupGuide } from "@/components/email/provider-setup-guide";
 
 interface ProviderAccount {
   id: number;
@@ -145,6 +148,14 @@ export default function EmailAccountsPage() {
   const [editingAccount, setEditingAccount] = useState<ProviderAccount | null>(null);
   const [deletingAccount, setDeletingAccount] = useState<ProviderAccount | null>(null);
   const [testingId, setTestingId] = useState<number | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
+
+  // Import domains state
+  const [importAccount, setImportAccount] = useState<ProviderAccount | null>(null);
+  const [providerDomains, setProviderDomains] = useState<Array<{ name: string; state: string; already_imported: boolean }>>([]);
+  const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
+  const [isLoadingDomains, setIsLoadingDomains] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   // General settings state
   const [hostingSettings, setHostingSettings] = useState<HostingSettings>(defaultHostingSettings);
@@ -295,6 +306,62 @@ export default function EmailAccountsPage() {
     }
   };
 
+  const openImportDialog = async (account: ProviderAccount) => {
+    setImportAccount(account);
+    setProviderDomains([]);
+    setSelectedDomains(new Set());
+    setIsLoadingDomains(true);
+    try {
+      const res = await api.get<{ domains: Array<{ name: string; state: string; already_imported: boolean }>; available: number }>(
+        `/email/provider-accounts/${account.id}/domains`
+      );
+      setProviderDomains(res.data.domains);
+      // Pre-select all available (not yet imported) domains
+      const available = res.data.domains.filter((d) => !d.already_imported).map((d) => d.name);
+      setSelectedDomains(new Set(available));
+    } catch {
+      toast.error("Failed to fetch domains from provider");
+      setImportAccount(null);
+    } finally {
+      setIsLoadingDomains(false);
+    }
+  };
+
+  const handleImportDomains = async () => {
+    if (!importAccount || selectedDomains.size === 0) return;
+    setIsImporting(true);
+    try {
+      const res = await api.post<{ message: string; imported_domains: Array<{ name: string }>; skipped_domains: string[]; import_errors: string[] }>(
+        `/email/provider-accounts/${importAccount.id}/import-domains`,
+        { domains: [...selectedDomains] }
+      );
+      const count = res.data.imported_domains.length;
+      if (count > 0) {
+        toast.success(`Imported ${count} domain${count !== 1 ? "s" : ""}`);
+      } else {
+        toast.info("No new domains to import");
+      }
+      if (res.data.import_errors.length > 0) {
+        res.data.import_errors.forEach((e) => toast.error(e));
+      }
+      setImportAccount(null);
+      await fetchAccounts();
+    } catch {
+      toast.error("Failed to import domains");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const toggleDomain = (name: string) => {
+    setSelectedDomains((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
   if (isLoading) return <SettingsPageSkeleton />;
 
   const fields = CREDENTIAL_FIELDS[editingAccount?.provider ?? formProvider] ?? [];
@@ -308,10 +375,16 @@ export default function EmailAccountsPage() {
             Manage email provider accounts. Each account stores credentials for one provider. Domains are linked to accounts.
           </p>
         </div>
-        <Button onClick={openAddDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Account
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowComparison(true)}>
+            <HelpCircle className="mr-2 h-4 w-4" />
+            Compare Providers
+          </Button>
+          <Button onClick={openAddDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Account
+          </Button>
+        </div>
       </div>
 
       {accounts.length === 0 ? (
@@ -365,6 +438,10 @@ export default function EmailAccountsPage() {
                       <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                     ) : null}
                     Test
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openImportDialog(account)} disabled={!!importAccount}>
+                    <Download className="mr-1 h-3 w-3" />
+                    Import Domains
                   </Button>
                   {!account.is_default && (
                     <Button variant="outline" size="sm" onClick={() => handleSetDefault(account)}>
@@ -456,6 +533,9 @@ export default function EmailAccountsPage() {
                 )}
               </div>
             ))}
+            {!editingAccount && (
+              <ProviderSetupGuide provider={formProvider} />
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setShowAddDialog(false); resetForm(); }}>Cancel</Button>
@@ -510,6 +590,68 @@ export default function EmailAccountsPage() {
           <SaveButton type="button" isDirty={isHostingDirty} isSaving={isSavingHosting} onClick={saveHostingSettings} />
         </CardFooter>
       </Card>
+
+      {/* Import Domains Dialog */}
+      <Dialog open={!!importAccount} onOpenChange={(open) => { if (!open) setImportAccount(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Import Domains</DialogTitle>
+            <DialogDescription>
+              Select domains from {importAccount?.name} to import into selfmx.
+            </DialogDescription>
+          </DialogHeader>
+          {isLoadingDomains ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : providerDomains.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No domains found on this provider account.
+            </p>
+          ) : (
+            <div className="max-h-80 overflow-y-auto space-y-1">
+              {providerDomains.map((d) => (
+                <label
+                  key={d.name}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm",
+                    d.already_imported
+                      ? "opacity-50"
+                      : "hover:bg-muted cursor-pointer"
+                  )}
+                >
+                  <Checkbox
+                    checked={d.already_imported || selectedDomains.has(d.name)}
+                    disabled={d.already_imported}
+                    onCheckedChange={() => toggleDomain(d.name)}
+                  />
+                  <span className="flex-1 font-mono">{d.name}</span>
+                  {d.already_imported ? (
+                    <Badge variant="secondary" className="text-xs">Imported</Badge>
+                  ) : (
+                    <Badge variant={d.state === "active" ? "default" : "outline"} className="text-xs">
+                      {d.state}
+                    </Badge>
+                  )}
+                </label>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportAccount(null)}>Cancel</Button>
+            <Button
+              onClick={handleImportDomains}
+              disabled={isImporting || selectedDomains.size === 0}
+            >
+              {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Import {selectedDomains.size > 0 ? `(${selectedDomains.size})` : ""}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Provider Comparison */}
+      <ProviderComparisonDialog open={showComparison} onOpenChange={setShowComparison} />
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingAccount} onOpenChange={(open) => { if (!open) setDeletingAccount(null); }}>

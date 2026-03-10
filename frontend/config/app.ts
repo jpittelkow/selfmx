@@ -10,15 +10,18 @@
  * fallback is needed in the frontend.
  */
 export const APP_CONFIG = {
+  /** Emoji used as logo/icon across the app (sidebar, tabs, PWA, etc.) */
+  emoji: '📬',
+
   /** Short name for collapsed states (1-3 characters recommended) */
   shortName: process.env.NEXT_PUBLIC_APP_SHORT_NAME || 'MX',
-  
+
   /** Full logo path (null = use text fallback) - use useAppConfig() for dynamic value */
   logo: null as string | null,
-  
+
   /** Square icon path for collapsed sidebar (null = use text fallback) */
   icon: null as string | null,
-  
+
   /** Favicon path */
   favicon: '/favicon.ico',
 };

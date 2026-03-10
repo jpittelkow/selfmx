@@ -1,6 +1,6 @@
 {
-  "name": "selfmx",
-  "short_name": "selfmx",
+  "name": "📬 selfmx",
+  "short_name": "📬 selfmx",
   "description": "Self-hosted Email the easy way",
   "start_url": "/",
   "display": "standalone",

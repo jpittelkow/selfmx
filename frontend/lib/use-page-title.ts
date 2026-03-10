@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAppConfig } from "@/lib/app-config";
 import { errorLogger } from "@/lib/error-logger";
+import { APP_CONFIG } from "@/config/app";
 
 /**
  * Hook to set page title and meta tags dynamically.
@@ -33,7 +34,8 @@ export function usePageTitle(pageTitle?: string, description?: string, unreadCou
 
     // Calculate the full title once
     const unreadPrefix = (unreadCount && unreadCount > 0) ? `(${unreadCount}) ` : "";
-    const fullTitle = (pageTitle && pageTitle.trim()) ? `${unreadPrefix}${pageTitle} | ${appName}` : `${unreadPrefix}${appName}`;
+    const emoji = APP_CONFIG.emoji;
+    const fullTitle = (pageTitle && pageTitle.trim()) ? `${unreadPrefix}${emoji} ${pageTitle} | ${appName}` : `${unreadPrefix}${emoji} ${appName}`;
 
     const updateTitle = () => {
       try {
