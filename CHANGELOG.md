@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.17] - 2026-03-10
+
+### Added
+- Domain import UI, provider guides, and emoji branding
 ## [0.2.16] - 2026-03-09
 
 ### Added
