@@ -6,6 +6,7 @@ use App\Exceptions\MailgunApiException;
 use App\Models\Mailbox;
 use App\Services\Email\Concerns\HasDeliveryStats;
 use App\Services\Email\Concerns\HasDkimManagement;
+use App\Services\Email\Concerns\HasDomainListing;
 use App\Services\Email\Concerns\HasEventLog;
 use App\Services\Email\Concerns\HasInboundRoutes;
 use App\Services\Email\Concerns\HasSuppressionManagement;
@@ -18,6 +19,7 @@ class MailgunProvider implements
     EmailProviderInterface,
     ProviderManagementInterface,
     HasDkimManagement,
+    HasDomainListing,
     HasWebhookManagement,
     HasInboundRoutes,
     HasEventLog,
@@ -38,6 +40,7 @@ class MailgunProvider implements
             'events'         => true,
             'suppressions'   => true,
             'stats'          => true,
+            'domain_listing'    => true,
             // Coming in Phase 8 (Cloudflare) / Phase E (SES, Postmark)
             'domain_management' => false,
             'dns_records'       => false,
@@ -351,6 +354,42 @@ class MailgunProvider implements
     {
         $result = $this->managementRequest('get', 'v3/domains', ['limit' => 1], $config);
         return $result['ok'];
+    }
+
+    // -- Domain Listing --
+
+    public function listProviderDomains(array $config = []): array
+    {
+        $allDomains = [];
+        $skip = 0;
+        $limit = 100;
+
+        do {
+            $result = $this->managementRequestOrFail('get', 'v3/domains', [
+                'limit' => $limit,
+                'skip' => $skip,
+            ], $config);
+
+            $items = $result['body']['items'] ?? [];
+            $totalCount = $result['body']['total_count'] ?? 0;
+
+            foreach ($items as $item) {
+                $allDomains[] = [
+                    'name' => $item['name'] ?? '',
+                    'state' => $item['state'] ?? 'unknown',
+                    'created_at' => $item['created_at'] ?? null,
+                    'type' => $item['type'] ?? null,
+                    'is_disabled' => $item['is_disabled'] ?? false,
+                ];
+            }
+
+            $skip += $limit;
+        } while (count($allDomains) < $totalCount && ! empty($items));
+
+        return [
+            'domains' => $allDomains,
+            'total' => count($allDomains),
+        ];
     }
 
     // -- DKIM --

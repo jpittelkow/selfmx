@@ -568,6 +568,8 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::delete('/{providerAccount}', [EmailProviderAccountController::class, 'destroy'])->middleware('can:settings.edit');
         Route::post('/{providerAccount}/test', [EmailProviderAccountController::class, 'test'])->middleware('can:settings.edit');
         Route::post('/{providerAccount}/default', [EmailProviderAccountController::class, 'setDefault'])->middleware('can:settings.edit');
+        Route::get('/{providerAccount}/domains', [EmailProviderAccountController::class, 'listProviderDomains'])->middleware('can:settings.view');
+        Route::post('/{providerAccount}/import-domains', [EmailProviderAccountController::class, 'importDomains'])->middleware('can:settings.edit');
     });
 
     // Email Domains (authenticated users manage their own domains)

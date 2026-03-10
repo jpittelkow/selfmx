@@ -49,8 +49,29 @@ class EmailProviderAccountController extends Controller
             $validated['credentials'],
         );
 
-        return $this->createdResponse('Provider account created successfully', [
-            'account' => $this->formatAccount($account),
+        // Auto-import active domains from the provider (best-effort — don't fail account creation)
+        $importResult = ['imported' => [], 'skipped' => [], 'errors' => []];
+        try {
+            $importResult = $this->accountService->importDomainsFromProvider($account);
+        } catch (\Exception $e) {
+            $importResult['errors'][] = 'Auto-import failed: ' . $e->getMessage();
+        }
+
+        $message = 'Provider account created successfully';
+        $importedCount = count($importResult['imported']);
+        if ($importedCount > 0) {
+            $message .= ". Imported {$importedCount} domain(s) from provider.";
+        }
+
+        return $this->createdResponse($message, [
+            'account' => $this->formatAccount($account->fresh()->loadCount('domains')),
+            'imported_domains' => array_map(fn ($d) => [
+                'id' => $d->id,
+                'name' => $d->name,
+                'is_verified' => $d->is_verified,
+            ], $importResult['imported']),
+            'skipped_domains' => $importResult['skipped'],
+            'import_errors' => $importResult['errors'],
         ]);
     }
 
@@ -124,6 +145,62 @@ class EmailProviderAccountController extends Controller
         $this->accountService->setDefault($providerAccount);
 
         return $this->successResponse('Provider account set as default');
+    }
+
+    /**
+     * List domains from the provider API, indicating which are already imported.
+     */
+    public function listProviderDomains(Request $request, EmailProviderAccount $providerAccount): JsonResponse
+    {
+        if ($providerAccount->user_id !== $request->user()->id) {
+            return $this->errorResponse('Not found', 404);
+        }
+
+        try {
+            $result = $this->accountService->fetchProviderDomains($providerAccount);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to fetch domains from provider: ' . $e->getMessage(), 502);
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * Import specific (or all active) domains from a provider account.
+     */
+    public function importDomains(Request $request, EmailProviderAccount $providerAccount): JsonResponse
+    {
+        if ($providerAccount->user_id !== $request->user()->id) {
+            return $this->errorResponse('Not found', 404);
+        }
+
+        $validated = $request->validate([
+            'domains' => ['sometimes', 'array'],
+            'domains.*' => ['string', 'max:253'],
+        ]);
+
+        $domainNames = $validated['domains'] ?? null;
+
+        try {
+            $result = $this->accountService->importDomainsFromProvider($providerAccount, $domainNames);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to import domains: ' . $e->getMessage(), 502);
+        }
+
+        $importedCount = count($result['imported']);
+        $message = $importedCount > 0
+            ? "Imported {$importedCount} domain(s) successfully."
+            : 'No new domains to import.';
+
+        return $this->successResponse($message, [
+            'imported_domains' => array_map(fn ($d) => [
+                'id' => $d->id,
+                'name' => $d->name,
+                'is_verified' => $d->is_verified,
+            ], $result['imported']),
+            'skipped_domains' => $result['skipped'],
+            'import_errors' => $result['errors'],
+        ]);
     }
 
     private function formatAccount(EmailProviderAccount $account): array

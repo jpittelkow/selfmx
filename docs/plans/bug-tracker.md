@@ -19,6 +19,22 @@ Suspected bugs and issues to investigate. Claude logs items here when something 
 - **Files involved**: `backend/app/Http/Controllers/Api/StorageSettingController.php`, `backend/app/Services/SettingService.php`, `backend/config/settings-schema.php`
 - **Notes**: Low severity — storage works correctly; only the admin API response is incomplete. Users updating storage settings via the UI won't notice, but API consumers expecting full config in the GET response will get a partial response.
 
+### Changelog page throws "Server Error" (Malformed UTF-8)
+- **Observed**: 2026-03-09
+- **Status**: Suspected
+- **Context**: User navigated to `/configuration/changelog` in production
+- **Symptoms**: Page fails to load with "Server Error". Backend logs show `InvalidArgumentException: Malformed UTF-8 characters, possibly incorrectly encoded` at `JsonResponse.php:90`. The changelog data being serialized to JSON contains invalid UTF-8 bytes.
+- **Files involved**: Changelog controller/service (likely `ChangelogController` or similar), `JsonResponse.php:90`
+- **Notes**: Happens consistently on page load. Likely a changelog entry contains non-UTF-8 characters (e.g., from git log output or a VERSION/CHANGELOG file with encoding issues). Need to sanitize or re-encode the data before JSON serialization.
+
+### VAPID private key decryption fails
+- **Observed**: 2026-03-09
+- **Status**: Suspected
+- **Context**: Appears on page load — `notifications.vapid_private_key` setting fails to decrypt
+- **Symptoms**: Warning log: `Failed to decrypt setting notifications.vapid_private_key {"error":"The payload is invalid."}`. The encrypted value in the database can't be decrypted, possibly due to an APP_KEY change or the value was stored corrupted.
+- **Files involved**: `backend/app/Services/SettingService.php`, notifications settings
+- **Notes**: Low severity if push notifications aren't actively used, but will cause issues when attempting to send web push notifications. Fix may require re-saving the VAPID keys or regenerating them.
+
 <!-- Template:
 ### [Short description]
 - **Observed**: [date]

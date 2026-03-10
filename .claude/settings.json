@@ -8,7 +8,21 @@
       "Bash(diff /c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/branding/page.tsx /c/Users/jpitt_6932a9v/code/sourdough/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/branding/page.tsx)",
       "Bash(diff /c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/security/page.tsx /c/Users/jpitt_6932a9v/code/sourdough/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/security/page.tsx)",
       "Bash(git -C c:/Users/jpitt_6932a9v/code/selfmx diff --stat HEAD)",
-      "Bash(git -C c:/Users/jpitt_6932a9v/code/selfmx diff --name-only HEAD -- backend/app/Services/Email/ backend/app/Http/Controllers/Api/ backend/database/migrations/)"
+      "Bash(git -C c:/Users/jpitt_6932a9v/code/selfmx diff --name-only HEAD -- backend/app/Services/Email/ backend/app/Http/Controllers/Api/ backend/database/migrations/)",
+      "Bash(figlet selfmx)",
+      "Bash(toilet selfmx)",
+      "Bash(figlet -f standard selfmx)",
+      "Bash(python3 -c \"import pyfiglet; print\\(pyfiglet.figlet_format\\(''selfmx'', font=''standard''\\)\\)\")",
+      "Bash(docker cp \"C:/Users/jpitt_6932a9v/code/selfmx/figlet_selfmx.py\" selfmx-dev:/tmp/figlet_selfmx.py)",
+      "Bash(python3 \"C:/Users/jpitt_6932a9v/code/selfmx/figlet_selfmx.py\")",
+      "Bash(python \"C:/Users/jpitt_6932a9v/code/selfmx/figlet_selfmx.py\")",
+      "Bash(',')",
+      "Bash(_)",
+      "Bash(node \"C:/Users/jpitt_6932a9v/code/selfmx/figlet_selfmx.js\")",
+      "Bash(node \"C:/Users/jpitt_6932a9v/code/selfmx/figlet_selfmx2.js\")",
+      "Bash(ls -la \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(auth\\)/\")",
+      "Bash(find \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(auth\\)\" -type f -name \"*.tsx\")",
+      "Bash(grep -n \"offline-badge\\\\|offline-indicator\" /c/Users/jpitt_6932a9v/code/selfmx/frontend/components/*.tsx)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jpitt_6932a9v\\code\\selfmx\\frontend\\components"

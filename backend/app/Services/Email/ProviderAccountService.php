@@ -2,10 +2,13 @@
 
 namespace App\Services\Email;
 
+use App\Models\EmailDomain;
 use App\Models\EmailProviderAccount;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\Email\Concerns\HasDomainListing;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProviderAccountService
 {
@@ -180,5 +183,137 @@ class ProviderAccountService
             ->where('is_default', true)
             ->where('is_active', true)
             ->first();
+    }
+
+    /**
+     * Fetch domains from the provider API and indicate which are already imported.
+     *
+     * @return array{domains: array, imported: int, available: int}
+     */
+    public function fetchProviderDomains(EmailProviderAccount $account): array
+    {
+        $provider = $this->domainService->resolveProvider($account->provider);
+
+        if (! $provider instanceof HasDomainListing) {
+            return ['domains' => [], 'imported' => 0, 'available' => 0];
+        }
+
+        $result = $provider->listProviderDomains($account->credentials ?? []);
+        $providerDomains = $result['domains'] ?? [];
+
+        // Get domain names already in the system globally (domain names are globally unique)
+        $existingNames = EmailDomain::pluck('name')
+            ->map(fn ($n) => strtolower($n))
+            ->toArray();
+
+        $imported = 0;
+        $available = 0;
+        $domains = [];
+
+        foreach ($providerDomains as $pd) {
+            $name = strtolower($pd['name']);
+            $alreadyImported = in_array($name, $existingNames);
+
+            if ($alreadyImported) {
+                $imported++;
+            } else {
+                $available++;
+            }
+
+            $domains[] = [
+                'name' => $name,
+                'state' => $pd['state'] ?? 'unknown',
+                'created_at' => $pd['created_at'] ?? null,
+                'type' => $pd['type'] ?? null,
+                'is_disabled' => $pd['is_disabled'] ?? false,
+                'already_imported' => $alreadyImported,
+            ];
+        }
+
+        return [
+            'domains' => $domains,
+            'imported' => $imported,
+            'available' => $available,
+        ];
+    }
+
+    /**
+     * Import active domains from a provider account into the system.
+     *
+     * @param  array|null  $domainNames  Specific domains to import. Null = all active domains.
+     * @return array{imported: EmailDomain[], skipped: string[], errors: string[]}
+     */
+    public function importDomainsFromProvider(EmailProviderAccount $account, ?array $domainNames = null): array
+    {
+        $provider = $this->domainService->resolveProvider($account->provider);
+
+        if (! $provider instanceof HasDomainListing) {
+            return ['imported' => [], 'skipped' => [], 'errors' => ["Provider '{$account->provider}' does not support domain listing."]];
+        }
+
+        $result = $provider->listProviderDomains($account->credentials ?? []);
+        $providerDomains = $result['domains'] ?? [];
+
+        // Always filter out disabled domains; when specific names given, allow unverified
+        $providerDomains = array_filter($providerDomains, function ($pd) use ($domainNames) {
+            if ($pd['is_disabled'] ?? false) {
+                return false;
+            }
+            if ($domainNames !== null) {
+                return in_array(strtolower($pd['name']), array_map('strtolower', $domainNames));
+            }
+            return ($pd['state'] ?? '') === 'active';
+        });
+
+        // Get existing domain names globally (domain names are globally unique)
+        $existingNames = EmailDomain::pluck('name')
+            ->map(fn ($n) => strtolower($n))
+            ->toArray();
+
+        $imported = [];
+        $skipped = [];
+        $errors = [];
+
+        foreach ($providerDomains as $pd) {
+            $name = strtolower($pd['name']);
+
+            if (in_array($name, $existingNames)) {
+                $skipped[] = $name;
+                continue;
+            }
+
+            try {
+                $isVerified = ($pd['state'] ?? '') === 'active';
+
+                $domain = EmailDomain::create([
+                    'user_id' => $account->user_id,
+                    'name' => $name,
+                    'provider' => $account->provider,
+                    'email_provider_account_id' => $account->id,
+                    'is_verified' => $isVerified,
+                    'verified_at' => $isVerified ? now() : null,
+                    'is_active' => $isVerified,
+                ]);
+
+                $this->auditService->log('email_domain.imported', $domain, [], [
+                    'name' => $name,
+                    'provider' => $account->provider,
+                    'account_id' => $account->id,
+                    'provider_state' => $pd['state'] ?? 'unknown',
+                ]);
+
+                $imported[] = $domain;
+            } catch (\Exception $e) {
+                Log::warning("Failed to import domain {$name} from provider account {$account->id}", [
+                    'error' => $e->getMessage(),
+                ]);
+                $isDuplicate = str_contains($e->getMessage(), 'UNIQUE') || str_contains($e->getMessage(), 'Duplicate');
+                $errors[] = $isDuplicate
+                    ? "{$name}: domain already exists in the system"
+                    : "{$name}: import failed";
+            }
+        }
+
+        return ['imported' => $imported, 'skipped' => $skipped, 'errors' => $errors];
     }
 }
