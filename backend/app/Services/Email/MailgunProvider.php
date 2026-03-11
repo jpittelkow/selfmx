@@ -335,7 +335,7 @@ class MailgunProvider implements
                 'post'   => $json ? $request->post($url, $payload) : $request->asForm()->post($url, $payload),
                 'put'    => $json ? $request->put($url, $payload) : $request->asForm()->put($url, $payload),
                 'delete' => $request->delete($url, $payload),
-                default  => $request->get($url, $payload),
+                default  => empty($payload) ? $request->get($url) : $request->get($url, $payload),
             };
 
             return [

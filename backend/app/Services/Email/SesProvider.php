@@ -109,12 +109,17 @@ class SesProvider implements
         $data = json_decode($message, true);
 
         if (!$data || !isset($data['SignatureVersion'])) {
+            Log::warning('SES webhook: missing SignatureVersion or invalid JSON', [
+                'content_length' => strlen($message),
+                'has_data' => !empty($data),
+            ]);
             return false;
         }
 
         // Verify the signing certificate URL is from SNS
         $certUrl = $data['SigningCertURL'] ?? '';
         if (!str_starts_with($certUrl, 'https://sns.') || !str_contains($certUrl, '.amazonaws.com/')) {
+            Log::warning('SES webhook: invalid signing cert URL', ['cert_url' => $certUrl]);
             return false;
         }
 
@@ -122,15 +127,24 @@ class SesProvider implements
             $cert = Http::get($certUrl)->body();
             $pubKey = openssl_pkey_get_public($cert);
             if (!$pubKey) {
+                Log::warning('SES webhook: could not extract public key from certificate', ['cert_url' => $certUrl]);
                 return false;
             }
 
             $stringToSign = $this->buildSnsStringToSign($data);
             $signature = base64_decode($data['Signature'] ?? '');
 
-            return openssl_verify($stringToSign, $signature, $pubKey, OPENSSL_ALGO_SHA1) === 1;
+            $result = openssl_verify($stringToSign, $signature, $pubKey, OPENSSL_ALGO_SHA1) === 1;
+            if (!$result) {
+                Log::warning('SES webhook: SNS signature verification failed', [
+                    'type' => $data['Type'] ?? 'unknown',
+                    'topic_arn' => $data['TopicArn'] ?? null,
+                    'message_id' => $data['MessageId'] ?? null,
+                ]);
+            }
+            return $result;
         } catch (\Exception $e) {
-            Log::warning('SES webhook signature verification failed', ['error' => $e->getMessage()]);
+            Log::warning('SES webhook signature verification exception', ['error' => $e->getMessage()]);
             return false;
         }
     }
@@ -140,16 +154,32 @@ class SesProvider implements
         $body = json_decode($request->getContent(), true);
         $messageType = $body['Type'] ?? '';
 
-        // Handle SNS subscription confirmation
+        Log::info('SES inbound webhook received', [
+            'type' => $messageType,
+            'topic_arn' => $body['TopicArn'] ?? null,
+            'message_id' => $body['MessageId'] ?? null,
+        ]);
+
+        // Handle SNS subscription confirmation (same pattern as parseDeliveryEvent)
         if ($messageType === 'SubscriptionConfirmation') {
             Http::get($body['SubscribeURL']);
+            Log::info('SNS subscription confirmed for SES inbound endpoint', ['TopicArn' => $body['TopicArn'] ?? '']);
             throw new \RuntimeException('SNS subscription confirmed');
         }
 
         // Parse the actual email from the SNS notification
         $snsMessage = json_decode($body['Message'] ?? '{}', true);
+        $notificationType = $snsMessage['notificationType'] ?? null;
         $mail = $snsMessage['mail'] ?? [];
         $content = $snsMessage['content'] ?? '';
+
+        Log::info('SES inbound email parsing', [
+            'notification_type' => $notificationType,
+            'source' => $mail['source'] ?? null,
+            'destination' => $mail['destination'] ?? [],
+            'has_content' => !empty($content),
+            'content_length' => strlen($content),
+        ]);
 
         $headers = [];
         foreach ($mail['headers'] ?? [] as $header) {

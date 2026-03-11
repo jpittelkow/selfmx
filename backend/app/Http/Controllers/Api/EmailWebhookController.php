@@ -33,7 +33,11 @@ class EmailWebhookController extends Controller
 
         // Verify webhook signature
         if (!$emailProvider->verifyWebhookSignature($request)) {
-            Log::warning("Email webhook signature verification failed for provider: {$provider}");
+            Log::warning("Email webhook signature verification failed for provider: {$provider}", [
+                'content_type' => $request->header('Content-Type'),
+                'content_length' => strlen($request->getContent()),
+                'ip' => $request->ip(),
+            ]);
             return $this->errorResponse('Invalid signature', 401);
         }
 
@@ -47,6 +51,17 @@ class EmailWebhookController extends Controller
             }
 
             return $this->successResponse('ok', ['email_id' => $email->id]);
+        } catch (\RuntimeException $e) {
+            // SNS subscription confirmations throw RuntimeException after confirming — return 200
+            if (str_contains($e->getMessage(), 'subscription confirmed')) {
+                return $this->successResponse('subscription confirmed');
+            }
+
+            Log::error("Email webhook processing failed", [
+                'provider' => $provider,
+                'error' => $e->getMessage(),
+            ]);
+            return $this->errorResponse('Processing failed', 500);
         } catch (\Exception $e) {
             Log::error("Email webhook processing failed", [
                 'provider' => $provider,
