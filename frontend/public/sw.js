@@ -11,7 +11,7 @@ importScripts('/workbox/workbox-sw.js');
 
 workbox.setConfig({ debug: false, modulePathPrefix: '/workbox/' });
 
-const CACHE_VERSION = 'selfmx-v0.2.19';
+const CACHE_VERSION = 'selfmx-v0.2.20';
 const OFFLINE_URL = '/offline.html';
 const REQUEST_QUEUE_DB = 'selfmx-request-queue';
 const REQUEST_QUEUE_STORE = 'requests';

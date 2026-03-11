@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.20] - 2026-03-10
+
+### Added
+- SES provider management, mailbox preservation on domain delete, email provider architecture docs
 ## [0.2.19] - 2026-03-10
 
 ### Fixed
