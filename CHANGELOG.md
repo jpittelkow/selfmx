@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.21] - 2026-03-11
+
+### Fixed
+- SES domain verification with full DNS records, stats format normalization, and tracking settings improvements across providers
 ## [0.2.20] - 2026-03-10
 
 ### Added
