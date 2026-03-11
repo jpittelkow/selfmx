@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.24] - 2026-03-11
+
+### Added
+- Search suggestions for emails and contacts, web push subscription cleanup, header layout fix
 ## [0.2.23] - 2026-03-11
 
 ### Fixed
