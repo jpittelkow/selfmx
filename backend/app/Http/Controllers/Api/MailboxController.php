@@ -72,6 +72,7 @@ class MailboxController extends Controller
             'user_id' => $request->user()->id,
             'email_domain_id' => $domain->id,
             'address' => strtolower($validated['address']),
+            'domain_name' => $domain->name,
             'display_name' => $validated['display_name'] ?? null,
             'signature' => $validated['signature'] ?? null,
             'is_active' => true,

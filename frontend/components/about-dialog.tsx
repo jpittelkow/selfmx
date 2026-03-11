@@ -124,7 +124,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
                 rel="noopener noreferrer"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Built on Sourdough v0.8.2
+                Powered by Sourdough v0.10.3
               </a>
             </div>
           </div>

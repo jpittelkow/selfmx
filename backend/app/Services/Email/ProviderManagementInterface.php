@@ -16,8 +16,8 @@ interface ProviderManagementInterface
      * Return a map of capability name => bool indicating what management
      * operations this provider supports.
      *
-     * Known keys: dkim_rotation, webhooks, inbound_routes, events,
-     *             suppressions, stats, domain_management, dns_records
+     * Known keys: dkim_rotation, domain_listing, webhooks, inbound_routes,
+     *             events, suppressions, stats, domain_management, dns_records
      *
      * @return array<string, bool>
      */

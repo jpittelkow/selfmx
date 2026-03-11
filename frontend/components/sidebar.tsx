@@ -43,6 +43,7 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { getMailboxAddress } from "@/lib/mail-types";
 import { useSidebar } from "@/components/sidebar-context";
 import { useIsMobile } from "@/lib/use-mobile";
 import { useVersion } from "@/lib/version-provider";
@@ -99,10 +100,7 @@ function MailboxSwitcher({
 
   const activeMailbox = accessibleMailboxes.find(m => m.id === activeMailboxId);
 
-  const getMailboxLabel = (m: typeof accessibleMailboxes[0]) => {
-    const fullAddress = `${m.address}@${m.email_domain.name}`;
-    return m.address === "*" ? `Catchall (${m.email_domain.name})` : fullAddress;
-  };
+  const getMailboxLabel = (m: typeof accessibleMailboxes[0]) => getMailboxAddress(m);
 
   return (
     <div className="px-2 mb-2">
@@ -238,7 +236,7 @@ function MailNavSectionInner({
               <div className="h-px bg-border my-1" />
               {accessibleMailboxes.map((m) => {
                 const unread = mailboxUnreadCounts[m.id] || 0;
-                const label = m.address === "*" ? `Catchall (${m.email_domain.name})` : `${m.address}@${m.email_domain.name}`;
+                const label = getMailboxAddress(m);
                 return (
                   <button
                     key={m.id}

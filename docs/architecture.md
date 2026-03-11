@@ -78,6 +78,8 @@ Architecture Decision Records (ADRs) document all significant design decisions:
   - See also: [Security Patterns](ai/patterns/security.md)
 - [ADR-027: Email Hosting Architecture](adr/027-email-hosting-architecture.md) - Provider-based email hosting with webhook inbound, API outbound, conversation threading, Gmail-style labels
   - Key files: `backend/app/Services/Email/EmailService.php`, `backend/app/Services/Email/MailgunProvider.php`, `backend/app/Services/Email/EmailProviderInterface.php`, `backend/app/Http/Controllers/Api/EmailWebhookController.php`, `backend/app/Models/Email.php`, `frontend/app/(dashboard)/mail/page.tsx`, `frontend/components/mail/`
+- [ADR-031: Email Provider Management Architecture](adr/031-email-provider-management-architecture.md) - Capability-based provider interfaces, management controller, credential hierarchy, webhook architecture
+  - Key files: `backend/app/Services/Email/ProviderManagementInterface.php`, `backend/app/Services/Email/Concerns/Has*.php`, `backend/app/Http/Controllers/Api/ProviderManagementController.php`, `backend/app/Models/EmailProviderAccount.php`, `backend/app/Services/Email/DomainService.php`
 
 ### Logging and Observability
 

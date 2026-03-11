@@ -4,19 +4,18 @@ set -e
 # ASCII Art Banner
 cat << 'BANNER'
 
-  .______________________________.
-  |\                            /|
-  | \........................../ |
-  |  '------------------------'  |
-  |                              |
-  '------------------------------'
-
-            s e l f m x
+     _______________
+    /              /\
+   /   Sourdough  / /
+  /              / /
+ /______________/ /
+ \______________\/
+   > _            ...
 
 BANNER
 echo "  ${APP_NAME:-selfmx} v${APP_VERSION:-unknown}"
 echo "  Build: ${APP_BUILD_SHA:-development}"
-echo "  Built on Sourdough v0.8.2 (github.com/Sourdough-start/sourdough)"
+echo "  Powered by Sourdough v0.10.3 (github.com/Sourdough-start/sourdough)"
 echo ""
 
 #==============================================================================

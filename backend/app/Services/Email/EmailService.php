@@ -43,6 +43,9 @@ class EmailService
         }
 
         $domain = $mailbox->emailDomain;
+        if (!$domain) {
+            abort(422, 'Cannot send: mailbox domain is not configured.');
+        }
         $messageId = $this->generateMessageId($domain->name);
         $subject = $data['subject'] ?? '';
         $normalizedSubject = $this->normalizeSubject($subject);
@@ -634,9 +637,9 @@ class EmailService
     public function resolveThread(ParsedEmail $parsed, Mailbox $mailbox): ?EmailThread
     {
         // Get all mailbox IDs on the same domain for broader matching
-        $domainMailboxIds = Mailbox::where('email_domain_id', $mailbox->email_domain_id)
-            ->pluck('id')
-            ->toArray();
+        $domainMailboxIds = $mailbox->email_domain_id
+            ? Mailbox::where('email_domain_id', $mailbox->email_domain_id)->pluck('id')->toArray()
+            : [$mailbox->id];
 
         // Try to find thread via In-Reply-To header
         if ($parsed->inReplyTo) {

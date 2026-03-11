@@ -113,13 +113,14 @@ class EmailImportService
                 }
             }
 
-            $messageId = $parsed['message_id'] ?: $this->emailService->generateMessageId($mailbox->emailDomain->name ?? 'imported');
+            $domainName = $mailbox->emailDomain?->name ?? $mailbox->domain_name ?? 'imported';
+            $messageId = $parsed['message_id'] ?: $this->emailService->generateMessageId($domainName);
             $subject = $parsed['subject'] ?? '(No Subject)';
             $normalizedSubject = $this->emailService->normalizeSubject($subject);
             $sentAt = $parsed['date'] ?? now();
 
             // Determine direction
-            $mailboxAddress = "{$mailbox->address}@{$mailbox->emailDomain->name}";
+            $mailboxAddress = $mailbox->full_address;
             $direction = strtolower($parsed['from_address']) === strtolower($mailboxAddress) ? 'outbound' : 'inbound';
 
             DB::transaction(function () use ($parsed, $mailbox, $user, $messageId, $subject, $normalizedSubject, $sentAt, $direction) {
@@ -178,9 +179,9 @@ class EmailImportService
      */
     private function resolveImportThread(array $parsed, Mailbox $mailbox, ?string $normalizedSubject, User $user): ?EmailThread
     {
-        $domainMailboxIds = Mailbox::where('email_domain_id', $mailbox->email_domain_id)
-            ->pluck('id')
-            ->toArray();
+        $domainMailboxIds = $mailbox->email_domain_id
+            ? Mailbox::where('email_domain_id', $mailbox->email_domain_id)->pluck('id')->toArray()
+            : [$mailbox->id];
 
         // Try In-Reply-To
         if (!empty($parsed['in_reply_to'])) {

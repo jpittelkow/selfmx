@@ -4,8 +4,10 @@ namespace App\Services\Email;
 
 use App\Models\EmailDomain;
 use App\Models\EmailProviderAccount;
+use App\Models\Mailbox;
 use App\Models\User;
 use App\Services\AuditService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DomainService
@@ -85,6 +87,21 @@ class DomainService
             }
         }
 
+        // Re-associate orphaned mailboxes from a previously deleted version of this domain
+        try {
+            $reassociated = Mailbox::whereNull('email_domain_id')
+                ->where('domain_name', strtolower($domainName))
+                ->where('user_id', $user->id)
+                ->update(['email_domain_id' => $domain->id, 'is_active' => true]);
+
+            if ($reassociated > 0) {
+                Log::info("Re-associated {$reassociated} orphaned mailboxes with domain {$domainName}");
+            }
+        } catch (\Exception $e) {
+            Log::warning("Failed to re-associate orphaned mailboxes for {$domainName}", ['error' => $e->getMessage()]);
+            $warnings[] = 'Some previously existing mailboxes could not be automatically restored.';
+        }
+
         return ['domain' => $domain, 'warnings' => $warnings];
     }
 
@@ -114,7 +131,7 @@ class DomainService
     }
 
     /**
-     * Delete a domain.
+     * Delete a domain. Mailboxes are preserved (detached) so emails persist.
      */
     public function deleteDomain(EmailDomain $domain): void
     {
@@ -123,7 +140,11 @@ class DomainService
             'provider' => $domain->provider,
         ], []);
 
-        $domain->delete();
+        DB::transaction(function () use ($domain) {
+            // Deactivate mailboxes before deletion — they'll be orphaned with email_domain_id=null
+            $domain->mailboxes()->update(['is_active' => false]);
+            $domain->delete();
+        });
     }
 
     /**

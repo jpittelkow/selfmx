@@ -232,20 +232,33 @@ backend/routes/web.php                              # connect callback
 
 **Read first:**
 ```
-docs/plans/email-provider-comparison.md          # Provider comparison, pricing, selection criteria, API docs
-docs/adr/027-email-hosting-architecture.md       # Provider abstraction architecture
-backend/app/Services/Email/EmailProviderInterface.php  # Provider interface contract
+docs/adr/031-email-provider-management-architecture.md  # Capability-based provider architecture (interfaces, DTOs, credential hierarchy)
+docs/adr/027-email-hosting-architecture.md              # Core email hosting architecture
+docs/plans/email-provider-comparison.md                 # Provider comparison, pricing, selection criteria, API docs
+backend/app/Services/Email/EmailProviderInterface.php   # Core provider interface contract
+backend/app/Services/Email/ProviderManagementInterface.php  # Management capability declaration
+backend/app/Services/Email/Concerns/                    # Capability-specific interfaces (7 files)
 ```
 
 **Also useful:**
 ```
-backend/app/Services/Email/MailgunProvider.php    # Reference adapter implementation
-backend/app/Services/Email/SesProvider.php        # SES adapter
-backend/app/Services/Email/PostmarkProvider.php   # Postmark adapter
-backend/app/Services/Email/SendGridProvider.php   # SendGrid adapter
-backend/config/settings-schema.php               # email_hosting settings group
+backend/app/Services/Email/MailgunProvider.php    # Reference adapter implementation (full capabilities)
+backend/app/Services/Email/SesProvider.php        # SES adapter (partial capabilities)
+backend/app/Services/Email/DomainService.php      # Domain lifecycle, provider factory, credential resolution
+backend/app/Http/Controllers/Api/ProviderManagementController.php  # Provider-agnostic management controller
+backend/app/Models/EmailProviderAccount.php       # Multi-account credential storage
+backend/app/Exceptions/ProviderApiException.php   # Provider error type
+backend/app/Services/Email/ParsedEmail.php        # Inbound email DTO
+backend/app/Services/Email/SendResult.php         # Send result DTO
+backend/app/Services/Email/DomainResult.php       # Domain registration DTO
+backend/config/settings-schema.php                # email_hosting settings group
 frontend/app/(dashboard)/configuration/email-provider/ # Provider configuration UI
 ```
+
+**Patterns & Recipes:**
+- [Email Provider Pattern](patterns/email-provider.md)
+- [Email Provider Anti-Patterns](anti-patterns/email-provider.md)
+- [Recipe: Add Email Provider](recipes/add-email-provider.md)
 
 ## Email Template Work
 

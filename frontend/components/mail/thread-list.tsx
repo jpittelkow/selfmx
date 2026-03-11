@@ -11,6 +11,7 @@ import { Inbox, Search, ChevronLeft, ChevronRight, MailOpen, Mail, Star, Trash2,
 import { SearchBar } from "@/components/mail/search-bar";
 import { ThreadListSkeleton } from "@/components/mail/thread-list-skeleton";
 import type { EmailThread, EmailLabel, MailView } from "@/lib/mail-types";
+import { getMailboxAddress } from "@/lib/mail-types";
 
 interface ThreadListProps {
   threads: EmailThread[];
@@ -284,9 +285,7 @@ export function ThreadList({
                     {showMailboxIndicator && thread.latest_email?.mailbox && (
                       <div className="mt-0.5">
                         <span className="text-xs text-muted-foreground">
-                          {thread.latest_email.mailbox.address === "*"
-                            ? `Catchall (${thread.latest_email.mailbox.email_domain.name})`
-                            : `${thread.latest_email.mailbox.address}@${thread.latest_email.mailbox.email_domain.name}`}
+                          {getMailboxAddress(thread.latest_email.mailbox)}
                         </span>
                       </div>
                     )}

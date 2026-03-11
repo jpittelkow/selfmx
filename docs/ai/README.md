@@ -63,6 +63,7 @@ Example plan reference:
 | Add Backup Destination | [add-backup-destination.md](recipes/add-backup-destination.md) |
 | Extend Backup & Restore | [extend-backup-restore.md](recipes/extend-backup-restore.md) |
 | Add Storage Provider | [add-storage-provider.md](recipes/add-storage-provider.md) |
+| Add Email Provider | [add-email-provider.md](recipes/add-email-provider.md) |
 | Add Email Template | [add-email-template.md](recipes/add-email-template.md) |
 | Add Notification Template | [add-notification-template.md](recipes/add-notification-template.md) |
 | Keep Notification Template Variables Up to Date | [keep-notification-template-variables-up-to-date.md](recipes/keep-notification-template-variables-up-to-date.md) |

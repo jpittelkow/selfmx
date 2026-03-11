@@ -6,7 +6,7 @@ use App\Exceptions\SesApiException;
 use App\Models\Mailbox;
 use App\Services\Email\Concerns\HasDeliveryStats;
 use App\Services\Email\Concerns\HasDkimManagement;
-use App\Services\Email\Concerns\HasEventLog;
+use App\Services\Email\Concerns\HasDomainListing;
 use App\Services\Email\Concerns\HasSuppressionManagement;
 use App\Services\Email\Concerns\HasWebhookManagement;
 use App\Services\SettingService;
@@ -18,8 +18,8 @@ class SesProvider implements
     EmailProviderInterface,
     ProviderManagementInterface,
     HasDkimManagement,
+    HasDomainListing,
     HasWebhookManagement,
-    HasEventLog,
     HasSuppressionManagement,
     HasDeliveryStats
 {
@@ -39,14 +39,62 @@ class SesProvider implements
     public function getCapabilities(): array
     {
         return [
-            'dkim_rotation'     => false, // SES DKIM is managed differently — no rotation endpoint
+            'dkim_rotation'     => true,  // disable/re-enable Easy DKIM to rotate tokens
             'webhooks'          => true,  // via SES configuration sets + event destinations
             'inbound_routes'    => false, // not supported
-            'events'            => false, // no queryable event log in SES v2
+            'events'            => false, // no queryable event log — use CloudWatch
             'suppressions'      => true,  // SES v2 account-level suppression list
             'stats'             => true,  // basic send statistics
+            'domain_listing'    => true,  // SES v2 ListEmailIdentities
             'domain_management' => false,
             'dns_records'       => false,
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // HasDomainListing
+    // -------------------------------------------------------------------------
+
+    public function listProviderDomains(array $config = []): array
+    {
+        $allDomains = [];
+        $nextToken  = null;
+
+        do {
+            $params = ['PageSize' => 100];
+            if ($nextToken) {
+                $params['NextToken'] = $nextToken;
+            }
+
+            $result = $this->managementRequestOrFail('get', 'email/identities', $params, $config);
+
+            $items     = $result['body']['EmailIdentities'] ?? [];
+            $nextToken = $result['body']['NextToken'] ?? null;
+
+            foreach ($items as $item) {
+                $identityName = $item['IdentityName'] ?? '';
+                $identityType = $item['IdentityType'] ?? '';
+
+                // Only include domain identities, skip email address identities
+                if ($identityType !== 'DOMAIN') {
+                    continue;
+                }
+
+                $sendingEnabled = $item['SendingEnabled'] ?? false;
+
+                $allDomains[] = [
+                    'name'       => $identityName,
+                    'state'      => $sendingEnabled ? 'active' : 'unverified',
+                    'created_at' => null,
+                    'type'       => 'domain',
+                    'is_disabled' => false,
+                ];
+            }
+        } while ($nextToken);
+
+        return [
+            'domains' => $allDomains,
+            'total'   => count($allDomains),
         ];
     }
 
@@ -122,11 +170,11 @@ class SesProvider implements
             bodyText: $this->extractBodyPart($content, 'text/plain'),
             bodyHtml: $this->extractBodyPart($content, 'text/html'),
             headers: $headers,
-            attachments: [],
+            attachments: $this->extractMimeAttachments($content),
             messageId: $mail['messageId'] ?? $headers['Message-ID'] ?? '',
             inReplyTo: $headers['In-Reply-To'] ?? null,
             references: $headers['References'] ?? null,
-            spamScore: null,
+            spamScore: $this->parseSesSpamScore($headers),
             providerMessageId: $mail['messageId'] ?? null,
             providerEventId: $body['MessageId'] ?? uniqid('ses_', true),
             recipientAddress: $mail['destination'][0] ?? '',
@@ -146,50 +194,46 @@ class SesProvider implements
     ): SendResult {
         $domain = $mailbox->emailDomain;
         $config = $domain->getEffectiveConfig();
-        $region = $config['region'] ?? $this->settingService->get('ses', 'region', 'us-east-1');
-        $accessKey = $config['access_key_id'] ?? $this->settingService->get('ses', 'access_key_id');
-        $secretKey = $config['secret_access_key'] ?? $this->settingService->get('ses', 'secret_access_key');
+        $creds = $this->resolveCredentials($config);
 
-        if (empty($accessKey) || empty($secretKey)) {
+        if (empty($creds['access_key']) || empty($creds['secret_key'])) {
             return SendResult::failure('AWS SES credentials not configured');
         }
 
-        $fromAddress = "{$mailbox->address}@{$domain->name}";
+        $fromAddress = $mailbox->full_address;
         $displayName = $mailbox->display_name;
         $from = $displayName ? "\"{$displayName}\" <{$fromAddress}>" : $fromAddress;
 
         try {
-            $endpoint = "https://email.{$region}.amazonaws.com";
-
+            $endpoint = "https://email.{$creds['region']}.amazonaws.com";
             $configSetName = $this->configSetName($domain->name);
 
+            // Build raw MIME message to support attachments and custom headers
+            $rawMessage = $this->buildRawMimeMessage($from, $to, $cc, $bcc, $subject, $html, $text, $attachments, $headers);
+
             $params = [
-                'Action' => 'SendEmail',
+                'Action' => 'SendRawEmail',
                 'Source' => $from,
                 'ConfigurationSetName' => $configSetName,
-                'Message.Subject.Data' => $subject,
-                'Message.Subject.Charset' => 'UTF-8',
-                'Message.Body.Html.Data' => $html,
-                'Message.Body.Html.Charset' => 'UTF-8',
+                'RawMessage.Data' => base64_encode($rawMessage),
             ];
 
-            if ($text) {
-                $params['Message.Body.Text.Data'] = $text;
-                $params['Message.Body.Text.Charset'] = 'UTF-8';
+            // Add explicit destinations so SES knows all recipients
+            $destIndex = 1;
+            foreach (array_values($to) as $addr) {
+                $params["Destinations.member.{$destIndex}"] = is_array($addr) ? $addr['address'] : $addr;
+                $destIndex++;
+            }
+            foreach (array_values($cc) as $addr) {
+                $params["Destinations.member.{$destIndex}"] = is_array($addr) ? $addr['address'] : $addr;
+                $destIndex++;
+            }
+            foreach (array_values($bcc) as $addr) {
+                $params["Destinations.member.{$destIndex}"] = is_array($addr) ? $addr['address'] : $addr;
+                $destIndex++;
             }
 
-            foreach (array_values($to) as $i => $addr) {
-                $params["Destination.ToAddresses.member." . ($i + 1)] = is_array($addr) ? $addr['address'] : $addr;
-            }
-            foreach (array_values($cc) as $i => $addr) {
-                $params["Destination.CcAddresses.member." . ($i + 1)] = is_array($addr) ? $addr['address'] : $addr;
-            }
-            foreach (array_values($bcc) as $i => $addr) {
-                $params["Destination.BccAddresses.member." . ($i + 1)] = is_array($addr) ? $addr['address'] : $addr;
-            }
-
-            // Sign request with AWS Signature V4
-            $response = Http::withHeaders($this->signAwsRequest('POST', $endpoint, $params, $region, $accessKey, $secretKey))
+            $response = Http::withHeaders($this->signAwsRequest('POST', $endpoint, $params, $creds['region'], $creds['access_key'], $creds['secret_key']))
                 ->asForm()
                 ->post($endpoint, $params);
 
@@ -261,29 +305,68 @@ class SesProvider implements
 
     public function addDomain(string $domain, array $config = []): DomainResult
     {
-        $region = $config['region'] ?? $this->settingService->get('ses', 'region', 'us-east-1');
-        $accessKey = $config['access_key_id'] ?? $this->settingService->get('ses', 'access_key_id');
-        $secretKey = $config['secret_access_key'] ?? $this->settingService->get('ses', 'secret_access_key');
+        $creds = $this->resolveCredentials($config);
+
+        if (empty($creds['access_key']) || empty($creds['secret_key']) || empty($creds['region'])) {
+            return DomainResult::failure('AWS SES credentials not configured');
+        }
 
         try {
-            $endpoint = "https://email.{$region}.amazonaws.com";
+            $endpoint = "https://email.{$creds['region']}.amazonaws.com";
+
+            // Step 1: Register domain identity
             $params = [
                 'Action' => 'VerifyDomainIdentity',
                 'Domain' => $domain,
             ];
 
-            $response = Http::withHeaders($this->signAwsRequest('POST', $endpoint, $params, $region, $accessKey, $secretKey))
+            $response = Http::withHeaders($this->signAwsRequest('POST', $endpoint, $params, $creds['region'], $creds['access_key'], $creds['secret_key']))
                 ->asForm()
                 ->post($endpoint, $params);
 
-            if ($response->successful()) {
-                $token = $this->extractXmlValue($response->body(), 'VerificationToken');
-                return DomainResult::success($domain, [
-                    ['type' => 'TXT', 'name' => "_amazonses.{$domain}", 'value' => $token],
-                ]);
+            if (! $response->successful()) {
+                return DomainResult::failure('SES API error: ' . $response->body());
             }
 
-            return DomainResult::failure('SES API error: ' . $response->body());
+            $token = $this->extractXmlValue($response->body(), 'VerificationToken');
+            if ($token === null) {
+                return DomainResult::failure('SES did not return a verification token');
+            }
+
+            $dnsRecords = [
+                ['type' => 'TXT', 'name' => "_amazonses.{$domain}", 'value' => $token],
+            ];
+
+            // Step 2: Enable DKIM and get CNAME tokens
+            $dkimParams = [
+                'Action' => 'VerifyDomainDkim',
+                'Domain' => $domain,
+            ];
+
+            $dkimResponse = Http::withHeaders($this->signAwsRequest('POST', $endpoint, $dkimParams, $creds['region'], $creds['access_key'], $creds['secret_key']))
+                ->asForm()
+                ->post($endpoint, $dkimParams);
+
+            if ($dkimResponse->successful()) {
+                preg_match_all('/<member>([^<]+)<\/member>/', $dkimResponse->body(), $dkimMatches);
+                foreach ($dkimMatches[1] ?? [] as $dkimToken) {
+                    $dnsRecords[] = [
+                        'type' => 'CNAME',
+                        'name' => "{$dkimToken}._domainkey.{$domain}",
+                        'value' => "{$dkimToken}.dkim.amazonses.com",
+                    ];
+                }
+            }
+
+            // Step 3: Add standard MX record for SES inbound
+            $dnsRecords[] = [
+                'type' => 'MX',
+                'name' => $domain,
+                'value' => "10 inbound-smtp.{$creds['region']}.amazonaws.com",
+                'priority' => 10,
+            ];
+
+            return DomainResult::success($domain, $dnsRecords);
         } catch (\Exception $e) {
             return DomainResult::failure($e->getMessage());
         }
@@ -291,27 +374,32 @@ class SesProvider implements
 
     public function verifyDomain(string $domain, array $config = []): DomainVerificationResult
     {
-        $region = $config['region'] ?? $this->settingService->get('ses', 'region', 'us-east-1');
-        $accessKey = $config['access_key_id'] ?? $this->settingService->get('ses', 'access_key_id');
-        $secretKey = $config['secret_access_key'] ?? $this->settingService->get('ses', 'secret_access_key');
-
+        // Use SES v2 GetEmailIdentity for richer results (verification + DKIM status)
         try {
-            $endpoint = "https://email.{$region}.amazonaws.com";
-            $params = [
-                'Action' => 'GetIdentityVerificationAttributes',
-                'Identities.member.1' => $domain,
-            ];
+            $result = $this->managementRequestOrFail('get', "email/identities/{$domain}", [], $config);
+            $body = $result['body'];
 
-            $response = Http::withHeaders($this->signAwsRequest('POST', $endpoint, $params, $region, $accessKey, $secretKey))
-                ->asForm()
-                ->post($endpoint, $params);
+            $isVerified = ($body['VerifiedForSendingStatus'] ?? false) === true;
 
-            if ($response->successful()) {
-                $isVerified = str_contains($response->body(), '<VerificationStatus>Success</VerificationStatus>');
-                return new DomainVerificationResult($isVerified);
+            // Build DNS records from DKIM tokens for the UI
+            $dnsRecords = [];
+            $dkimAttrs = $body['DkimAttributes'] ?? [];
+            foreach ($dkimAttrs['Tokens'] ?? [] as $token) {
+                $dnsRecords[] = [
+                    'type' => 'CNAME',
+                    'name' => "{$token}._domainkey.{$domain}",
+                    'value' => "{$token}.dkim.amazonses.com",
+                    'valid' => ($dkimAttrs['Status'] ?? '') === 'SUCCESS',
+                ];
             }
 
-            return new DomainVerificationResult(false, [], 'SES API error');
+            return new DomainVerificationResult($isVerified, $dnsRecords);
+        } catch (SesApiException $e) {
+            // Identity not found — not verified
+            if ($e->httpStatus === 404) {
+                return new DomainVerificationResult(false, [], 'Domain not registered with SES');
+            }
+            return new DomainVerificationResult(false, [], $e->getMessage());
         } catch (\Exception $e) {
             return new DomainVerificationResult(false, [], $e->getMessage());
         }
@@ -319,14 +407,19 @@ class SesProvider implements
 
     public function configureDomainWebhook(string $domain, string $webhookUrl, array $config = []): bool
     {
-        // SES uses SNS topics for notifications — this requires SNS configuration
-        // which is typically done via AWS console or CloudFormation
-        Log::info('SES domain webhook configuration requires SNS topic setup', [
+        // SES inbound email requires a Receipt Rule in a Receipt Rule Set pointing
+        // to an SNS topic that forwards to the webhook URL. This is configured
+        // automatically during webhook auto-configuration (HasWebhookManagement).
+        // The Receipt Rule setup requires knowing the active rule set name, which
+        // varies per account. Log the requirement and return false so the caller
+        // knows manual setup may be needed.
+        Log::info('SES inbound webhook requires Receipt Rule configuration', [
             'domain' => $domain,
             'webhook_url' => $webhookUrl,
+            'instructions' => 'Create an SES Receipt Rule that forwards to an SNS topic subscribed to the webhook URL.',
         ]);
 
-        return true;
+        return false;
     }
 
     // -------------------------------------------------------------------------
@@ -382,12 +475,14 @@ class SesProvider implements
                 }
             }
 
-            $headers = $this->signAwsV2Request(
+            $headers = $this->signAwsSigV4(
                 strtoupper($method),
-                $host,
+                parse_url($host, PHP_URL_HOST),
                 $canonicalUri,
                 $queryString,
                 $bodyString,
+                'application/json',
+                'ses',
                 $region,
                 $creds['access_key'],
                 $creds['secret_key'],
@@ -518,21 +613,37 @@ class SesProvider implements
      */
     public function listWebhooks(string $domain, array $config = []): array
     {
-        $result = $this->managementRequestOrFail('get', 'email/configuration-sets', [], $config);
-        $sets   = $result['body']['ConfigurationSets'] ?? [];
+        $setName = $this->configSetName($domain);
 
+        // Only fetch event destinations for this domain's configuration set
+        $destResult = $this->managementRequest('get', "email/configuration-sets/{$setName}/event-destinations", [], $config);
+
+        if (! $destResult['ok']) {
+            // Config set doesn't exist yet — no webhooks configured
+            return [];
+        }
+
+        // Map SES event types back to generic event names for the frontend
+        $reverseMap = [
+            'DELIVERY'  => 'delivered',
+            'BOUNCE'    => 'permanent_fail',
+            'COMPLAINT' => 'complained',
+            'SEND'      => 'stored',
+            'OPEN'      => 'opened',
+            'CLICK'     => 'clicked',
+        ];
+
+        // Build {event_name: {urls: [sns_arn]}} format matching Mailgun's structure
         $webhooks = [];
-        foreach ($sets as $setName) {
-            $destResult = $this->managementRequest('get', "email/configuration-sets/{$setName}/event-destinations", [], $config);
-            foreach ($destResult['body']['EventDestinations'] ?? [] as $dest) {
-                $snsUrl = $dest['SnsDestination']['TopicArn'] ?? null;
-                $webhooks[] = [
-                    'id'                  => "{$setName}::{$dest['Name']}",
-                    'configuration_set'   => $setName,
-                    'destination_name'    => $dest['Name'],
-                    'enabled'             => $dest['Enabled'] ?? false,
-                    'matching_event_types' => $dest['MatchingEventTypes'] ?? [],
-                    'sns_topic_arn'       => $snsUrl,
+        foreach ($destResult['body']['EventDestinations'] ?? [] as $dest) {
+            $snsUrl = $dest['SnsDestination']['TopicArn'] ?? null;
+            $eventTypes = $dest['MatchingEventTypes'] ?? [];
+
+            foreach ($eventTypes as $sesType) {
+                $eventName = $reverseMap[$sesType] ?? strtolower($sesType);
+                $webhooks[$eventName] = [
+                    'urls' => [$snsUrl ?? 'sns://' . $dest['Name']],
+                    'id'   => "{$setName}::{$dest['Name']}",
                 ];
             }
         }
@@ -718,28 +829,6 @@ class SesProvider implements
                 'message'     => 'Failed to reach webhook URL: ' . $e->getMessage(),
             ];
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // HasEventLog
-    // -------------------------------------------------------------------------
-
-    /**
-     * SES v2 does not expose a queryable event log API.
-     *
-     * Events are routed to CloudWatch Logs, S3, Kinesis Data Firehose, or SNS
-     * via configuration sets. There is no "list recent events" endpoint.
-     *
-     * This stub returns an empty result with an explanatory note so the UI can
-     * surface a meaningful message rather than a hard error.
-     */
-    public function getEvents(string $domain, array $filters = [], array $config = []): array
-    {
-        return [
-            'items'    => [],
-            'nextPage' => null,
-            'note'     => 'SES does not provide a queryable event log. Configure CloudWatch Logs or an S3 bucket as an event destination on your configuration set to archive events.',
-        ];
     }
 
     // -------------------------------------------------------------------------
@@ -957,33 +1046,26 @@ class SesProvider implements
     // -------------------------------------------------------------------------
 
     /**
-     * Sign an SES v2 JSON API request using AWS Signature V4.
+     * Sign an AWS API request using Signature V4.
      *
-     * This is separate from the existing signAwsRequest() which signs form-encoded
-     * v1 requests. Both use the same signing algorithm but differ in content-type
-     * and payload hash calculation.
-     *
-     * @param  string  $canonicalUri  Full path including /v2/... prefix
-     * @param  string  $queryString   Already-encoded query string (no leading ?)
-     * @param  string  $bodyString    Raw JSON body (empty string for GET/DELETE)
+     * Shared by SES v1 (form-encoded), SES v2 (JSON), and SNS (form-encoded).
      */
-    private function signAwsV2Request(
+    private function signAwsSigV4(
         string $method,
-        string $host,
+        string $hostHeader,
         string $canonicalUri,
         string $queryString,
-        string $bodyString,
+        string $payload,
+        string $contentType,
+        string $service,
         string $region,
         string $accessKey,
         string $secretKey,
     ): array {
-        $service    = 'ses';
         $date       = gmdate('Ymd\THis\Z');
         $dateStamp  = gmdate('Ymd');
-        $hostHeader = parse_url($host, PHP_URL_HOST);
 
-        $contentType = empty($bodyString) ? 'application/json' : 'application/json';
-        $payloadHash = hash('sha256', $bodyString);
+        $payloadHash = hash('sha256', $payload);
 
         $canonicalHeaders = "content-type:{$contentType}\nhost:{$hostHeader}\nx-amz-date:{$date}\n";
         $signedHeaders    = 'content-type;host;x-amz-date';
@@ -1083,12 +1165,14 @@ class SesProvider implements
 
         // CreateTopic is idempotent — returns existing ARN if topic already exists
         $createResult = $this->snsRequest('CreateTopic', ['Name' => $topicName], $creds);
-        $topicArn     = $createResult['CreateTopicResponse']['CreateTopicResult']['TopicArn'] ?? null;
+        // simplexml strips the root element, so TopicArn is at CreateTopicResult level
+        $topicArn     = $createResult['CreateTopicResult']['TopicArn'] ?? null;
 
         if (! $topicArn) {
+            $rawError = $createResult['raw'] ?? ($createResult['Error']['Message'] ?? json_encode($createResult));
             throw new SesApiException(
-                'Failed to create SNS topic for SES webhook — check that your IAM credentials have sns:CreateTopic permission.',
-                0,
+                "Failed to create SNS topic: {$rawError}",
+                $createResult['status'] ?? 0,
                 $createResult,
             );
         }
@@ -1101,7 +1185,7 @@ class SesProvider implements
             'Endpoint' => $httpUrl,
         ], $creds);
 
-        $subArn = $subResult['SubscribeResponse']['SubscribeResult']['SubscriptionArn'] ?? null;
+        $subArn = $subResult['SubscribeResult']['SubscriptionArn'] ?? null;
         if (! $subArn) {
             Log::warning('SNS Subscribe did not return SubscriptionArn — subscription may be pending confirmation', [
                 'topic' => $topicArn, 'endpoint' => $httpUrl,
@@ -1123,47 +1207,40 @@ class SesProvider implements
         $params['Version'] = '2010-03-31';
 
         $body = http_build_query($params);
-
-        $date      = gmdate('Ymd\THis\Z');
-        $dateStamp = gmdate('Ymd');
-        $service   = 'sns';
         $hostHeader = "sns.{$region}.amazonaws.com";
 
-        $payloadHash = hash('sha256', $body);
-        $canonicalHeaders = "content-type:application/x-www-form-urlencoded\nhost:{$hostHeader}\nx-amz-date:{$date}\n";
-        $signedHeaders    = 'content-type;host;x-amz-date';
-
-        $canonicalRequest = implode("\n", [
-            'POST', '/', '', $canonicalHeaders, $signedHeaders, $payloadHash,
-        ]);
-
-        $credentialScope = "{$dateStamp}/{$region}/{$service}/aws4_request";
-        $stringToSign    = "AWS4-HMAC-SHA256\n{$date}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
-
-        $signingKey = hash_hmac('sha256', 'aws4_request',
-            hash_hmac('sha256', $service,
-                hash_hmac('sha256', $region,
-                    hash_hmac('sha256', $dateStamp, 'AWS4' . $creds['secret_key'], true), true), true), true);
-
-        $signature = hash_hmac('sha256', $stringToSign, $signingKey);
-
-        $headers = [
-            'Host'          => $hostHeader,
-            'X-Amz-Date'    => $date,
-            'Content-Type'  => 'application/x-www-form-urlencoded',
-            'Authorization' => "AWS4-HMAC-SHA256 Credential={$creds['access_key']}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}",
-        ];
+        $headers = $this->signAwsSigV4(
+            'POST',
+            $hostHeader,
+            '/',
+            '',
+            $body,
+            'application/x-www-form-urlencoded',
+            'sns',
+            $region,
+            $creds['access_key'],
+            $creds['secret_key'],
+        );
 
         try {
             $response = Http::withHeaders($headers)
                 ->withBody($body, 'application/x-www-form-urlencoded')
                 ->post($host);
 
+            if (! $response->successful()) {
+                Log::error('SNS API error', [
+                    'action' => $action,
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
+                return ['error' => true, 'status' => $response->status(), 'raw' => $response->body()];
+            }
+
             $xml = simplexml_load_string($response->body());
             return json_decode(json_encode($xml), true) ?: [];
         } catch (\Exception $e) {
-            Log::error('SNS request failed', ['action' => $action, 'error' => $e->getMessage()]);
-            return [];
+            Log::error('SNS request exception', ['action' => $action, 'error' => $e->getMessage()]);
+            return ['error' => true, 'status' => 0, 'raw' => $e->getMessage()];
         }
     }
 
@@ -1231,7 +1308,7 @@ class SesProvider implements
                 $dataPoints[] = [
                     'time'      => $timestamp,
                     'sent'      => $delivAttempts,
-                    'delivered' => $delivAttempts - $bounces - $rejects,
+                    'delivered' => max(0, $delivAttempts - $bounces - $rejects),
                     'bounced'   => $bounces,
                     'complained' => $complaints,
                     'rejected'  => $rejects,
@@ -1300,8 +1377,13 @@ class SesProvider implements
     {
         $type = $data['Type'] ?? '';
         if ($type === 'Notification') {
-            return "Message\n{$data['Message']}\nMessageId\n{$data['MessageId']}\nSubject\n" .
-                ($data['Subject'] ?? '') . "\nTimestamp\n{$data['Timestamp']}\nTopicArn\n{$data['TopicArn']}\nType\n{$type}\n";
+            // Per AWS SNS docs, Subject is only included in the string-to-sign when present
+            $str = "Message\n{$data['Message']}\nMessageId\n{$data['MessageId']}\n";
+            if (isset($data['Subject'])) {
+                $str .= "Subject\n{$data['Subject']}\n";
+            }
+            $str .= "Timestamp\n{$data['Timestamp']}\nTopicArn\n{$data['TopicArn']}\nType\n{$type}\n";
+            return $str;
         }
         return "Message\n{$data['Message']}\nMessageId\n{$data['MessageId']}\nSubscribeURL\n" .
             ($data['SubscribeURL'] ?? '') . "\nTimestamp\n{$data['Timestamp']}\nToken\n" .
@@ -1314,6 +1396,27 @@ class SesProvider implements
             return ['name' => trim($matches[1]), 'address' => trim($matches[2])];
         }
         return ['name' => null, 'address' => trim($raw)];
+    }
+
+    /**
+     * Extract spam score from SES inbound email headers.
+     *
+     * SES adds X-SES-Spam-Verdict and X-SES-Virus-Verdict headers.
+     * Returns a normalized 0-10 score (PASS=0, FAIL=10).
+     */
+    private function parseSesSpamScore(array $headers): ?float
+    {
+        $verdict = strtoupper($headers['X-SES-Spam-Verdict'] ?? '');
+        if (empty($verdict)) {
+            return null;
+        }
+
+        return match ($verdict) {
+            'PASS' => 0.0,
+            'FAIL' => 10.0,
+            'GRAY', 'PROCESSING_FAILED' => 5.0,
+            default => null,
+        };
     }
 
     private function parseAddressHeader(string $header): array
@@ -1408,42 +1511,198 @@ class SesProvider implements
     }
 
     /**
+     * Build a raw MIME message string for use with SES SendRawEmail.
+     *
+     * Supports HTML + plain text body, CC, BCC, custom headers, and file
+     * attachments. Uses multipart/mixed when attachments are present, or
+     * multipart/alternative for text+HTML bodies without attachments.
+     */
+    private function buildRawMimeMessage(
+        string $from,
+        array $to,
+        array $cc,
+        array $bcc,
+        string $subject,
+        string $html,
+        ?string $text,
+        array $attachments,
+        array $headers,
+    ): string {
+        $boundary = 'SelfMX_' . bin2hex(random_bytes(16));
+        $hasAttachments = ! empty($attachments);
+
+        $toAddresses = implode(', ', array_map(fn ($a) => is_array($a) ? $a['address'] : $a, $to));
+        $ccAddresses = implode(', ', array_map(fn ($a) => is_array($a) ? $a['address'] : $a, $cc));
+
+        $msg = "From: {$from}\r\n";
+        $msg .= "To: {$toAddresses}\r\n";
+        if ($ccAddresses) {
+            $msg .= "Cc: {$ccAddresses}\r\n";
+        }
+        $msg .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
+        $msg .= "MIME-Version: 1.0\r\n";
+
+        // Custom headers (e.g., In-Reply-To, References) — strip CRLF to prevent header injection
+        foreach ($headers as $name => $value) {
+            if (is_string($name) && ! empty($value)) {
+                $sanitizedName = str_replace(["\r", "\n"], '', $name);
+                $sanitizedValue = str_replace(["\r", "\n"], '', $value);
+                $msg .= "{$sanitizedName}: {$sanitizedValue}\r\n";
+            }
+        }
+
+        if ($hasAttachments) {
+            $altBoundary = 'SelfMX_alt_' . bin2hex(random_bytes(16));
+            $msg .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n\r\n";
+
+            // Body part (multipart/alternative for text + HTML)
+            $msg .= "--{$boundary}\r\n";
+            $msg .= "Content-Type: multipart/alternative; boundary=\"{$altBoundary}\"\r\n\r\n";
+
+            if ($text) {
+                $msg .= "--{$altBoundary}\r\n";
+                $msg .= "Content-Type: text/plain; charset=UTF-8\r\n";
+                $msg .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
+                $msg .= quoted_printable_encode($text) . "\r\n";
+            }
+
+            $msg .= "--{$altBoundary}\r\n";
+            $msg .= "Content-Type: text/html; charset=UTF-8\r\n";
+            $msg .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
+            $msg .= quoted_printable_encode($html) . "\r\n";
+            $msg .= "--{$altBoundary}--\r\n";
+
+            // Attachment parts
+            foreach ($attachments as $attachment) {
+                $filename = $attachment['filename'] ?? $attachment['name'] ?? 'attachment';
+                $content = $attachment['content'] ?? '';
+                if (empty($content) && !empty($attachment['path']) && file_exists($attachment['path'])) {
+                    $content = file_get_contents($attachment['path']);
+                }
+                $mimeType = $attachment['mime_type'] ?? $attachment['content_type'] ?? 'application/octet-stream';
+
+                // Always base64-encode — round-trip detection is unreliable for short content
+                $encoded = base64_encode(is_string($content) ? $content : '');
+
+                $msg .= "--{$boundary}\r\n";
+                $msg .= "Content-Type: {$mimeType}; name=\"{$filename}\"\r\n";
+                $msg .= "Content-Disposition: attachment; filename=\"{$filename}\"\r\n";
+                $msg .= "Content-Transfer-Encoding: base64\r\n\r\n";
+                $msg .= chunk_split($encoded, 76, "\r\n");
+            }
+
+            $msg .= "--{$boundary}--\r\n";
+        } else {
+            // No attachments — use multipart/alternative for text + HTML
+            $msg .= "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n\r\n";
+
+            if ($text) {
+                $msg .= "--{$boundary}\r\n";
+                $msg .= "Content-Type: text/plain; charset=UTF-8\r\n";
+                $msg .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
+                $msg .= quoted_printable_encode($text) . "\r\n";
+            }
+
+            $msg .= "--{$boundary}\r\n";
+            $msg .= "Content-Type: text/html; charset=UTF-8\r\n";
+            $msg .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
+            $msg .= quoted_printable_encode($html) . "\r\n";
+            $msg .= "--{$boundary}--\r\n";
+        }
+
+        return $msg;
+    }
+
+    /**
+     * Extract attachments from raw MIME content in an SES inbound email.
+     *
+     * Parses multipart MIME parts and returns non-body parts as attachments.
+     */
+    private function extractMimeAttachments(string $content): array
+    {
+        if (empty($content)) {
+            return [];
+        }
+
+        $parts = preg_split('/\r?\n\r?\n/', $content, 2);
+        $headerBlock = $parts[0] ?? '';
+        $bodyContent = $parts[1] ?? '';
+
+        if (! preg_match('/Content-Type:\s*multipart\/\w+;\s*boundary="?([^";\r\n]+)"?/i', $headerBlock, $m)) {
+            return [];
+        }
+
+        return $this->extractAttachmentsFromMultipart($bodyContent, $m[1]);
+    }
+
+    /**
+     * Recursively extract attachments from multipart MIME sections.
+     */
+    private function extractAttachmentsFromMultipart(string $body, string $boundary): array
+    {
+        $attachments = [];
+        $parts = explode('--' . $boundary, $body);
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '' || $part === '--') {
+                continue;
+            }
+
+            $sections = preg_split('/\r?\n\r?\n/', $part, 2);
+            $partHeaders = $sections[0] ?? '';
+            $partBody = $sections[1] ?? '';
+
+            // Recurse into nested multipart
+            if (preg_match('/Content-Type:\s*multipart\/\w+;\s*boundary="?([^";\r\n]+)"?/i', $partHeaders, $m)) {
+                $attachments = array_merge($attachments, $this->extractAttachmentsFromMultipart($partBody, $m[1]));
+                continue;
+            }
+
+            // Check for Content-Disposition: attachment
+            if (preg_match('/Content-Disposition:\s*attachment/i', $partHeaders)) {
+                $filename = 'attachment';
+                if (preg_match('/filename="?([^";\r\n]+)"?/i', $partHeaders, $m)) {
+                    $filename = trim($m[1]);
+                }
+
+                $mimeType = 'application/octet-stream';
+                if (preg_match('/Content-Type:\s*([^;\r\n]+)/i', $partHeaders, $m)) {
+                    $mimeType = trim($m[1]);
+                }
+
+                $decoded = $this->decodeTransferEncoding($partBody, $partHeaders);
+
+                $attachments[] = [
+                    'filename' => $filename,
+                    'mimeType' => $mimeType,
+                    'size' => strlen($decoded),
+                    'content' => $decoded,
+                ];
+            }
+        }
+
+        return $attachments;
+    }
+
+    /**
      * Sign a SES v1 form-encoded request using AWS Signature V4.
      *
-     * Used by sendEmail(), addDomain(), verifyDomain(), and getDomainStats()
-     * (which uses the v1 GetSendStatistics action). Do not modify.
+     * Used by sendEmail(), addDomain(), and getDomainStats().
      */
     private function signAwsRequest(string $method, string $endpoint, array $params, string $region, string $accessKey, string $secretKey): array
     {
-        $service = 'ses';
-        $date = gmdate('Ymd\THis\Z');
-        $dateStamp = gmdate('Ymd');
-
-        $headers = [
-            'Host' => parse_url($endpoint, PHP_URL_HOST),
-            'X-Amz-Date' => $date,
-            'Content-Type' => 'application/x-www-form-urlencoded',
-        ];
-
-        $canonicalQueryString = '';
-        $canonicalHeaders = "content-type:application/x-www-form-urlencoded\nhost:{$headers['Host']}\nx-amz-date:{$date}\n";
-        $signedHeaders = 'content-type;host;x-amz-date';
-        $payloadHash = hash('sha256', http_build_query($params));
-
-        $canonicalRequest = "{$method}\n/\n{$canonicalQueryString}\n{$canonicalHeaders}\n{$signedHeaders}\n{$payloadHash}";
-
-        $credentialScope = "{$dateStamp}/{$region}/{$service}/aws4_request";
-        $stringToSign = "AWS4-HMAC-SHA256\n{$date}\n{$credentialScope}\n" . hash('sha256', $canonicalRequest);
-
-        $signingKey = hash_hmac('sha256', 'aws4_request',
-            hash_hmac('sha256', $service,
-                hash_hmac('sha256', $region,
-                    hash_hmac('sha256', $dateStamp, 'AWS4' . $secretKey, true), true), true), true);
-
-        $signature = hash_hmac('sha256', $stringToSign, $signingKey);
-
-        $headers['Authorization'] = "AWS4-HMAC-SHA256 Credential={$accessKey}/{$credentialScope}, SignedHeaders={$signedHeaders}, Signature={$signature}";
-
-        return $headers;
+        return $this->signAwsSigV4(
+            $method,
+            parse_url($endpoint, PHP_URL_HOST),
+            '/',
+            '',
+            http_build_query($params),
+            'application/x-www-form-urlencoded',
+            'ses',
+            $region,
+            $accessKey,
+            $secretKey,
+        );
     }
 }

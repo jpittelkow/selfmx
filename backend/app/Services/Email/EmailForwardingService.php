@@ -65,6 +65,10 @@ class EmailForwardingService
     {
         try {
             $mailbox->loadMissing('emailDomain');
+            if (!$mailbox->emailDomain) {
+                Log::warning('Cannot forward: mailbox domain is not configured', ['mailbox_id' => $mailbox->id]);
+                return;
+            }
             $provider = $this->domainService->resolveProvider($mailbox->emailDomain->provider);
 
             $result = $provider->sendEmail(

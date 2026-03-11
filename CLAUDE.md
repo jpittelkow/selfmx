@@ -58,6 +58,7 @@ docker exec selfmx-dev bash -c "cd /var/www/html/frontend && npx shadcn@latest a
 | Task Type | Key Files & Docs |
 |-----------|-----------------|
 | **Full-Stack Feature** | [add-full-stack-feature recipe](docs/ai/recipes/add-full-stack-feature.md) |
+| **Email Provider** | [ADR-031](docs/adr/031-email-provider-management-architecture.md), [email-provider pattern](docs/ai/patterns/email-provider.md), [add-email-provider recipe](docs/ai/recipes/add-email-provider.md) |
 | Frontend UI | `frontend/app/(dashboard)/`, `frontend/components/`, `frontend/lib/api.ts` |
 | Backend API | `backend/routes/api.php`, `backend/app/Http/Controllers/Api/` |
 | Config Page | [add-config-page recipe](docs/ai/recipes/add-config-page.md), [add-configuration-menu-item recipe](docs/ai/recipes/add-configuration-menu-item.md) |

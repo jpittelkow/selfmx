@@ -9,6 +9,7 @@ What NOT to do when developing on Sourdough. Read only the files relevant to you
 | Backend | [backend.md](backend.md) | Business logic, user scoping, access logging, FormRequest, response format, last admin, pagination, password, indexes, migrations, interfaces |
 | Frontend | [frontend.md](frontend.md) | Duplicate logic, groups fetch, utilities, error handling, loading, save button, API URLs, credentials, shadcn, TypeScript, help system |
 | Forms | [forms.md](forms.md) | Required fields, onChange, setValue, shouldDirty, empty strings |
+| Email Provider | [email-provider.md](email-provider.md) | Capability mismatches, credential resolution, webhook safety, error handling |
 | Database | [database.md](database.md) | Raw SQL, N+1, SQLite |
 | Architecture | [architecture.md](architecture.md) | Admin routes, secrets, settings models, SettingService, BackupService |
 | Testing | [testing.md](testing.md) | Authentication, user isolation |

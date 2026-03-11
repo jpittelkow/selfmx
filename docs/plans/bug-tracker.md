@@ -35,6 +35,15 @@ Suspected bugs and issues to investigate. Claude logs items here when something 
 - **Files involved**: `backend/app/Services/SettingService.php`, notifications settings
 - **Notes**: Low severity if push notifications aren't actively used, but will cause issues when attempting to send web push notifications. Fix may require re-saving the VAPID keys or regenerating them.
 
+### SES provider: `dkim_rotation` and `events` capabilities report `false` despite implementing interfaces
+- **Observed**: 2026-03-10
+- **Status**: Confirmed
+- **Context**: Code review during email provider documentation
+- **Symptoms**: `SesProvider` implements `HasDkimManagement` (with a working disable/re-enable workaround) and `HasEventLog` (returns empty with CloudWatch note), but `getCapabilities()` reports both as `false`. The controller's `requireCapability()` check blocks access to these endpoints even though the code works. The DKIM workaround is genuinely useful; the EventLog stub is debatable.
+- **Files involved**: `backend/app/Services/Email/SesProvider.php` (lines 41-52)
+- **Notes**: Two options: (1) Set `dkim_rotation => true` since the implementation works. Keep `events => false` since it returns no data. (2) Remove `HasEventLog` from SES since the stub provides no value. The anti-pattern docs warn against implementing interfaces for capabilities reported as `false`.
+- **Resolution**: Fixed 2026-03-10 — Set `dkim_rotation => true`, removed `HasEventLog` interface and stub method.
+
 <!-- Template:
 ### [Short description]
 - **Observed**: [date]

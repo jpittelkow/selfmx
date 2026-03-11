@@ -87,7 +87,7 @@ All 6 phases are complete. See the full [roadmap](docs/plans/email-app-roadmap.m
 
 ## Built With
 
-selfmx is built on [Sourdough v0.8.2](https://github.com/Sourdough-start/sourdough), a full-stack starter framework for Laravel + Next.js applications.
+selfmx is built on [Sourdough v0.10.3](https://github.com/Sourdough-start/sourdough), a full-stack starter framework for Laravel + Next.js applications.
 
 ## License
 

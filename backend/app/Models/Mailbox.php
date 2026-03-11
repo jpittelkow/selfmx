@@ -17,6 +17,7 @@ class Mailbox extends Model
         'user_id',
         'email_domain_id',
         'address',
+        'domain_name',
         'display_name',
         'is_active',
         'signature',
@@ -90,7 +91,9 @@ class Mailbox extends Model
      */
     public function getFullAddressAttribute(): string
     {
-        return $this->address . '@' . $this->emailDomain->name;
+        $domain = $this->emailDomain?->name ?? $this->domain_name;
+
+        return $domain ? $this->address . '@' . $domain : $this->address;
     }
 
     /**

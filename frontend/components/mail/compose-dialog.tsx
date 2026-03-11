@@ -46,6 +46,7 @@ import { RichTextEditor } from "./rich-text-editor";
 import { sanitizeEmailHtml } from "@/lib/sanitize";
 import { useOnline } from "@/lib/use-online";
 import { cn } from "@/lib/utils";
+import { getMailboxAddress } from "@/lib/mail-types";
 
 const MAX_ATTACHMENT_MB = 25;
 
@@ -54,8 +55,9 @@ interface Mailbox {
   address: string;
   display_name: string | null;
   signature: string | null;
-  email_domain: { name: string };
-  email_domain_id: number;
+  domain_name?: string | null;
+  email_domain: { name: string } | null;
+  email_domain_id: number | null;
   user_role?: string;
 }
 
@@ -553,8 +555,8 @@ export function ComposeDialog({
                   {mailboxes.map((m) => (
                     <SelectItem key={m.id} value={m.id.toString()}>
                       {m.display_name
-                        ? `${m.display_name} <${m.address}@${m.email_domain.name}>`
-                        : `${m.address}@${m.email_domain.name}`}
+                        ? `${m.display_name} <${getMailboxAddress(m)}>`
+                        : getMailboxAddress(m)}
                     </SelectItem>
                   ))}
                 </SelectContent>

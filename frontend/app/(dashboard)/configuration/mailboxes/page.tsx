@@ -42,6 +42,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Loader2, Pencil, Users, X, Globe, Mail as MailIcon, Forward } from "lucide-react";
+import { getMailboxAddress } from "@/lib/mail-types";
 
 interface EmailDomain {
   id: number;
@@ -51,10 +52,11 @@ interface EmailDomain {
 interface Mailbox {
   id: number;
   address: string;
+  domain_name?: string | null;
   display_name: string | null;
   signature: string | null;
   is_active: boolean;
-  email_domain: EmailDomain;
+  email_domain: EmailDomain | null;
   user_role?: string;
   created_at: string;
 }
@@ -396,10 +398,10 @@ export default function MailboxesPage() {
                           {mailbox.address === "*" ? (
                             <span>
                               <Badge variant="outline" className="mr-2">catchall</Badge>
-                              *@{mailbox.email_domain.name}
+                              {getMailboxAddress(mailbox)}
                             </span>
                           ) : (
-                            `${mailbox.address}@${mailbox.email_domain.name}`
+                            getMailboxAddress(mailbox)
                           )}
                         </TableCell>
                         <TableCell>{mailbox.display_name || "—"}</TableCell>
@@ -532,7 +534,7 @@ export default function MailboxesPage() {
             <DialogTitle>Edit Mailbox</DialogTitle>
             <DialogDescription>
               Update display name and email signature for{" "}
-              {editMailbox && `${editMailbox.address}@${editMailbox.email_domain.name}`}.
+              {editMailbox && getMailboxAddress(editMailbox)}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -616,9 +618,7 @@ export default function MailboxesPage() {
             <DialogTitle>Manage Members</DialogTitle>
             <DialogDescription>
               Control who has access to{" "}
-              {membersMailbox && (membersMailbox.address === "*"
-                ? `catchall@${membersMailbox.email_domain.name}`
-                : `${membersMailbox.address}@${membersMailbox.email_domain.name}`)}.
+              {membersMailbox && getMailboxAddress(membersMailbox)}.
             </DialogDescription>
           </DialogHeader>
 

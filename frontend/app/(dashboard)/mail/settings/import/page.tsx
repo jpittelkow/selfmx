@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Upload, FileUp, CheckCircle, AlertCircle, Loader2, MailWarning } from "lucide-react";
+import { getMailboxAddress } from "@/lib/mail-types";
 
 interface ImportResult {
   imported: number;
@@ -194,8 +195,8 @@ export default function ImportEmailsPage() {
                   {importableMailboxes.map((mb) => (
                     <SelectItem key={mb.id} value={mb.id.toString()}>
                       {mb.display_name
-                        ? `${mb.display_name} <${mb.address}@${mb.email_domain.name}>`
-                        : `${mb.address}@${mb.email_domain.name}`}
+                        ? `${mb.display_name} <${getMailboxAddress(mb)}>`
+                        : getMailboxAddress(mb)}
                     </SelectItem>
                   ))}
                 </SelectContent>

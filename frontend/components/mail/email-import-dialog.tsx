@@ -21,12 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Upload, Loader2, CheckCircle, AlertCircle, FileUp } from "lucide-react";
+import { getMailboxAddress } from "@/lib/mail-types";
 
 interface Mailbox {
   id: number;
   address: string;
+  domain_name?: string | null;
   display_name: string | null;
-  email_domain: { name: string } | null;
+  email_domain?: { name: string } | null;
 }
 
 interface ImportResult {
@@ -177,7 +179,7 @@ export function EmailImportDialog({
 
   const selectedMailbox = mailboxes.find((m) => m.id.toString() === mailboxId);
   const mailboxLabel = selectedMailbox
-    ? `${selectedMailbox.address}@${selectedMailbox.email_domain?.name ?? ""}`
+    ? getMailboxAddress(selectedMailbox)
     : "";
 
   return (
@@ -200,7 +202,7 @@ export function EmailImportDialog({
               <SelectContent>
                 {mailboxes.map((mb) => (
                   <SelectItem key={mb.id} value={mb.id.toString()}>
-                    {mb.display_name ?? mb.address}@{mb.email_domain?.name ?? ""}
+                    {mb.display_name ? `${mb.display_name} <${getMailboxAddress(mb)}>` : getMailboxAddress(mb)}
                   </SelectItem>
                 ))}
               </SelectContent>

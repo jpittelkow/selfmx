@@ -20,6 +20,7 @@ Follow these patterns for consistency across the codebase. Read only the files r
 | Settings Overview | [settings-overview.md](settings-overview.md) | Which settings system to use (decision flowchart) |
 | Setting Service | [setting-service.md](setting-service.md) | System-wide settings with env fallback |
 | Search Service | [search-service.md](search-service.md) | Full-text search with Meilisearch |
+| Email Provider | [email-provider.md](email-provider.md) | Implementing email providers with capability interfaces |
 | Email Template Service | [email-template-service.md](email-template-service.md) | Rendering and sending emails |
 | Notification Template Service | [notification-template-service.md](notification-template-service.md) | Notification templates per channel |
 | Backup & Restore | [backup-restore.md](backup-restore.md) | Backup operations and destinations |

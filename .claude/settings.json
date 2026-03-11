@@ -28,7 +28,10 @@
       "Bash(grep -l \"NotificationSettingsController\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Http/Controllers/Api/*.php)",
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(xargs grep -l \"z\\\\.object\\\\|z\\\\.string\\\\|zod\\\\|validation\")",
-      "Bash(grep -r \"Request\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Http/Traits/*.php)"
+      "Bash(grep -r \"Request\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Http/Traits/*.php)",
+      "Read(//c/Users/jpitt_6932a9v/OneDrive/Desktop/**)",
+      "Bash(xargs grep -l \"email_provider_account\\\\|EmailProviderAccount\")",
+      "Bash(grep -n \"cascade\\\\|onDelete\" /c/Users/jpitt_6932a9v/code/selfmx/backend/database/migrations/*.php)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jpitt_6932a9v\\code\\selfmx\\frontend\\components"
