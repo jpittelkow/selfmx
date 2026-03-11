@@ -22,49 +22,48 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60 safe-area-top">
       <div className="flex h-14 w-full items-center px-4 gap-2 overflow-hidden">
         {/* Left: mobile menu + breadcrumbs */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden h-11 w-11 min-w-11 shrink-0 transition-transform duration-150 hover:scale-[1.03]"
-          onClick={() => setMobileMenuOpen(true)}
-          title="Open menu"
-          aria-label="Open menu"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        <div className="hidden md:block min-w-0">
-          <AppBreadcrumbs />
+        <div className="flex items-center gap-2 min-w-0 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-11 w-11 min-w-11 shrink-0 transition-transform duration-150 hover:scale-[1.03]"
+            onClick={() => setMobileMenuOpen(true)}
+            title="Open menu"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="hidden md:block min-w-0">
+            <AppBreadcrumbs />
+          </div>
         </div>
 
-        {/* Right: actions */}
-        <div className="flex items-center gap-2 ml-auto">
-          {/* Search group */}
-          {searchEnabled && (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="md:hidden h-9 gap-1.5 px-2 shrink-0 text-muted-foreground hover:text-foreground transition-transform duration-150 hover:scale-[1.03]"
-                onClick={() => setSearchOpen(true)}
-                title="Search"
-                aria-label="Search"
-              >
-                <Search className="h-4 w-4" />
-                <span className="hidden sm:inline text-xs">
-                  {isMac ? "⌘K" : "Ctrl+K"}
-                </span>
-              </Button>
-              <div className="hidden md:block">
-                <SearchInline />
-              </div>
-            </>
-          )}
+        {/* Center: search */}
+        {searchEnabled && (
+          <div className="flex-1 flex justify-center mx-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden h-9 gap-1.5 px-2 shrink-0 text-muted-foreground hover:text-foreground transition-transform duration-150 hover:scale-[1.03]"
+              onClick={() => setSearchOpen(true)}
+              title="Search"
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">
+                {isMac ? "⌘K" : "Ctrl+K"}
+              </span>
+            </Button>
+            <div className="hidden md:block w-full max-w-xl">
+              <SearchInline />
+            </div>
+          </div>
+        )}
 
-          {/* Utility group: help + notifications */}
+        {/* Right: actions */}
+        <div className="flex items-center gap-2 shrink-0">
           <HelpIcon className="shrink-0" />
           <NotificationBell />
-
-          {/* User group: theme + profile */}
           <div className="hidden sm:block">
             <ThemeToggle />
           </div>

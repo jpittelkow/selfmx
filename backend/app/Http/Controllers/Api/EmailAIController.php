@@ -168,7 +168,7 @@ class EmailAIController extends Controller
         }
 
         $validated = $request->validate([
-            'label_ids' => ['required', 'array'],
+            'label_ids' => ['present', 'array'],
             'label_ids.*' => ['integer'],
             'new_labels' => ['sometimes', 'array'],
             'new_labels.*.name' => ['required', 'string', 'max:50'],

@@ -49,7 +49,10 @@
       "Bash(grep -rn checkSuppression /c/Users/jpitt_6932a9v/code/selfmx/backend --include=*.php)",
       "Bash(grep -n \"function.*managementRequest\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Services/Email/*.php)",
       "Bash(grep -n \"mgmtPath\\\\|StatsPoint\\\\|interface.*Stats\" /c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/email-domains/[id]/page.tsx)",
-      "Read(//c/Users/jpitt_6932a9v/backend/tests/Feature/**)"
+      "Read(//c/Users/jpitt_6932a9v/backend/tests/Feature/**)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -E \"\\\\.\\(tsx?|php\\)$\")",
+      "Bash(grep -E \"\\\\.php$\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\jpitt_6932a9v\\code\\selfmx\\frontend\\components"

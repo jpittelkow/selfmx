@@ -95,6 +95,14 @@ export async function subscribe(vapidPublicKey: string): Promise<PushSubscriptio
     return null;
   }
 
+  // Unsubscribe any existing subscription first — required when the
+  // VAPID key (applicationServerKey) has changed, otherwise the browser
+  // throws "A subscription with a different applicationServerKey already exists".
+  const existing = await registration.pushManager.getSubscription();
+  if (existing) {
+    await existing.unsubscribe();
+  }
+
   const key = urlBase64ToUint8Array(vapidPublicKey);
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -48,6 +48,7 @@ export default function MailPage() {
   // Derive view from URL
   const currentView = (searchParams.get("view") as MailView) || "inbox";
   const currentLabelId = searchParams.get("labelId") ? Number(searchParams.get("labelId")) : null;
+  const initialSearchQuery = searchParams.get("search") || null;
 
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<EmailThread | null>(null);
@@ -164,13 +165,20 @@ export default function MailPage() {
     setCurrentPage(1);
   }, []);
 
-  // Reset selection when view or mailbox changes
+  // Reset selection when view or mailbox changes (skip if launching with a search query)
+  const initialSearchRef = useRef(initialSearchQuery);
   useEffect(() => {
+    if (initialSearchRef.current) {
+      // On mount with a search param, trigger search instead of resetting
+      handleSearch(initialSearchRef.current);
+      initialSearchRef.current = null;
+      return;
+    }
     setSelectedThread(null);
     setSelectedEmails([]);
     setCurrentPage(1);
     setIsSearchActive(false);
-  }, [currentView, currentLabelId, activeMailboxId]);
+  }, [currentView, currentLabelId, activeMailboxId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!isSearchActive) {

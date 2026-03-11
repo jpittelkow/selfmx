@@ -64,13 +64,14 @@ class WebPushChannel implements ChannelInterface
                 $sub->update(['last_used_at' => now()]);
                 $anySuccess = true;
                 $results[] = ['endpoint' => $sub->endpoint, 'device' => $sub->device_name, 'sent' => true];
-            } elseif ($report->isSubscriptionExpired()) {
+            } elseif ($report->isSubscriptionExpired() || $this->isSubscriptionRevoked($report)) {
                 $sub->delete();
                 $results[] = ['endpoint' => $sub->endpoint, 'device' => $sub->device_name, 'expired' => true];
                 Log::info('Expired Web Push subscription removed', [
                     'subscription_id' => $sub->id,
                     'user_id' => $user->id,
                     'device' => $sub->device_name,
+                    'reason' => $report->getReason(),
                 ]);
             } else {
                 Log::warning('WebPush send failed for subscription', [
@@ -105,6 +106,19 @@ class WebPushChannel implements ChannelInterface
     {
         return config('notifications.channels.webpush.enabled', false)
             && $user->pushSubscriptions()->exists();
+    }
+
+    /**
+     * Check if the push service rejected the subscription with 401/403,
+     * indicating the subscription token has been revoked or is no longer valid.
+     * WNS (Windows) commonly returns 401 for expired subscriptions.
+     */
+    private function isSubscriptionRevoked($report): bool
+    {
+        $reason = $report->getReason();
+
+        return str_contains($reason, '401 Unauthorized')
+            || str_contains($reason, '403 Forbidden');
     }
 
     private function buildPayload(string $title, string $message, string $type, array $data, User $user): string

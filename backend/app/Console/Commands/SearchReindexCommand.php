@@ -2,35 +2,12 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AIProvider;
-use App\Models\ApiToken;
-use App\Models\EmailTemplate;
-use App\Models\Notification;
-use App\Models\NotificationTemplate;
-use App\Models\User;
-use App\Models\UserGroup;
-use App\Models\Webhook;
 use App\Services\Search\SearchService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 
 class SearchReindexCommand extends Command
 {
-    /**
-     * Searchable model name to class map.
-     *
-     * @var array<string, class-string>
-     */
-    protected static array $searchableModels = [
-        'users' => User::class,
-        'user_groups' => UserGroup::class,
-        'notifications' => Notification::class,
-        'email_templates' => EmailTemplate::class,
-        'notification_templates' => NotificationTemplate::class,
-        'api_tokens' => ApiToken::class,
-        'ai_providers' => AIProvider::class,
-        'webhooks' => Webhook::class,
-    ];
 
     protected $signature = 'search:reindex
         {model? : Model name to reindex (users, user_groups, pages, etc.). Omit to reindex all.}';
@@ -41,6 +18,8 @@ class SearchReindexCommand extends Command
     {
         $modelArg = $this->argument('model');
 
+        $searchableModels = SearchService::getSearchableModels();
+
         if ($modelArg !== null) {
             $modelArg = strtolower($modelArg);
 
@@ -48,19 +27,19 @@ class SearchReindexCommand extends Command
                 return $this->reindexPages(fatal: true);
             }
 
-            if (! isset(static::$searchableModels[$modelArg])) {
-                $available = array_merge(array_keys(static::$searchableModels), ['pages']);
+            if (! isset($searchableModels[$modelArg])) {
+                $available = array_merge(array_keys($searchableModels), ['pages']);
                 $this->error("Unknown model: {$modelArg}. Available: " . implode(', ', $available));
 
                 return self::FAILURE;
             }
-            $models = [$modelArg => static::$searchableModels[$modelArg]];
+            $models = [$modelArg => $searchableModels[$modelArg]];
         } else {
             // Pages sync is non-fatal when reindexing all models so that
             // model reindexing can still proceed even if the API key is
             // misconfigured for direct Meilisearch operations.
             $this->reindexPages(fatal: false);
-            $models = static::$searchableModels;
+            $models = $searchableModels;
         }
 
         foreach ($models as $name => $class) {

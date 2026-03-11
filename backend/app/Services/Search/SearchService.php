@@ -795,7 +795,7 @@ class SearchService
      * @param  int|null  $scopeUserId  When set, scope user results to only this user (for non-admin).
      * @return array<int, array{id: int|string, type: string, title: string, subtitle?: string, url: string, highlight?: array{title?: string, subtitle?: string}}>
      */
-    public function getSuggestions(string $query, int $limit = 5, ?int $scopeUserId = null): array
+    public function getSuggestions(string $query, int $limit = 5, ?int $scopeUserId = null, ?int $authUserId = null): array
     {
         $query = trim($query);
         if ($query === '') {
@@ -807,10 +807,41 @@ class SearchService
         $isAdmin = $scopeUserId === null;
         $results = [];
 
-        // Search pages first (fast, static content)
-        $pageLimit = min(3, $limit);
-        $pages = $this->searchPages($query, $isAdmin, $pageLimit);
-        $results = array_merge($results, $pages);
+        // Search emails first (most relevant for daily use)
+        $emailUserId = $authUserId ?? $scopeUserId;
+        if ($emailUserId) {
+            $emailLimit = min(3, $limit);
+            try {
+                $emailResults = $this->searchEmails($query, $emailUserId, $emailLimit, 1);
+                foreach ($emailResults->items() as $email) {
+                    $results[] = $this->transformEmailToSuggestion($email, $query);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Email suggestion search failed', ['error' => $e->getMessage()]);
+            }
+        }
+
+        // Search pages (fast, static content)
+        $pageLimit = min(3, $limit - count($results));
+        if ($pageLimit > 0) {
+            $pages = $this->searchPages($query, $isAdmin, $pageLimit);
+            $results = array_merge($results, $pages);
+        }
+
+        // Search contacts
+        $contactLimit = min(2, $limit - count($results));
+        if ($contactLimit > 0 && $emailUserId) {
+            try {
+                $contactResults = Contact::search($query)
+                    ->where('user_id', $emailUserId)
+                    ->paginate($contactLimit);
+                foreach ($contactResults->items() as $contact) {
+                    $results[] = $this->transformContactToSuggestion($contact, $query);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Contact suggestion search failed', ['error' => $e->getMessage()]);
+            }
+        }
 
         // Search user groups (admin only)
         if ($isAdmin) {
@@ -827,6 +858,52 @@ class SearchService
         $results = array_merge($results, $userResults['data']);
 
         return array_slice($results, 0, $limit);
+    }
+
+    /**
+     * Transform an Email model into a suggestion result.
+     */
+    protected function transformEmailToSuggestion(Email $email, string $query): array
+    {
+        $title = $email->subject ?: '(No subject)';
+        $subtitle = $email->from_name ? "{$email->from_name} <{$email->from_address}>" : $email->from_address;
+        $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $safeSubtitle = htmlspecialchars($subtitle ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        return [
+            'id' => $email->id,
+            'type' => 'emails',
+            'title' => $safeTitle,
+            'subtitle' => $safeSubtitle,
+            'url' => '/mail?search=' . urlencode($email->subject ?: ''),
+            'highlight' => [
+                'title' => $this->highlightMatch($title, $query),
+                'subtitle' => $subtitle ? $this->highlightMatch($subtitle, $query) : null,
+            ],
+        ];
+    }
+
+    /**
+     * Transform a Contact model into a suggestion result.
+     */
+    protected function transformContactToSuggestion(Contact $contact, string $query): array
+    {
+        $title = $contact->display_name ?: $contact->email_address;
+        $subtitle = $contact->display_name ? $contact->email_address : null;
+        $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $safeSubtitle = $subtitle ? htmlspecialchars($subtitle, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : null;
+
+        return [
+            'id' => $contact->id,
+            'type' => 'contacts',
+            'title' => $safeTitle,
+            'subtitle' => $safeSubtitle,
+            'url' => '/contacts',
+            'highlight' => [
+                'title' => $this->highlightMatch($title, $query),
+                'subtitle' => $subtitle ? $this->highlightMatch($subtitle, $query) : null,
+            ],
+        ];
     }
 
     /**

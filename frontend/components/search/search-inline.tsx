@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
+import { useHelp } from "@/components/help/help-provider";
 import {
   Command,
   CommandEmpty,
@@ -49,6 +50,7 @@ function addRecentQuery(query: string) {
 
 export function SearchInline() {
   const router = useRouter();
+  const { openArticle } = useHelp();
   const { setFocusInlineSearch } = useSearch();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -106,9 +108,13 @@ export function SearchInline() {
       addRecentQuery(query);
       setPopoverOpen(false);
       setQuery("");
-      router.push(result.url);
+      if (result.url.startsWith("help:")) {
+        openArticle(result.url.slice(5));
+      } else {
+        router.push(result.url);
+      }
     },
-    [query, router]
+    [query, router, openArticle]
   );
 
   const handleRecentSelect = useCallback(
@@ -127,16 +133,16 @@ export function SearchInline() {
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
-        <div className="relative w-[200px] sm:w-[240px] lg:w-[280px]">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             ref={inputRef}
             type="search"
-            placeholder="Search..."
+            placeholder="Search emails, pages, contacts..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setPopoverOpen(true)}
-            className="h-9 pl-8"
+            className="h-10 pl-9 text-sm"
             aria-label="Search"
           />
         </div>

@@ -61,7 +61,7 @@ class SearchController extends Controller
         $limit = (int) $request->input('limit', 5);
         $scopeUserId = $request->user()->inGroup('admin') ? null : $request->user()->id;
 
-        $data = $this->searchService->getSuggestions($query, $limit, $scopeUserId);
+        $data = $this->searchService->getSuggestions($query, $limit, $scopeUserId, $request->user()->id);
 
         return $this->dataResponse(['data' => $data]);
     }
