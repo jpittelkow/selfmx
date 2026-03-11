@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [0.2.23] - 2026-03-11
+
+### Fixed
+- SES webhook logging, SNS subscription handling, Mailgun empty GET payload fix
 ## [0.2.22] - 2026-03-11
 
 ### Added
