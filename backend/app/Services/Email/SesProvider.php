@@ -452,19 +452,130 @@ class SesProvider implements
 
     public function configureDomainWebhook(string $domain, string $webhookUrl, array $config = []): bool
     {
-        // SES inbound email requires a Receipt Rule in a Receipt Rule Set pointing
-        // to an SNS topic that forwards to the webhook URL. This is configured
-        // automatically during webhook auto-configuration (HasWebhookManagement).
-        // The Receipt Rule setup requires knowing the active rule set name, which
-        // varies per account. Log the requirement and return false so the caller
-        // knows manual setup may be needed.
-        Log::info('SES inbound webhook requires Receipt Rule configuration', [
-            'domain' => $domain,
-            'webhook_url' => $webhookUrl,
-            'instructions' => 'Create an SES Receipt Rule that forwards to an SNS topic subscribed to the webhook URL.',
-        ]);
+        $creds = $this->resolveCredentials($config);
 
-        return false;
+        if (empty($creds['access_key']) || empty($creds['secret_key'])) {
+            Log::warning('SES inbound webhook: credentials not configured', ['domain' => $domain]);
+            return false;
+        }
+
+        try {
+            // Step 1: Create SNS topic and subscribe the webhook URL
+            $topicArn = $this->ensureSnsTopic(
+                str_replace('.', '-', $domain),
+                'inbound',
+                $webhookUrl,
+                $config,
+            );
+
+            // Step 2: Discover or create a Receipt Rule Set
+            // SES allows only ONE active rule set per account — reuse it if one exists
+            $ruleSetName = $this->getOrCreateActiveRuleSet($creds);
+            if ($ruleSetName === null) {
+                Log::error('SES: failed to get or create active receipt rule set', ['domain' => $domain]);
+                return false;
+            }
+
+            // Step 4: Create Receipt Rule with SNS action for this domain
+            $ruleName = 'selfmx-inbound-' . str_replace('.', '-', $domain);
+            $ruleResult = $this->sesV1Request('CreateReceiptRule', [
+                'RuleSetName' => $ruleSetName,
+                'Rule.Name' => $ruleName,
+                'Rule.Enabled' => 'true',
+                'Rule.ScanEnabled' => 'true',
+                'Rule.TlsPolicy' => 'Optional',
+                'Rule.Recipients.member.1' => $domain,
+                'Rule.Actions.member.1.SNSAction.TopicArn' => $topicArn,
+                'Rule.Actions.member.1.SNSAction.Encoding' => 'UTF-8',
+            ], $creds);
+
+            // AlreadyExists is fine — rule was previously created
+            if (isset($ruleResult['error']) && $ruleResult['error']) {
+                $raw = $ruleResult['raw'] ?? '';
+                if (str_contains($raw, 'AlreadyExists')) {
+                    Log::info('SES receipt rule already exists, skipping', ['domain' => $domain, 'rule' => $ruleName]);
+                    return true;
+                }
+
+                Log::error('SES: failed to create receipt rule', [
+                    'domain' => $domain,
+                    'error' => $raw,
+                ]);
+                return false;
+            }
+
+            Log::info('SES inbound receipt rule configured', [
+                'domain' => $domain,
+                'rule_set' => $ruleSetName,
+                'rule' => $ruleName,
+                'topic_arn' => $topicArn,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('SES inbound webhook configuration failed', [
+                'domain' => $domain,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Clean up AWS resources when a domain is deleted.
+     *
+     * Removes the Receipt Rule and SNS topic/subscription created by configureDomainWebhook().
+     */
+    public function cleanupDomainResources(string $domain, array $config = []): void
+    {
+        $creds = $this->resolveCredentials($config);
+
+        if (empty($creds['access_key']) || empty($creds['secret_key'])) {
+            return;
+        }
+
+        // Delete the Receipt Rule from the active rule set
+        $describeResult = $this->sesV1Request('DescribeActiveReceiptRuleSet', [], $creds);
+        $ruleSetName = $describeResult['Metadata']['Name'] ?? null;
+
+        if ($ruleSetName) {
+            $ruleName = 'selfmx-inbound-' . str_replace('.', '-', $domain);
+            $result = $this->sesV1Request('DeleteReceiptRule', [
+                'RuleSetName' => $ruleSetName,
+                'RuleName' => $ruleName,
+            ], $creds);
+
+            if (isset($result['error']) && $result['error']) {
+                Log::warning('SES: failed to delete receipt rule on domain cleanup', [
+                    'domain' => $domain,
+                    'rule' => $ruleName,
+                    'error' => $result['raw'] ?? 'unknown',
+                ]);
+            } else {
+                Log::info('SES: deleted receipt rule', ['domain' => $domain, 'rule' => $ruleName]);
+            }
+        }
+
+        // Delete the SNS topic (also removes all subscriptions)
+        $topicName = 'selfmx-' . str_replace('.', '-', $domain) . '-inbound';
+        $region = $creds['region'];
+
+        // We need the topic ARN to delete it — reconstruct or look it up
+        // CreateTopic is idempotent and returns the ARN of an existing topic
+        $topicResult = $this->snsRequest('CreateTopic', ['Name' => $topicName], $creds);
+        $topicArn = $topicResult['CreateTopicResult']['TopicArn'] ?? null;
+
+        if ($topicArn) {
+            $deleteResult = $this->snsRequest('DeleteTopic', ['TopicArn' => $topicArn], $creds);
+            if (isset($deleteResult['error']) && $deleteResult['error']) {
+                Log::warning('SES: failed to delete SNS topic on domain cleanup', [
+                    'domain' => $domain,
+                    'topic' => $topicArn,
+                ]);
+            } else {
+                Log::info('SES: deleted SNS topic', ['domain' => $domain, 'topic' => $topicArn]);
+            }
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -979,8 +1090,16 @@ class SesProvider implements
             return ['suppressed' => false, 'reason' => null, 'detail' => null];
         }
 
-        // Unexpected error — treat as unknown
-        Log::warning('SES checkSuppression unexpected response', ['address' => $address, 'status' => $result['status']]);
+        // 403 often means account-level suppression list is not enabled in SES
+        $errorMsg = $result['body']['message'] ?? ($result['body']['Message'] ?? null);
+        Log::warning('SES checkSuppression unexpected response', [
+            'address' => $address,
+            'status' => $result['status'],
+            'error' => $errorMsg,
+            'hint' => $result['status'] === 403
+                ? 'Ensure account-level suppression list is enabled in SES console (Account dashboard > Suppression list)'
+                : null,
+        ]);
         return ['suppressed' => false, 'reason' => null, 'detail' => null];
     }
 
@@ -1299,6 +1418,88 @@ class SesProvider implements
             return json_decode(json_encode($xml), true) ?: [];
         } catch (\Exception $e) {
             Log::error('SNS request exception', ['action' => $action, 'error' => $e->getMessage()]);
+            return ['error' => true, 'status' => 0, 'raw' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Get the active Receipt Rule Set, or create and activate one named 'selfmx'.
+     *
+     * SES allows only ONE active rule set per account. If one already exists,
+     * we add our rules to it rather than replacing it.
+     */
+    private function getOrCreateActiveRuleSet(array $creds): ?string
+    {
+        // DescribeActiveReceiptRuleSet returns the active set (or empty if none)
+        $describeResult = $this->sesV1Request('DescribeActiveReceiptRuleSet', [], $creds);
+
+        // If there's already an active rule set, reuse it
+        $existingName = $describeResult['Metadata']['Name'] ?? null;
+        if ($existingName) {
+            Log::info('SES: reusing existing active receipt rule set', ['rule_set' => $existingName]);
+            return $existingName;
+        }
+
+        // No active rule set — create and activate 'selfmx'
+        $ruleSetName = 'selfmx';
+        $createResult = $this->sesV1Request('CreateReceiptRuleSet', [
+            'RuleSetName' => $ruleSetName,
+        ], $creds);
+
+        // AlreadyExists is fine (set exists but is inactive); other errors are not
+        if (isset($createResult['error']) && $createResult['error']) {
+            $raw = $createResult['raw'] ?? '';
+            if (! str_contains($raw, 'AlreadyExists')) {
+                Log::error('SES: failed to create receipt rule set', ['error' => $raw]);
+                return null;
+            }
+        }
+
+        $activateResult = $this->sesV1Request('SetActiveReceiptRuleSet', [
+            'RuleSetName' => $ruleSetName,
+        ], $creds);
+
+        if (isset($activateResult['error']) && $activateResult['error']) {
+            Log::error('SES: failed to activate receipt rule set', [
+                'error' => $activateResult['raw'] ?? 'unknown',
+            ]);
+            return null;
+        }
+
+        return $ruleSetName;
+    }
+
+    /**
+     * Make an AWS SES v1 API request (query-style, form-encoded).
+     *
+     * Used for Receipt Rule management which is only available in SES v1.
+     */
+    private function sesV1Request(string $action, array $params, array $creds): array
+    {
+        $region   = $creds['region'];
+        $endpoint = "https://email.{$region}.amazonaws.com";
+
+        $params['Action']  = $action;
+        $params['Version'] = '2010-12-01';
+
+        try {
+            $response = Http::withHeaders($this->signAwsRequest('POST', $endpoint, $params, $region, $creds['access_key'], $creds['secret_key']))
+                ->asForm()
+                ->post($endpoint, $params);
+
+            if (! $response->successful()) {
+                Log::warning('SES v1 API error', [
+                    'action' => $action,
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
+                return ['error' => true, 'status' => $response->status(), 'raw' => $response->body()];
+            }
+
+            $xml = simplexml_load_string($response->body());
+            return json_decode(json_encode($xml), true) ?: [];
+        } catch (\Exception $e) {
+            Log::error('SES v1 request exception', ['action' => $action, 'error' => $e->getMessage()]);
             return ['error' => true, 'status' => 0, 'raw' => $e->getMessage()];
         }
     }

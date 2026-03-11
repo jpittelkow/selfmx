@@ -142,6 +142,21 @@ class DomainService
             'provider' => $domain->provider,
         ], []);
 
+        // Clean up provider-side resources (receipt rules, SNS topics, etc.)
+        try {
+            $provider = $this->resolveProvider($domain->provider);
+            if (method_exists($provider, 'cleanupDomainResources')) {
+                $config = $this->getCredentialsForDomain($domain);
+                $provider->cleanupDomainResources($domain->name, $config);
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to clean up provider resources for domain', [
+                'domain' => $domain->name,
+                'provider' => $domain->provider,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         DB::transaction(function () use ($domain) {
             // Deactivate mailboxes before deletion — they'll be orphaned with email_domain_id=null
             $domain->mailboxes()->update(['is_active' => false]);

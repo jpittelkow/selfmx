@@ -43,7 +43,11 @@
       "Bash(grep -n \"function.*suppression\\\\|function.*bounce\" backend/tests/Feature/*.php -i)",
       "Bash(sed -n '130,145p' frontend/app/\\\\\\(dashboard\\\\\\)/configuration/email-domains/[id]/page.tsx)",
       "Bash(git diff frontend/app/\\\\\\(dashboard\\\\\\)/configuration/email-domains/[id]/page.tsx)",
-      "Bash(powershell -File ./scripts/push.ps1 patch 'fix: SES domain verification with full DNS records, stats format normalization, and tracking settings improvements across providers')"
+      "Bash(powershell -File ./scripts/push.ps1 patch 'fix: SES domain verification with full DNS records, stats format normalization, and tracking settings improvements across providers')",
+      "Bash(powershell -Command \"Get-Process -Name php -ErrorAction SilentlyContinue | Select-Object Id,StartTime\")",
+      "Bash(grep -rn \"receipt\\\\|Receipt\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app --include=*.php)",
+      "Bash(grep -rn checkSuppression /c/Users/jpitt_6932a9v/code/selfmx/backend --include=*.php)",
+      "Bash(grep -n \"function.*managementRequest\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Services/Email/*.php)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jpitt_6932a9v\\code\\selfmx\\frontend\\components"

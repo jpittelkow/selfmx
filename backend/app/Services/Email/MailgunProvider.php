@@ -49,12 +49,6 @@ class MailgunProvider implements
 
     public function verifyWebhookSignature(Request $request): bool
     {
-        $signingKey = $this->getSigningKey();
-        if (empty($signingKey)) {
-            Log::warning('Mailgun webhook signing key not configured');
-            return false;
-        }
-
         $timestamp = $request->input('signature.timestamp', $request->input('timestamp', ''));
         $token = $request->input('signature.token', $request->input('token', ''));
         $signature = $request->input('signature.signature', $request->input('signature', ''));
@@ -63,9 +57,33 @@ class MailgunProvider implements
             return false;
         }
 
-        $computed = hash_hmac('sha256', $timestamp . $token, $signingKey);
+        // Try signing keys from all active Mailgun provider accounts
+        $signingKeys = \App\Models\EmailProviderAccount::where('provider', 'mailgun')
+            ->where('is_active', true)
+            ->get()
+            ->map(fn ($account) => $account->getCredential('webhook_signing_key', ''))
+            ->filter(fn ($key) => !empty($key))
+            ->unique()
+            ->values();
 
-        return hash_equals($computed, $signature);
+        // Fall back to legacy SettingService location
+        if ($signingKeys->isEmpty()) {
+            $legacyKey = $this->getSigningKey();
+            if (empty($legacyKey)) {
+                Log::warning('Mailgun webhook signing key not configured');
+                return false;
+            }
+            $signingKeys = collect([$legacyKey]);
+        }
+
+        foreach ($signingKeys as $key) {
+            $computed = hash_hmac('sha256', $timestamp . $token, $key);
+            if (hash_equals($computed, $signature)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function parseInboundEmail(Request $request): ParsedEmail
