@@ -861,6 +861,10 @@ class PostmarkProvider implements
                 'active' => ($body['TrackLinks'] ?? 'None') !== 'None',
                 'mode'   => $body['TrackLinks'] ?? 'None',
             ],
+            'unsubscribe' => [
+                'active' => null,
+                'note'   => 'Unsubscribe tracking is not supported by Postmark.',
+            ],
         ];
     }
 

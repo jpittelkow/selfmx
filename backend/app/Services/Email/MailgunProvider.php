@@ -721,7 +721,16 @@ class MailgunProvider implements
     public function getTrackingSettings(string $domain, array $config = []): array
     {
         $result = $this->managementRequestOrFail('get', "v3/domains/{$domain}/tracking", [], $config);
-        return $result['body']['tracking'] ?? [];
+        $tracking = $result['body']['tracking'] ?? [];
+
+        // Mailgun returns active as strings ('yes','no','htmlonly','htmlAndText') — normalize to booleans
+        foreach (['click', 'open', 'unsubscribe'] as $key) {
+            if (isset($tracking[$key]['active'])) {
+                $tracking[$key]['active'] = ! in_array($tracking[$key]['active'], ['no', false], true);
+            }
+        }
+
+        return $tracking;
     }
 
     /**

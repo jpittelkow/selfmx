@@ -138,10 +138,17 @@ interface SuppressionItem {
   tag?: string;
 }
 
+interface TrackingSettingValue {
+  active: boolean | null;
+  note?: string;
+  html_footer?: string;
+  text_footer?: string;
+}
+
 interface TrackingSettings {
-  click?: { active: boolean };
-  open?: { active: boolean };
-  unsubscribe?: { active: boolean; html_footer?: string; text_footer?: string };
+  click?: TrackingSettingValue;
+  open?: TrackingSettingValue;
+  unsubscribe?: TrackingSettingValue;
 }
 
 interface StatsPoint {
@@ -1066,6 +1073,7 @@ function TrackingTab({ domain }: { domain: EmailDomain }) {
   }, [domain.id]);
 
   const toggle = async (type: "click" | "open" | "unsubscribe", active: boolean) => {
+    if (tracking?.[type]?.active === null || tracking?.[type]?.active === undefined) return;
     setSaving(type);
     try {
       await api.put(mgmtPath(domain.id, "tracking", type), { active });
@@ -1096,19 +1104,27 @@ function TrackingTab({ domain }: { domain: EmailDomain }) {
 
   return (
     <div className="space-y-1 divide-y rounded-md border text-sm">
-      {rows.map(({ key, label, description }) => (
-        <div key={key} className="flex items-center justify-between px-4 py-4">
-          <div>
-            <p className="font-medium">{label}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+      {rows.map(({ key, label, description }) => {
+        const setting = tracking[key];
+        const unsupported = setting?.active === null || setting?.active === undefined;
+        const note = setting?.note;
+
+        return (
+          <div key={key} className="flex items-center justify-between px-4 py-4">
+            <div>
+              <p className={`font-medium ${unsupported ? "text-muted-foreground" : ""}`}>{label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {unsupported && note ? note : description}
+              </p>
+            </div>
+            <Switch
+              checked={!unsupported && (setting?.active ?? false)}
+              disabled={unsupported || saving === key}
+              onCheckedChange={(v) => toggle(key, v)}
+            />
           </div>
-          <Switch
-            checked={tracking[key]?.active ?? false}
-            disabled={saving === key}
-            onCheckedChange={(v) => toggle(key, v)}
-          />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

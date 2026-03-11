@@ -43,14 +43,16 @@ class DomainService
             abort(422, "Failed to register domain with {$provider}: {$result->error}");
         }
 
-        // Only store domain-specific overrides in provider_config, not account credentials
+        // Only store domain-specific overrides in provider_config, not account credentials.
+        // Merge any provider metadata (e.g. SES verification token) for later retrieval.
+        $storedConfig = array_merge($providerConfig, $result->metadata);
         $domain = EmailDomain::create([
             'user_id' => $user->id,
             'name' => strtolower($domainName),
             'provider' => $provider,
             'email_provider_account_id' => $accountId,
             'provider_domain_id' => $result->providerDomainId,
-            'provider_config' => $providerConfig,
+            'provider_config' => $storedConfig,
             'is_verified' => false,
             'is_active' => true,
         ]);

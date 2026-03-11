@@ -9,11 +9,12 @@ class DomainResult
         public readonly ?string $providerDomainId = null,
         public readonly array $dnsRecords = [],
         public readonly ?string $error = null,
+        public readonly array $metadata = [],
     ) {}
 
-    public static function success(string $providerDomainId, array $dnsRecords = []): self
+    public static function success(string $providerDomainId, array $dnsRecords = [], array $metadata = []): self
     {
-        return new self(true, $providerDomainId, $dnsRecords);
+        return new self(true, $providerDomainId, $dnsRecords, null, $metadata);
     }
 
     public static function failure(string $error): self

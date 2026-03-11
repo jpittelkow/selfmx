@@ -366,7 +366,9 @@ class SesProvider implements
                 'priority' => 10,
             ];
 
-            return DomainResult::success($domain, $dnsRecords);
+            return DomainResult::success($domain, $dnsRecords, [
+                'ses_verification_token' => $token,
+            ]);
         } catch (\Exception $e) {
             return DomainResult::failure($e->getMessage());
         }
@@ -379,19 +381,62 @@ class SesProvider implements
             $result = $this->managementRequestOrFail('get', "email/identities/{$domain}", [], $config);
             $body = $result['body'];
 
-            $isVerified = ($body['VerifiedForSendingStatus'] ?? false) === true;
-
-            // Build DNS records from DKIM tokens for the UI
-            $dnsRecords = [];
+            $identityVerified = ($body['VerifiedForSendingStatus'] ?? false) === true;
             $dkimAttrs = $body['DkimAttributes'] ?? [];
+            $dkimVerified = ($dkimAttrs['Status'] ?? '') === 'SUCCESS';
+
+            // Domain is only fully verified when both identity and DKIM are confirmed
+            $isVerified = $identityVerified && $dkimVerified;
+
+            $creds = $this->resolveCredentials($config);
+            $dnsRecords = [];
+
+            // 1. TXT verification record
+            $txtValue = $config['ses_verification_token'] ?? null;
+            $dnsRecords[] = [
+                'type' => 'TXT',
+                'name' => "_amazonses.{$domain}",
+                'value' => $txtValue ?: '(check SES console for token)',
+                'valid' => $identityVerified ? 'valid' : 'invalid',
+                'purpose' => 'verification',
+            ];
+
+            // 2. DKIM CNAME records
             foreach ($dkimAttrs['Tokens'] ?? [] as $token) {
                 $dnsRecords[] = [
                     'type' => 'CNAME',
                     'name' => "{$token}._domainkey.{$domain}",
                     'value' => "{$token}.dkim.amazonses.com",
-                    'valid' => ($dkimAttrs['Status'] ?? '') === 'SUCCESS',
+                    'valid' => $dkimVerified ? 'valid' : 'invalid',
+                    'purpose' => 'dkim',
                 ];
             }
+
+            // 3. MX record for inbound email reception
+            $region = $creds['region'] ?: 'us-east-1';
+            $mxTarget = "inbound-smtp.{$region}.amazonaws.com";
+            $mxValid = 'unknown';
+            try {
+                $mxRecords = @dns_get_record($domain, DNS_MX);
+                foreach ($mxRecords ?: [] as $mx) {
+                    if (rtrim($mx['target'] ?? '', '.') === $mxTarget) {
+                        $mxValid = 'valid';
+                        break;
+                    }
+                }
+                if ($mxValid === 'unknown' && ! empty($mxRecords)) {
+                    $mxValid = 'invalid';
+                }
+            } catch (\Exception $e) {
+                // DNS lookup failed — leave as unknown
+            }
+            $dnsRecords[] = [
+                'type' => 'MX',
+                'name' => $domain,
+                'value' => "10 {$mxTarget}",
+                'valid' => $mxValid,
+                'purpose' => 'receiving',
+            ];
 
             return new DomainVerificationResult($isVerified, $dnsRecords);
         } catch (SesApiException $e) {
@@ -468,8 +513,10 @@ class SesProvider implements
             if (in_array(strtolower($method), ['post', 'put'], true)) {
                 $bodyString = $payload ? json_encode($payload) : '{}';
             } else {
-                // For GET / DELETE, encode payload as query parameters
+                // For GET / DELETE, encode payload as query parameters.
+                // Sort by key for AWS Sig V4 canonical query string.
                 if ($payload) {
+                    ksort($payload);
                     $queryString = http_build_query($payload);
                     $url .= '?' . $queryString;
                 }
@@ -842,7 +889,7 @@ class SesProvider implements
      */
     public function listBounces(string $domain, int $limit = 25, ?string $page = null, array $config = []): array
     {
-        $params = ['Reason' => 'BOUNCE', 'PageSize' => $limit];
+        $params = ['Reasons' => 'BOUNCE', 'PageSize' => $limit];
         if ($page) {
             $params['NextToken'] = $page;
         }
@@ -859,7 +906,7 @@ class SesProvider implements
      */
     public function listComplaints(string $domain, int $limit = 25, ?string $page = null, array $config = []): array
     {
-        $params = ['Reason' => 'COMPLAINT', 'PageSize' => $limit];
+        $params = ['Reasons' => 'COMPLAINT', 'PageSize' => $limit];
         if ($page) {
             $params['NextToken'] = $page;
         }
@@ -1000,7 +1047,19 @@ class SesProvider implements
                 return ['stats' => [], 'start' => null, 'end' => null, 'note' => 'Unable to retrieve SES send statistics.'];
             }
 
-            $stats = $this->parseSendStatisticsXml($response->body(), $duration, $resolution);
+            $rawStats = $this->parseSendStatisticsXml($response->body(), $duration, $resolution);
+
+            // Transform flat SES format to Mailgun-compatible nested format for the frontend
+            $stats = array_map(fn ($p) => [
+                'time'      => $p['time'],
+                'accepted'  => ['incoming' => 0, 'outgoing' => $p['sent'] ?? 0, 'total' => $p['sent'] ?? 0],
+                'delivered'  => ['smtp' => $p['delivered'] ?? 0, 'http' => 0, 'total' => $p['delivered'] ?? 0],
+                'failed'    => [
+                    'permanent' => ['bounce' => $p['bounced'] ?? 0, 'total' => $p['bounced'] ?? 0],
+                    'temporary' => ['espblock' => 0, 'total' => $p['rejected'] ?? 0],
+                ],
+                'complained' => ['total' => $p['complained'] ?? 0],
+            ], $rawStats);
 
             return [
                 'stats' => $stats,

@@ -773,7 +773,7 @@ class ProviderManagementController extends Controller
                 'resolution' => ['sometimes', 'string', 'in:hour,day,month'],
             ]);
 
-            $events = ['accepted', 'delivered', 'failed', 'bounced', 'complained'];
+            $events = ['accepted', 'delivered', 'failed', 'complained'];
 
             /** @var HasDeliveryStats $provider */
             $data = $provider->getDomainStats(

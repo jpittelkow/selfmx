@@ -57,7 +57,7 @@ Only implement the interfaces your provider actually supports:
 | `HasInboundRoutes` | `list/create/update/deleteRoute()` | Provider has mail routing rules |
 | `HasEventLog` | `getEvents()` | Provider has queryable event/activity log |
 | `HasSuppressionManagement` | `list/delete/check/importBounces/Complaints/Unsubscribes()` | Provider has suppression lists |
-| `HasDeliveryStats` | `getDomainStats()`, `getTrackingSettings()`, `updateTrackingSetting()` | Provider has delivery statistics API |
+| `HasDeliveryStats` | `getDomainStats()`, `getTrackingSettings()`, `updateTrackingSetting()` | Provider has delivery statistics API (see [Tracking Limitations](#tracking-limitations)) |
 
 ## Core Method Implementations
 
@@ -194,6 +194,35 @@ public function parseDeliveryEvent(Request $request): array
     ];
 }
 ```
+
+## Tracking Limitations
+
+Not all providers support open/click/unsubscribe tracking via their API. When implementing `HasDeliveryStats`, providers that **cannot** manage tracking programmatically should return `active: null` with a `note` explaining why:
+
+```php
+// Provider does NOT support tracking via API (e.g., SES — managed via AWS console)
+public function getTrackingSettings(string $domain, array $config = []): array
+{
+    return [
+        'open'        => ['active' => null, 'note' => 'Managed via configuration set in the provider console.'],
+        'click'       => ['active' => null, 'note' => 'Managed via configuration set in the provider console.'],
+        'unsubscribe' => ['active' => null, 'note' => 'Not supported by this provider.'],
+    ];
+}
+
+public function updateTrackingSetting(string $domain, string $type, bool $active, array $config = []): array
+{
+    return ['updated' => false, 'note' => 'Tracking settings are not manageable via API for this provider.'];
+}
+```
+
+The frontend handles `active: null` by disabling the toggle and showing the `note` text instead of the default description. Providers that fully support tracking (e.g., Mailgun) return `active: true|false` with no `note`.
+
+| Provider | Open Tracking | Click Tracking | Unsubscribe Tracking |
+|----------|--------------|----------------|---------------------|
+| Mailgun | API-managed | API-managed | API-managed |
+| Postmark | API-managed | API-managed | Not supported |
+| SES | Console only | Console only | Not supported |
 
 ## Credential Resolution
 

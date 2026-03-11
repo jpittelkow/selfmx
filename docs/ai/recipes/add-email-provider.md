@@ -330,6 +330,23 @@ return [
 
 Support `duration` (1d, 7d, 30d, 90d) and `resolution` (hour, day, month) parameters.
 
+### Tracking Settings
+
+Not all providers support open/click/unsubscribe tracking via their API. If the provider **does not** support programmatic tracking control, return `active: null` with a `note`:
+
+```php
+public function getTrackingSettings(string $domain, array $config = []): array
+{
+    return [
+        'open'        => ['active' => null, 'note' => 'Managed via provider console, not API.'],
+        'click'       => ['active' => null, 'note' => 'Managed via provider console, not API.'],
+        'unsubscribe' => ['active' => null, 'note' => 'Not supported by this provider.'],
+    ];
+}
+```
+
+The frontend will disable the toggle and display the `note` text. See [Tracking Limitations](../patterns/email-provider.md#tracking-limitations) for the full pattern.
+
 ### DKIM Management
 
 If provider supports DKIM key retrieval/rotation:
@@ -354,6 +371,7 @@ If provider supports DKIM key retrieval/rotation:
 - [ ] `parseDeliveryEvent()` maps to generic statuses: delivered, bounced, failed, complained
 - [ ] Credential resolution uses `$config` parameter with fallback to `SettingService`
 - [ ] Errors throw `ProviderApiException` (not `RuntimeException` or `\Exception`)
+- [ ] `getTrackingSettings()` returns `active: null` + `note` for unsupported tracking features (see [Tracking Limitations](../patterns/email-provider.md#tracking-limitations))
 - [ ] `checkApiHealth()` implemented for health check endpoint
 - [ ] Provider registered in `DomainService::resolveProvider()`
 - [ ] Provider added to `EmailProviderAccount::supportedProviders()`

@@ -31,7 +31,19 @@
       "Bash(grep -r \"Request\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Http/Traits/*.php)",
       "Read(//c/Users/jpitt_6932a9v/OneDrive/Desktop/**)",
       "Bash(xargs grep -l \"email_provider_account\\\\|EmailProviderAccount\")",
-      "Bash(grep -n \"cascade\\\\|onDelete\" /c/Users/jpitt_6932a9v/code/selfmx/backend/database/migrations/*.php)"
+      "Bash(grep -n \"cascade\\\\|onDelete\" /c/Users/jpitt_6932a9v/code/selfmx/backend/database/migrations/*.php)",
+      "Bash(xargs grep -l \"getSuppression\\\\|suppressionList\\\\|bounceList\")",
+      "Bash(ls -la /c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\\\\\(dashboard\\\\\\)/configuration/)",
+      "Bash(cat \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(dashboard\\)/configuration/email-domains/page.tsx\")",
+      "Bash(cat \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(dashboard\\)/configuration/email-domains/[id]/page.tsx\")",
+      "Bash(wc -l \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(dashboard\\)/configuration/email-domains/[id]/page.tsx\")",
+      "Bash(xargs grep -l \"suppression\\\\|bounce\" -i)",
+      "Bash(grep -n \"suppression\\\\|bounce\" frontend/app/\\\\\\(dashboard\\\\\\)/configuration/email-domains/[id]/page.tsx -i)",
+      "Bash(sed -n '902,1080p' frontend/app/\\\\\\(dashboard\\\\\\)/configuration/email-domains/[id]/page.tsx)",
+      "Bash(grep -n \"function.*suppression\\\\|function.*bounce\" backend/tests/Feature/*.php -i)",
+      "Bash(sed -n '130,145p' frontend/app/\\\\\\(dashboard\\\\\\)/configuration/email-domains/[id]/page.tsx)",
+      "Bash(git diff frontend/app/\\\\\\(dashboard\\\\\\)/configuration/email-domains/[id]/page.tsx)",
+      "Bash(powershell -File ./scripts/push.ps1 patch 'fix: SES domain verification with full DNS records, stats format normalization, and tracking settings improvements across providers')"
     ],
     "additionalDirectories": [
       "c:\\Users\\jpitt_6932a9v\\code\\selfmx\\frontend\\components"
