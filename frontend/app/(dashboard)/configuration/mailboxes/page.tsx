@@ -49,12 +49,20 @@ interface EmailDomain {
   name: string;
 }
 
+interface UserSignature {
+  id: number;
+  name: string;
+  body: string;
+  is_default: boolean;
+}
+
 interface Mailbox {
   id: number;
   address: string;
   domain_name?: string | null;
   display_name: string | null;
   signature: string | null;
+  default_signature_id: number | null;
   is_active: boolean;
   email_domain: EmailDomain | null;
   user_role?: string;
@@ -89,6 +97,8 @@ export default function MailboxesPage() {
   const [editMailbox, setEditMailbox] = useState<Mailbox | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editSignature, setEditSignature] = useState("");
+  const [editDefaultSignatureId, setEditDefaultSignatureId] = useState<string>("");
+  const [userSignatures, setUserSignatures] = useState<UserSignature[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [membersMailbox, setMembersMailbox] = useState<Mailbox | null>(null);
   const [members, setMembers] = useState<MailboxMember[]>([]);
@@ -108,12 +118,14 @@ export default function MailboxesPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [mailboxRes, domainRes] = await Promise.all([
+      const [mailboxRes, domainRes, sigRes] = await Promise.all([
         api.get<{ mailboxes: Mailbox[] }>("/email/mailboxes"),
         api.get<{ domains: EmailDomain[] }>("/email/domains"),
+        api.get<{ signatures: UserSignature[] }>("/email/signatures"),
       ]);
       setMailboxes(mailboxRes.data.mailboxes);
       setDomains(domainRes.data.domains);
+      setUserSignatures(sigRes.data.signatures);
 
       // Fetch forward status for each mailbox
       const forwards: Record<number, MailboxForward | null> = {};
@@ -178,6 +190,7 @@ export default function MailboxesPage() {
     setEditMailbox(mailbox);
     setEditDisplayName(mailbox.display_name || "");
     setEditSignature(mailbox.signature || "");
+    setEditDefaultSignatureId(mailbox.default_signature_id ? mailbox.default_signature_id.toString() : "none");
     setForwardLoading(true);
     try {
       const res = await api.get<{ forward: MailboxForward | null }>(`/email/mailboxes/${mailbox.id}/forward`);
@@ -201,6 +214,7 @@ export default function MailboxesPage() {
       await api.put(`/email/mailboxes/${editMailbox.id}`, {
         display_name: editDisplayName.trim() || null,
         signature: editSignature.trim() || null,
+        default_signature_id: editDefaultSignatureId && editDefaultSignatureId !== "none" ? parseInt(editDefaultSignatureId) : null,
       });
 
       // Save forwarding config
@@ -547,16 +561,25 @@ export default function MailboxesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Signature</Label>
-              <Textarea
-                placeholder="Your email signature..."
-                value={editSignature}
-                onChange={(e) => setEditSignature(e.target.value)}
-                rows={5}
-                className="resize-y"
-              />
+              <Label>Default Signature</Label>
+              <Select value={editDefaultSignatureId} onValueChange={setEditDefaultSignatureId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Use user default" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (use user default)</SelectItem>
+                  {userSignatures.map((sig) => (
+                    <SelectItem key={sig.id} value={sig.id.toString()}>
+                      {sig.name}{sig.is_default ? " (default)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground">
-                This signature will be automatically appended to emails sent from this mailbox.
+                Choose which signature to use for this mailbox.{" "}
+                <a href="/mail/settings/signatures" className="underline hover:text-foreground">
+                  Manage signatures
+                </a>
               </p>
             </div>
 

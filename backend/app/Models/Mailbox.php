@@ -21,6 +21,7 @@ class Mailbox extends Model
         'display_name',
         'is_active',
         'signature',
+        'default_signature_id',
     ];
 
     protected function casts(): array
@@ -38,6 +39,11 @@ class Mailbox extends Model
     public function emailDomain(): BelongsTo
     {
         return $this->belongsTo(EmailDomain::class);
+    }
+
+    public function defaultSignature(): BelongsTo
+    {
+        return $this->belongsTo(Signature::class, 'default_signature_id');
     }
 
     public function forward(): HasOne

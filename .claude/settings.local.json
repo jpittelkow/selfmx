@@ -11,7 +11,8 @@
       "Bash(php -l:*)",
       "Bash(git status:*)",
       "Bash(composer require:*)",
-      "Bash(powershell.exe -Command \"Get-Command php -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; Get-Command composer -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")"
+      "Bash(powershell.exe -Command \"Get-Command php -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; Get-Command composer -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
+      "Bash(ls frontend/app/\\\\\\(dashboard\\\\\\)/mail/settings/signatures/ frontend/components/mail/sender-avatar.tsx backend/app/Http/Controllers/Api/SignatureController.php backend/app/Models/Signature.php 2>/dev/null)"
     ]
   }
 }

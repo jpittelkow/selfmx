@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\SystemSetting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
@@ -14,6 +13,9 @@ use App\Services\UsageTrackingService;
 
 class StorageService
 {
+    public function __construct(
+        private SettingService $settingService,
+    ) {}
     public const PROVIDERS = [
         'local' => ['label' => 'Local Filesystem', 'driver' => 'local'],
         's3' => ['label' => 'Amazon S3', 'driver' => 's3'],
@@ -49,7 +51,7 @@ class StorageService
      */
     public function getUploadPolicy(): array
     {
-        $settings = SystemSetting::getGroup('storage');
+        $settings = $this->settingService->getGroup('storage');
         $maxBytes = (int) ($settings['max_upload_size'] ?? 10485760);
         $allowedTypes = $settings['allowed_file_types'] ?? [];
 
@@ -102,7 +104,7 @@ class StorageService
      */
     public function getProviderConfig(string $provider): array
     {
-        $all = SystemSetting::getGroup('storage');
+        $all = $this->settingService->getGroup('storage');
         $prefix = $this->getSettingPrefix($provider);
 
         if ($prefix === null) {
@@ -608,7 +610,7 @@ class StorageService
      */
     public function getCleanupSuggestions(): array
     {
-        $driver = SystemSetting::get('driver', 'local', 'storage');
+        $driver = $this->settingService->get('storage', 'driver', 'local');
         $suggestions = [
             'cache' => ['count' => 0, 'size' => 0, 'description' => 'Framework cache files'],
             'temp' => ['count' => 0, 'size' => 0, 'description' => 'Temporary files older than 7 days'],
@@ -693,7 +695,7 @@ class StorageService
      */
     public function executeCleanup(string $type): array
     {
-        $driver = SystemSetting::get('driver', 'local', 'storage');
+        $driver = $this->settingService->get('storage', 'driver', 'local');
         if ($driver !== 'local') {
             throw new \InvalidArgumentException('Cleanup available for local storage only.');
         }
@@ -742,7 +744,7 @@ class StorageService
      */
     public function getAnalytics(): array
     {
-        $driver = SystemSetting::get('driver', 'local', 'storage');
+        $driver = $this->settingService->get('storage', 'driver', 'local');
         $analytics = [
             'driver' => $driver,
             'by_type' => [],
@@ -804,7 +806,7 @@ class StorageService
      */
     public function getStats(): array
     {
-        $driver = SystemSetting::get('driver', 'local', 'storage');
+        $driver = $this->settingService->get('storage', 'driver', 'local');
         $stats = [
             'driver' => $driver,
             'total_size' => 0,

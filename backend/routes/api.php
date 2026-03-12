@@ -66,6 +66,7 @@ use App\Http\Controllers\Api\EmailHostingSettingController;
 use App\Http\Controllers\Api\EmailProviderAccountController;
 use App\Http\Controllers\Api\EmailImportController;
 use App\Http\Controllers\Api\ProviderManagementController;
+use App\Http\Controllers\Api\SignatureController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -753,6 +754,16 @@ Route::middleware(['auth:sanctum', 'verified', '2fa.setup'])->group(function () 
         Route::put('/{rule}', [EmailRuleController::class, 'update']);
         Route::delete('/{rule}', [EmailRuleController::class, 'destroy']);
         Route::post('/{rule}/test', [EmailRuleController::class, 'test']);
+    });
+
+    // Email Signatures (authenticated users manage their own signature library)
+    Route::prefix('email/signatures')->group(function () {
+        Route::get('/', [SignatureController::class, 'index']);
+        Route::post('/', [SignatureController::class, 'store']);
+        Route::get('/{signature}', [SignatureController::class, 'show']);
+        Route::put('/{signature}', [SignatureController::class, 'update']);
+        Route::delete('/{signature}', [SignatureController::class, 'destroy']);
+        Route::put('/{signature}/default', [SignatureController::class, 'setDefault']);
     });
 
     // Email Import (authenticated users import into their mailboxes)

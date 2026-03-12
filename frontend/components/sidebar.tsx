@@ -199,7 +199,7 @@ function MailNavSectionInner({
         <Button
           variant="default"
           size="icon"
-          className="w-10 h-10"
+          className="w-10 h-10 shadow-md hover:shadow-lg transition-shadow"
           onClick={() => {
             openCompose();
             onNavClick?.();
@@ -283,7 +283,7 @@ function MailNavSectionInner({
       {/* Compose */}
       <div className="px-2 mb-3">
         <Button
-          className="w-full justify-center gap-2"
+          className="w-full justify-center gap-2 shadow-md hover:shadow-lg transition-shadow h-10 text-sm font-medium"
           onClick={() => {
             openCompose();
             onNavClick?.();

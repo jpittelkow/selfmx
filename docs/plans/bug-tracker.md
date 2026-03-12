@@ -18,6 +18,7 @@ Suspected bugs and issues to investigate. Claude logs items here when something 
 - **Symptoms**: `StorageSettingController::show()` uses `settingService->getGroup('storage')` which only returns schema-defined alert settings (4 keys), not the driver or provider credentials. The storage system itself works because `StorageService` reads directly from `SystemSetting::getGroup()` (bypassing schema).
 - **Files involved**: `backend/app/Http/Controllers/Api/StorageSettingController.php`, `backend/app/Services/SettingService.php`, `backend/config/settings-schema.php`
 - **Notes**: Low severity — storage works correctly; only the admin API response is incomplete. Users updating storage settings via the UI won't notice, but API consumers expecting full config in the GET response will get a partial response.
+- **Resolution**: Fixed 2026-03-11 — Added all storage driver/credential keys (27+) to `settings-schema.php` with `encrypted: true` on secrets. Updated `StorageSettingController` to use `SettingService::getGroupMasked()` and `setGroup()`. Updated `StorageService` to use `SettingService` instead of raw `SystemSetting` queries.
 
 ### Changelog page throws "Server Error" (Malformed UTF-8)
 - **Observed**: 2026-03-09
@@ -26,6 +27,7 @@ Suspected bugs and issues to investigate. Claude logs items here when something 
 - **Symptoms**: Page fails to load with "Server Error". Backend logs show `InvalidArgumentException: Malformed UTF-8 characters, possibly incorrectly encoded` at `JsonResponse.php:90`. The changelog data being serialized to JSON contains invalid UTF-8 bytes.
 - **Files involved**: Changelog controller/service (likely `ChangelogController` or similar), `JsonResponse.php:90`
 - **Notes**: Happens consistently on page load. Likely a changelog entry contains non-UTF-8 characters (e.g., from git log output or a VERSION/CHANGELOG file with encoding issues). Need to sanitize or re-encode the data before JSON serialization.
+- **Resolution**: Fixed 2026-03-11 — Fixed corrupted bytes in CHANGELOG.md (line 72 had `\xc7\xf6` instead of em dash). Added `mb_convert_encoding()` guard in `ChangelogService::getEntries()` to strip invalid UTF-8 before parsing.
 
 ### VAPID private key decryption fails
 - **Observed**: 2026-03-09
@@ -34,6 +36,7 @@ Suspected bugs and issues to investigate. Claude logs items here when something 
 - **Symptoms**: Warning log: `Failed to decrypt setting notifications.vapid_private_key {"error":"The payload is invalid."}`. The encrypted value in the database can't be decrypted, possibly due to an APP_KEY change or the value was stored corrupted.
 - **Files involved**: `backend/app/Services/SettingService.php`, notifications settings
 - **Notes**: Low severity if push notifications aren't actively used, but will cause issues when attempting to send web push notifications. Fix may require re-saving the VAPID keys or regenerating them.
+- **Resolution**: Fixed 2026-03-11 — Root cause was conflicting decryption in `SystemSetting` model accessor. The accessor tried to JSON-decode encrypted strings before decrypting, corrupting the ciphertext (JSON-decode of a Base64 encrypted string returns null → decrypt(null) fails). Removed encryption handling from model accessor — encryption/decryption is now solely handled by `SettingService` via the schema. If VAPID keys were stored during the dual-path era, they may need to be regenerated.
 
 ### SES provider: `dkim_rotation` and `events` capabilities report `false` despite implementing interfaces
 - **Observed**: 2026-03-10

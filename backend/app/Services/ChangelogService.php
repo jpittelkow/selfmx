@@ -28,6 +28,7 @@ class ChangelogService
         }
 
         $content = file_get_contents($changelogPath);
+        $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
         $entries = $this->parseChangelog($content);
 
         $total = count($entries);

@@ -310,6 +310,14 @@ return [
         'content' => 'import mbox eml upload email file mailbox',
     ],
     [
+        'id' => 'mail-settings-signatures',
+        'title' => 'Mail Settings > Signatures',
+        'subtitle' => 'Manage email signatures',
+        'url' => '/mail/settings/signatures',
+        'admin_only' => false,
+        'content' => 'signature email sign off library default mailbox',
+    ],
+    [
         'id' => 'config-email-accounts',
         'title' => 'Configuration > Provider Accounts',
         'subtitle' => 'Manage email provider credentials',

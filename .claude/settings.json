@@ -52,7 +52,22 @@
       "Read(//c/Users/jpitt_6932a9v/backend/tests/Feature/**)",
       "Bash(xargs grep:*)",
       "Bash(grep -E \"\\\\.\\(tsx?|php\\)$\")",
-      "Bash(grep -E \"\\\\.php$\")"
+      "Bash(grep -E \"\\\\.php$\")",
+      "Bash(iconv -f UTF-8 -t UTF-8 /c/Users/jpitt_6932a9v/code/selfmx/CHANGELOG.md)",
+      "Bash(python3:*)",
+      "Bash(grep -v '^$')",
+      "Bash(find \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(dashboard\\)\" -type f -name \"layout.tsx\")",
+      "Bash(grep -A 20 \"signature\" /c/Users/jpitt_6932a9v/code/selfmx/backend/database/migrations/*.php)",
+      "Bash(awk 'NR >= 52 && NR <= 58' /c/Users/jpitt_6932a9v/code/selfmx/CHANGELOG.md)",
+      "Bash(awk 'NR >= 85 && NR <= 90' /c/Users/jpitt_6932a9v/code/selfmx/CHANGELOG.md)",
+      "Bash(awk 'NR >= 83 && NR <= 87' /c/Users/jpitt_6932a9v/code/selfmx/CHANGELOG.md)",
+      "Bash(awk 'NR >= 93 && NR <= 98' /c/Users/jpitt_6932a9v/code/selfmx/CHANGELOG.md)",
+      "Bash(awk 'NR >= 99 && NR <= 105' /c/Users/jpitt_6932a9v/code/selfmx/CHANGELOG.md)",
+      "Bash(printf '\\\\xc7\\\\xf6')",
+      "Bash(grep -n \"class.*Controller\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Http/Controllers/Api/*.php)",
+      "Bash(grep -r \"is_default\\\\|default_signature\\\\|is_primary\" /c/Users/jpitt_6932a9v/code/selfmx/backend/app/Models/*.php)",
+      "Bash(python -c \":*)",
+      "Bash(find \"/c/Users/jpitt_6932a9v/code/selfmx/frontend/app/\\(dashboard\\)/mail/settings/signatures\" -type f)"
     ],
     "additionalDirectories": [
       "c:\\Users\\jpitt_6932a9v\\code\\selfmx\\frontend\\components"

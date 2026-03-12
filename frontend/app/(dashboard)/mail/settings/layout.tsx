@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   ListFilter,
+  PenLine,
   ShieldBan,
   Upload,
   Menu,
@@ -32,6 +33,7 @@ type NavItem = {
 
 const navigationItems: NavItem[] = [
   { name: "Rules", href: "/mail/settings/rules", icon: ListFilter, description: "Manage email filter rules" },
+  { name: "Signatures", href: "/mail/settings/signatures", icon: PenLine, description: "Manage email signatures" },
   { name: "Spam Filter", href: "/mail/settings/spam", icon: ShieldBan, description: "Allow and block sender lists" },
   { name: "Import Emails", href: "/mail/settings/import", icon: Upload, description: "Import mbox or eml files" },
 ];

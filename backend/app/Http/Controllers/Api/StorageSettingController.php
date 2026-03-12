@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
-use App\Models\SystemSetting;
 use App\Services\AuditService;
+use App\Services\SettingService;
 use App\Services\StorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,8 +14,11 @@ class StorageSettingController extends Controller
 {
     use ApiResponseTrait;
 
+    private const GROUP = 'storage';
+
     public function __construct(
         private StorageService $storageService,
+        private SettingService $settingService,
     ) {}
 
     /**
@@ -23,7 +26,7 @@ class StorageSettingController extends Controller
      */
     public function show(): JsonResponse
     {
-        $settings = SystemSetting::getGroup('storage');
+        $settings = $this->settingService->getGroupMasked(self::GROUP);
 
         return $this->dataResponse([
             'settings' => $settings,
@@ -121,11 +124,7 @@ class StorageSettingController extends Controller
 
         $validated = $request->validate($rules);
 
-        $user = $request->user();
-
-        foreach ($validated as $key => $value) {
-            SystemSetting::set($key, $value, 'storage', $user->id, false);
-        }
+        $this->settingService->setGroup(self::GROUP, $validated, $request->user()->id);
 
         return $this->successResponse('Storage settings updated successfully');
     }

@@ -41,7 +41,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Calendar } from "@/components/ui/calendar";
-import { Loader2, Send, Paperclip, X, Clock, Cloud, WifiOff, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, Send, Paperclip, X, Clock, Cloud, WifiOff, ChevronDown, PenLine, Check } from "lucide-react";
 import { RichTextEditor } from "./rich-text-editor";
 import { sanitizeEmailHtml } from "@/lib/sanitize";
 import { useOnline } from "@/lib/use-online";
@@ -50,11 +57,27 @@ import { getMailboxAddress } from "@/lib/mail-types";
 
 const MAX_ATTACHMENT_MB = 25;
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+interface EmailSignature {
+  id: number;
+  name: string;
+  body: string;
+  is_default: boolean;
+}
+
 interface Mailbox {
   id: number;
   address: string;
   display_name: string | null;
   signature: string | null;
+  default_signature_id: number | null;
   domain_name?: string | null;
   email_domain: { name: string } | null;
   email_domain_id: number | null;
@@ -99,7 +122,9 @@ export function ComposeDialog({
   const { isOffline } = useOnline();
 
   const [mailboxes, setMailboxes] = useState<Mailbox[]>([]);
+  const [signatures, setSignatures] = useState<EmailSignature[]>([]);
   const [selectedMailboxId, setSelectedMailboxId] = useState<string>("");
+  const [selectedSignatureId, setSelectedSignatureId] = useState<string>("");
   const [to, setTo] = useState<string[]>([]);
   const [cc, setCc] = useState<string[]>([]);
   const [bcc, setBcc] = useState<string[]>([]);
@@ -132,11 +157,19 @@ export function ComposeDialog({
   const isSendingRef = useRef(false);
   const dragCounterRef = useRef(0);
 
-  // Fetch mailboxes when dialog opens — filter to sendable (member/owner, non-catchall)
+  // Fetch mailboxes and signatures when dialog opens
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     initializedRef.current = false;
+
+    // Fetch signatures in parallel
+    api.get<{ signatures: EmailSignature[] }>("/email/signatures")
+      .then((res) => {
+        if (!cancelled) setSignatures(res.data.signatures);
+      })
+      .catch(() => {});
+
     api
       .get<{ mailboxes: Mailbox[] }>("/email/mailboxes")
       .then((res) => {
@@ -226,21 +259,37 @@ export function ComposeDialog({
     hasEditedRef.current = false;
   }, [open, mode, replyData]);
 
-  // Insert signature when mailbox changes
+  // Resolve signature when mailbox changes: mailbox default → user default → none
   useEffect(() => {
-    if (!selectedMailboxId || !open) return;
+    if (!selectedMailboxId || !open || signatures.length === 0) return;
     const mailbox = mailboxes.find((m) => m.id.toString() === selectedMailboxId);
-    if (!mailbox?.signature) return;
 
-    // Build signature HTML
-    const sigHtml = `<br><br><div data-signature="true">--<br>${mailbox.signature.replace(/\n/g, "<br>")}</div>`;
+    // Priority: mailbox default_signature_id → user default (is_default) → none
+    let resolved: EmailSignature | undefined;
+    if (mailbox?.default_signature_id) {
+      resolved = signatures.find((s) => s.id === mailbox.default_signature_id);
+    }
+    if (!resolved) {
+      resolved = signatures.find((s) => s.is_default);
+    }
+
+    setSelectedSignatureId(resolved ? resolved.id.toString() : "");
+  }, [selectedMailboxId, mailboxes, signatures, open]);
+
+  // Insert/replace signature in body when selection changes
+  useEffect(() => {
+    if (!open) return;
+    const sig = signatures.find((s) => s.id.toString() === selectedSignatureId);
 
     setBodyHtml((prev) => {
-      // Remove existing signature (greedy match handles nested divs; --<br> anchor prevents false matches)
+      // Remove existing signature
       const withoutSig = prev.replace(/(<br>)*<div data-signature="true">--<br>[\s\S]*<\/div>$/, "");
+      if (!sig) return withoutSig;
+      const sigHtml = `<br><br><div data-signature="true">--<br>${escapeHtml(sig.body).replace(/\n/g, "<br>")}</div>`;
       return withoutSig + sigHtml;
     });
-  }, [selectedMailboxId, mailboxes, open]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSignatureId, signatures, open]);
 
   // Check suppressions when recipients change (debounced)
   useEffect(() => {
@@ -735,6 +784,38 @@ export function ComposeDialog({
               >
                 <Paperclip className="h-4 w-4" />
               </Button>
+              {signatures.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      title="Select signature"
+                    >
+                      <PenLine className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => setSelectedSignatureId("")}>
+                      <span className="flex items-center gap-2">
+                        {!selectedSignatureId && <Check className="h-3 w-3" />}
+                        <span className={!selectedSignatureId ? "font-medium" : ""}>None</span>
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {signatures.map((sig) => (
+                      <DropdownMenuItem key={sig.id} onClick={() => setSelectedSignatureId(sig.id.toString())}>
+                        <span className="flex items-center gap-2">
+                          {selectedSignatureId === sig.id.toString() && <Check className="h-3 w-3" />}
+                          <span className={selectedSignatureId === sig.id.toString() ? "font-medium" : ""}>{sig.name}</span>
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {draftStatus === "saving" && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />

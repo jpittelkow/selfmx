@@ -58,6 +58,7 @@ import { ThreadSummary } from "@/components/mail/thread-summary";
 import { SnoozePicker } from "@/components/mail/snooze-picker";
 import { AILabelSuggestions } from "@/components/mail/ai-label-suggestions";
 import { SmartReplySuggestions } from "@/components/mail/smart-reply-suggestions";
+import { SenderAvatar } from "@/components/mail/sender-avatar";
 
 interface EmailDetailProps {
   emails: Email[];
@@ -352,7 +353,14 @@ function EmailMessage({
       {/* Email header */}
       <div className="px-6 py-4">
         <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 flex items-start gap-3">
+            <SenderAvatar
+              name={email.from_name}
+              email={email.from_address}
+              size="md"
+              className="mt-0.5 shrink-0"
+            />
+            <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm">
                 {email.from_name || email.from_address}
@@ -393,6 +401,7 @@ function EmailMessage({
                 {formatFullDate(email.sent_at)}
               </div>
             )}
+            </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-xs text-muted-foreground mr-2 hidden md:inline">

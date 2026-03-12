@@ -341,6 +341,13 @@ export const SEARCH_PAGES: SearchPage[] = [
     url: "/mail/settings/import",
     keywords: ["import", "mbox", "eml", "upload", "email"],
   },
+  {
+    id: "mail-settings-signatures",
+    title: "Mail Settings > Signatures",
+    subtitle: "Manage email signatures",
+    url: "/mail/settings/signatures",
+    keywords: ["signature", "email", "sign off", "library", "default"],
+  },
 ];
 
 /**

@@ -206,10 +206,43 @@ return [
     ],
 
     'storage' => [
+        // Driver & upload policy
+        'driver' => ['env' => 'STORAGE_DRIVER', 'default' => 'local'],
+        'max_upload_size' => ['env' => 'STORAGE_MAX_UPLOAD_SIZE', 'default' => 10],
+        'allowed_file_types' => ['env' => null, 'default' => null],
+        // Alerts
         'storage_alert_enabled' => ['env' => 'STORAGE_ALERT_ENABLED', 'default' => false],
         'storage_alert_threshold' => ['env' => 'STORAGE_ALERT_THRESHOLD', 'default' => 80],
         'storage_alert_critical' => ['env' => 'STORAGE_ALERT_CRITICAL', 'default' => 95],
         'storage_alert_email' => ['env' => 'STORAGE_ALERT_EMAIL', 'default' => true],
+        // S3
+        's3_bucket' => ['env' => 'STORAGE_S3_BUCKET', 'default' => null],
+        's3_region' => ['env' => 'STORAGE_S3_REGION', 'default' => null],
+        's3_key' => ['env' => 'STORAGE_S3_KEY', 'default' => null, 'encrypted' => true],
+        's3_secret' => ['env' => 'STORAGE_S3_SECRET', 'default' => null, 'encrypted' => true],
+        // Google Cloud Storage
+        'gcs_bucket' => ['env' => 'STORAGE_GCS_BUCKET', 'default' => null],
+        'gcs_project_id' => ['env' => 'STORAGE_GCS_PROJECT_ID', 'default' => null],
+        'gcs_credentials_json' => ['env' => 'STORAGE_GCS_CREDENTIALS_JSON', 'default' => null, 'encrypted' => true],
+        // Azure
+        'azure_container' => ['env' => 'STORAGE_AZURE_CONTAINER', 'default' => null],
+        'azure_connection_string' => ['env' => 'STORAGE_AZURE_CONNECTION_STRING', 'default' => null, 'encrypted' => true],
+        // DigitalOcean Spaces
+        'do_spaces_bucket' => ['env' => 'STORAGE_DO_SPACES_BUCKET', 'default' => null],
+        'do_spaces_region' => ['env' => 'STORAGE_DO_SPACES_REGION', 'default' => null],
+        'do_spaces_key' => ['env' => 'STORAGE_DO_SPACES_KEY', 'default' => null, 'encrypted' => true],
+        'do_spaces_secret' => ['env' => 'STORAGE_DO_SPACES_SECRET', 'default' => null, 'encrypted' => true],
+        'do_spaces_endpoint' => ['env' => 'STORAGE_DO_SPACES_ENDPOINT', 'default' => null],
+        // MinIO
+        'minio_bucket' => ['env' => 'STORAGE_MINIO_BUCKET', 'default' => null],
+        'minio_endpoint' => ['env' => 'STORAGE_MINIO_ENDPOINT', 'default' => null],
+        'minio_key' => ['env' => 'STORAGE_MINIO_KEY', 'default' => null, 'encrypted' => true],
+        'minio_secret' => ['env' => 'STORAGE_MINIO_SECRET', 'default' => null, 'encrypted' => true],
+        // Backblaze B2
+        'b2_bucket' => ['env' => 'STORAGE_B2_BUCKET', 'default' => null],
+        'b2_region' => ['env' => 'STORAGE_B2_REGION', 'default' => null],
+        'b2_key_id' => ['env' => 'STORAGE_B2_KEY_ID', 'default' => null, 'encrypted' => true],
+        'b2_application_key' => ['env' => 'STORAGE_B2_APPLICATION_KEY', 'default' => null, 'encrypted' => true],
     ],
 
     'stripe' => [

@@ -473,6 +473,9 @@ export default function MailPage() {
           labels={labels}
           activeMailboxId={activeMailboxId}
           onBulkActionComplete={() => { fetchThreads(); refreshUnreadCount(); }}
+          onToggleStar={handleToggleStar}
+          onTrash={handleTrash}
+          onMarkRead={handleMarkRead}
         />
       </div>
     );
@@ -500,6 +503,9 @@ export default function MailPage() {
           labels={labels}
           activeMailboxId={activeMailboxId}
           onBulkActionComplete={() => { fetchThreads(); refreshUnreadCount(); }}
+          onToggleStar={handleToggleStar}
+          onTrash={handleTrash}
+          onMarkRead={handleMarkRead}
         />
       </div>
 

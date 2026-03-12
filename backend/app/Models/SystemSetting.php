@@ -28,7 +28,12 @@ class SystemSetting extends Model
     }
 
     /**
-     * Value attribute: JSON decode and optionally decrypt when is_encrypted.
+     * Value attribute: JSON decode on read, JSON encode on write.
+     *
+     * Encryption/decryption is handled by SettingService (via the schema),
+     * not the model. The accessor returns raw values — encrypted strings
+     * stay encrypted. SettingService.resolveGroup() decrypts them using
+     * the schema's 'encrypted' flag.
      */
     protected function value(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
@@ -36,15 +41,6 @@ class SystemSetting extends Model
             get: function (mixed $value): mixed {
                 if ($value === null || $value === '') {
                     return $value;
-                }
-                if ($this->is_encrypted) {
-                    try {
-                        $decoded = is_string($value) ? json_decode($value, true) : $value;
-                        $toDecrypt = is_string($decoded) ? $decoded : $value;
-                        return decrypt($toDecrypt);
-                    } catch (\Throwable $e) {
-                        return self::jsonDecodeValue($value);
-                    }
                 }
                 return self::jsonDecodeValue($value);
             },

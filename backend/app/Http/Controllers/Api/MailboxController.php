@@ -27,7 +27,7 @@ class MailboxController extends Controller
         $accessible = $this->accessService->getAccessibleMailboxes($user);
         $mailboxIds = array_keys($accessible);
 
-        $query = Mailbox::whereIn('id', $mailboxIds)->with('emailDomain');
+        $query = Mailbox::whereIn('id', $mailboxIds)->with(['emailDomain', 'defaultSignature']);
 
         if ($request->has('email_domain_id')) {
             $query->where('email_domain_id', $request->input('email_domain_id'));
@@ -120,15 +120,24 @@ class MailboxController extends Controller
         $validated = $request->validate([
             'display_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'signature' => ['sometimes', 'nullable', 'string'],
+            'default_signature_id' => ['sometimes', 'nullable', 'integer', 'exists:signatures,id'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        // Verify the signature belongs to the requesting user
+        if (!empty($validated['default_signature_id'])) {
+            $sigOwner = \App\Models\Signature::where('id', $validated['default_signature_id'])->value('user_id');
+            if ($sigOwner !== $request->user()->id) {
+                return $this->errorResponse('Invalid signature', 422);
+            }
+        }
 
         $old = $mailbox->only(array_keys($validated));
         $mailbox->update($validated);
 
         $this->auditService->log('mailbox.updated', $mailbox, $old, $validated);
 
-        return $this->successResponse('Mailbox updated successfully', ['mailbox' => $mailbox->fresh()->load('emailDomain')]);
+        return $this->successResponse('Mailbox updated successfully', ['mailbox' => $mailbox->fresh()->load(['emailDomain', 'defaultSignature'])]);
     }
 
     public function destroy(Request $request, Mailbox $mailbox): JsonResponse
