@@ -65,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Storage Service
         $this->app->singleton(\App\Services\StorageService::class, function ($app) {
-            return new \App\Services\StorageService();
+            return new \App\Services\StorageService($app->make(\App\Services\SettingService::class));
         });
 
         // Register URL Validation Service (SSRF Protection)

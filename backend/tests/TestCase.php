@@ -14,6 +14,14 @@ abstract class TestCase extends BaseTestCase
      */
     protected function setUp(): void
     {
+        // Force in-memory SQLite for tests. The docker-compose.yml sets
+        // DB_DATABASE as a process-level env var pointing at the real database,
+        // which phpunit.xml cannot override. We must set it before the app
+        // boots so RefreshDatabase migrations target :memory: not the real DB.
+        putenv('DB_DATABASE=:memory:');
+        $_ENV['DB_DATABASE'] = ':memory:';
+        $_SERVER['DB_DATABASE'] = ':memory:';
+
         parent::setUp();
 
         // Force Scout to use the collection driver in tests so that
